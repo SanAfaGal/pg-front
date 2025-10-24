@@ -8,6 +8,7 @@ import { Badge } from '../components/ui/Badge';
 import { apiClient, API_ENDPOINTS, useCache } from '../shared';
 import { useAuth } from '../features/auth';
 import { Clients } from './Clients';
+import Attendances from './Attendances';
 import { PlansDebug } from '../components/debug/PlansDebug';
 import { SimplePlansTest } from '../components/debug/SimplePlansTest';
 import { ConfigDebug } from '../components/debug/ConfigDebug';
@@ -63,6 +64,10 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   const renderContent = () => {
     if (activeMenuItem === 'clients') {
       return <Clients />;
+    }
+
+    if (activeMenuItem === 'attendances') {
+      return <Attendances />;
     }
 
     if (activeMenuItem === 'debug-plans') {

@@ -12,7 +12,7 @@ export const API_CONFIG = {
 
 // API Endpoints Configuration
 export const API_ENDPOINTS = {
-  // Auth
+  // Auth 
   auth: {
     login: '/auth/token',
     logout: '/auth/logout',
@@ -51,6 +51,15 @@ export const API_ENDPOINTS = {
   
   // Statistics
   statistics: '/statistics',
+  
+  // Attendances
+  attendances: {
+    checkIn: '/attendances/check-in',
+    list: '/attendances',
+    detail: (id: string) => `/attendances/${id}`,
+    metrics: '/attendances/metrics',
+    stats: '/attendances/stats',
+  },
 } as const;
 
 // Token Management
@@ -168,7 +177,7 @@ class RealApiClient implements ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        await this.handleErrorResponse(response);
+        await this.handleErrorResponse(response, endpoint);
       }
 
       // Handle empty responses (204 No Content)
@@ -187,11 +196,11 @@ class RealApiClient implements ApiClient {
     }
   }
 
-  private async handleErrorResponse(response: Response): Promise<never> {
+  private async handleErrorResponse(response: Response, endpoint: string): Promise<never> {
     const status = response.status;
     
-    // Handle authentication errors
-    if (status === 401) {
+    // Handle authentication errors (but not for check-in endpoint)
+    if (status === 401 && !endpoint.includes('/attendances/check-in')) {
       tokenManager.clearTokens();
       if (!API_CONFIG.disableAuth) {
         window.location.href = '/';

@@ -33,7 +33,7 @@ export class FaceRecognitionService {
     };
 
     return apiClient.post<FaceRegistrationResponse>(
-      '/api/v1/face/register',
+      '/face/register',
       payload
     );
   }
@@ -48,13 +48,13 @@ export class FaceRecognitionService {
     };
 
     return apiClient.put<FaceRegistrationResponse>(
-      '/api/v1/face/update',
+      '/face/update',
       payload
     );
   }
 
   static async deleteFace(clientId: string): Promise<FaceDeleteResponse> {
-    await apiClient.delete(`/api/v1/face/${clientId}`);
+    await apiClient.delete(`/face/${clientId}`);
     return { success: true, message: 'Biometría eliminada exitosamente' };
   }
 

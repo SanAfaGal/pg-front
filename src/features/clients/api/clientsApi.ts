@@ -64,20 +64,20 @@ export const clientsApi = {
   },
 
   async registerFaceBiometric(clientId: string, imageBase64: string): Promise<void> {
-    return apiClient.post('/api/v1/face/register', {
+    return apiClient.post('/face/register', {
       client_id: clientId,
       image_base64: imageBase64,
     });
   },
 
   async updateFaceBiometric(clientId: string, imageBase64: string): Promise<void> {
-    return apiClient.put('/api/v1/face/update', {
+    return apiClient.put('/face/update', {
       client_id: clientId,
       image_base64: imageBase64,
     });
   },
 
   async getClientStats(): Promise<ClientStats> {
-    return apiClient.get<ClientStats>('/api/v1/clients/stats');
+    return apiClient.get<ClientStats>('/clients/stats');
   },
 };
