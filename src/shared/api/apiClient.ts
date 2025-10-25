@@ -1,5 +1,4 @@
 // Centralized API Configuration and Client
-import { ApiError } from '../types/common';
 
 // Environment Configuration
 export const API_CONFIG = {
@@ -54,7 +53,7 @@ export const API_ENDPOINTS = {
   
   // Attendances
   attendances: {
-    checkIn: '/attendances/check-in',
+    checkIn: '/check-in',
     list: '/attendances',
     detail: (id: string) => `/attendances/${id}`,
     metrics: '/attendances/metrics',
@@ -115,6 +114,22 @@ interface RequestConfig {
 
 // Real API Client Implementation
 class RealApiClient implements ApiClient {
+  private isNetworkError(error: Error): boolean {
+    // Check for common network error patterns
+    return (
+      error.name === 'TypeError' && (
+        error.message.includes('fetch') ||
+        error.message.includes('network') ||
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('NetworkError') ||
+        error.message.includes('ERR_NETWORK') ||
+        error.message.includes('ERR_INTERNET_DISCONNECTED') ||
+        error.message.includes('ERR_CONNECTION_REFUSED') ||
+        error.message.includes('ERR_NAME_NOT_RESOLVED')
+      )
+    );
+  }
+
   private async makeRequest<T>(
     endpoint: string,
     method: string,
@@ -189,9 +204,26 @@ class RealApiClient implements ApiClient {
       console.log(`API ${method.toUpperCase()} Response:`, responseData);
       return responseData;
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timeout');
+      // Handle different types of network errors
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          // Request was aborted due to timeout
+          const timeoutError = new Error('Tiempo de espera agotado') as any;
+          timeoutError.status = 0;
+          timeoutError.type = 'timeout';
+          timeoutError.response = { data: null };
+          throw timeoutError;
+        } else if (this.isNetworkError(error)) {
+          // Network error (no internet, server down, etc.)
+          const networkError = new Error('Error de conexión') as any;
+          networkError.status = 0;
+          networkError.type = 'network';
+          networkError.response = { data: null };
+          throw networkError;
+        }
       }
+      
+      // Re-throw other errors as-is
       throw error;
     }
   }
@@ -200,7 +232,7 @@ class RealApiClient implements ApiClient {
     const status = response.status;
     
     // Handle authentication errors (but not for check-in endpoint)
-    if (status === 401 && !endpoint.includes('/attendances/check-in')) {
+    if (status === 401 && !endpoint.includes('/check-in')) {
       tokenManager.clearTokens();
       if (!API_CONFIG.disableAuth) {
         window.location.href = '/';
@@ -210,8 +242,10 @@ class RealApiClient implements ApiClient {
 
     // Try to parse error response
     let errorMessage = `HTTP error! status: ${status}`;
+    let errorData: any = null;
+    
     try {
-      const errorData = await response.json();
+      errorData = await response.json();
       
       if (status === 422) {
         // Validation errors
@@ -222,17 +256,30 @@ class RealApiClient implements ApiClient {
           errorMessage = details;
         }
       } else if (status === 400) {
-        errorMessage = errorData.detail || errorData.message || 'Bad request';
+        errorMessage = errorData.detail || errorData.message || 'Solicitud incorrecta';
+      } else if (status === 401) {
+        errorMessage = errorData.detail || errorData.message || 'No autorizado';
+      } else if (status === 403) {
+        errorMessage = errorData.detail || errorData.message || 'Acceso denegado';
       } else if (status === 404) {
-        errorMessage = 'Resource not found';
+        errorMessage = 'Recurso no encontrado';
+      } else if (status === 409) {
+        errorMessage = errorData.detail || errorData.message || 'Conflicto - ya registrado';
+      } else if (status === 422) {
+        errorMessage = errorData.detail || errorData.message || 'Error de validación';
       } else if (status === 500) {
-        errorMessage = 'Internal server error';
+        errorMessage = 'Error interno del servidor';
       }
     } catch {
       // If we can't parse the error response, use the default message
     }
 
-    throw new Error(errorMessage);
+    // Create a custom error that includes the response data
+    const error = new Error(errorMessage) as any;
+    error.status = status;
+    error.response = { data: errorData };
+    
+    throw error;
   }
 
   async get<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
@@ -267,9 +314,7 @@ class MockApiClient implements ApiClient {
       mockGetSubscriptions, 
       mockGetActiveSubscription, 
       mockGetPayments, 
-      mockGetPaymentStats, 
-      mockCreateSubscription, 
-      mockCreatePayment 
+      mockGetPaymentStats
     } = await import('../../services/mockSubscriptionService');
     
     // Handle plans endpoints
@@ -308,7 +353,7 @@ class MockApiClient implements ApiClient {
     return {} as T;
   }
 
-  async post<T>(endpoint: string, data?: unknown, config: RequestConfig = {}): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown, _config: RequestConfig = {}): Promise<T> {
     console.log('Mock POST:', endpoint, data);
     
     const { mockCreateSubscription, mockCreatePayment } = await import('../../services/mockSubscriptionService');
@@ -326,17 +371,17 @@ class MockApiClient implements ApiClient {
     return {} as T;
   }
 
-  async put<T>(endpoint: string, data?: unknown, config: RequestConfig = {}): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown, _config: RequestConfig = {}): Promise<T> {
     console.log('Mock PUT:', endpoint, data);
-    return { ...data, updated_at: new Date().toISOString() } as T;
+    return { ...(data as object), updated_at: new Date().toISOString() } as T;
   }
 
-  async patch<T>(endpoint: string, data?: unknown, config: RequestConfig = {}): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown, _config: RequestConfig = {}): Promise<T> {
     console.log('Mock PATCH:', endpoint, data);
-    return { ...data, updated_at: new Date().toISOString() } as T;
+    return { ...(data as object), updated_at: new Date().toISOString() } as T;
   }
 
-  async delete<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
+  async delete<T>(endpoint: string, _config: RequestConfig = {}): Promise<T> {
     console.log('Mock DELETE:', endpoint);
     return { success: true } as T;
   }

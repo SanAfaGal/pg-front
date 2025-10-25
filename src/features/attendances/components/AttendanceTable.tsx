@@ -74,8 +74,8 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
           <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No attendances found</h3>
-          <p className="text-gray-500">Try adjusting your filters or check back later.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron asistencias</h3>
+          <p className="text-gray-500">Intenta ajustar tus filtros o revisa más tarde.</p>
         </div>
       </Card>
     );
@@ -85,7 +85,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
     <Card className={`p-6 ${className}`}>
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-gray-900">
-          Attendance Records ({attendances.length})
+          Registros de Asistencia ({attendances.length})
         </h3>
         {onExport && (
           <Button
@@ -96,7 +96,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <span>Export</span>
+            <span>Exportar</span>
           </Button>
         )}
       </div>
@@ -110,7 +110,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 onClick={() => handleSort('client_first_name')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Client</span>
+                  <span>Cliente</span>
                   {sortField === 'client_first_name' && (
                     <svg className={`w-4 h-4 ${sortDirection === 'asc' ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -136,7 +136,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 onClick={() => handleSort('check_in')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Check-in Time</span>
+                  <span>Hora de Check-in</span>
                   {sortField === 'check_in' && (
                     <svg className={`w-4 h-4 ${sortDirection === 'asc' ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
@@ -145,10 +145,10 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                Estado
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                Acciones
               </th>
             </tr>
           </thead>
@@ -184,7 +184,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
                       variant={isRecent ? 'success' : 'default'}
                       className={isRecent ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
                     >
-                      {isRecent ? 'Recent' : 'Completed'}
+                      {isRecent ? 'Reciente' : 'Completado'}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -194,7 +194,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
                       onClick={() => onViewDetails(attendance)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      View Details
+                      Ver Detalles
                     </Button>
                   </td>
                 </tr>

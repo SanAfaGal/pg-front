@@ -1,7 +1,7 @@
 import { format, parseISO, isValid, differenceInDays, isAfter, isBefore } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Subscription, SubscriptionStatus, Payment, PaymentMethod } from '../api/types';
-import { SUBSCRIPTION_STATUS_CONFIG, PAYMENT_METHOD_CONFIG, CURRENCY_CONFIG } from '../constants/subscriptionConstants';
+import { Subscription, SubscriptionStatus } from '../api/types';
+import { SUBSCRIPTION_STATUS_CONFIG } from '../constants/subscriptionConstants';
 
 // Subscription Helper Functions
 
@@ -46,14 +46,23 @@ export const isSubscriptionExpired = (subscription: Subscription): boolean => {
 
 /**
  * Get days remaining for a subscription
+ * Includes the current day if the subscription ends today
  */
 export const getDaysRemaining = (subscription: Subscription): number => {
   const endDate = parseISO(subscription.end_date);
   const today = new Date();
   
-  if (isAfter(today, endDate)) return 0;
+  // Set both dates to start of day for accurate comparison
+  const endDateStart = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   
-  return differenceInDays(endDate, today);
+  // If end date is before today, subscription has expired
+  if (isBefore(endDateStart, todayStart)) return 0;
+  
+  // Calculate difference including the current day
+  // If subscription ends today, it should show 1 day remaining
+  const daysDiff = differenceInDays(endDateStart, todayStart);
+  return daysDiff + 1;
 };
 
 /**
@@ -81,24 +90,41 @@ export const canCancelSubscription = (subscription: Subscription): boolean => {
 
 /**
  * Get subscription duration in days
+ * Includes both start and end dates in the calculation
  */
 export const getSubscriptionDuration = (subscription: Subscription): number => {
   const startDate = parseISO(subscription.start_date);
   const endDate = parseISO(subscription.end_date);
   
-  return differenceInDays(endDate, startDate);
+  // Set both dates to start of day for accurate comparison
+  const startDateStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const endDateStart = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  
+  // Include both start and end dates in the duration
+  // If start and end are the same day, duration should be 1 day
+  const daysDiff = differenceInDays(endDateStart, startDateStart);
+  return daysDiff + 1;
 };
 
 /**
  * Calculate subscription progress percentage
+ * Uses the corrected day calculation that includes both start and end dates
  */
 export const getSubscriptionProgress = (subscription: Subscription): number => {
   const startDate = parseISO(subscription.start_date);
   const endDate = parseISO(subscription.end_date);
   const today = new Date();
   
-  const totalDays = differenceInDays(endDate, startDate);
-  const elapsedDays = differenceInDays(today, startDate);
+  // Set all dates to start of day for accurate comparison
+  const startDateStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const endDateStart = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  
+  // Calculate total duration including both start and end dates
+  const totalDays = differenceInDays(endDateStart, startDateStart) + 1;
+  
+  // Calculate elapsed days including the start date
+  const elapsedDays = Math.max(0, differenceInDays(todayStart, startDateStart) + 1);
   
   if (totalDays <= 0) return 100;
   

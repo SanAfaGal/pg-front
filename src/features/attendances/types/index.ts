@@ -26,7 +26,7 @@ export interface CheckInResponse {
     last_name: string;
     dni_number: string;
   };
-  reason?: 'subscription_expired' | 'inactive_client' | 'no_active_subscription' | 'face_not_recognized' | 'no_face_detected' | 'system_error';
+  reason?: 'subscription_expired' | 'inactive_client' | 'no_active_subscription' | 'face_not_recognized' | 'no_face_detected' | 'already_checked_in' | 'system_error';
   detail?: string;
 }
 
@@ -40,7 +40,7 @@ export interface CheckInAccessDeniedResponse {
   success: false;
   message: string;
   can_enter: false;
-  reason: 'subscription_expired' | 'inactive_client' | 'no_active_subscription' | 'payment_required';
+  reason: 'subscription_expired' | 'inactive_client' | 'no_active_subscription' | 'payment_required' | 'already_checked_in';
   detail: string;
 }
 

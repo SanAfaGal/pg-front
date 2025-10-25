@@ -33,7 +33,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
     return (
       <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 ${className}`}>
         <Card className="p-6 text-center">
-          <p className="text-gray-500">No metrics available</p>
+          <p className="text-gray-500">No hay métricas disponibles</p>
         </Card>
       </div>
     );
@@ -41,7 +41,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
 
   const cards = [
     {
-      title: 'Today',
+      title: 'Hoy',
       value: metrics.today_count,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,7 +52,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
       bgColor: 'bg-blue-50',
     },
     {
-      title: 'This Week',
+      title: 'Esta Semana',
       value: metrics.week_count,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,7 +63,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
       bgColor: 'bg-green-50',
     },
     {
-      title: 'This Month',
+      title: 'Este Mes',
       value: metrics.month_count,
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@ export const MetricsCards: React.FC<MetricsCardsProps> = ({
             <div>
               <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
               <p className="text-3xl font-bold text-gray-900">{card.value}</p>
-              <p className="text-xs text-gray-500 mt-1">attendances</p>
+              <p className="text-xs text-gray-500 mt-1">asistencias</p>
             </div>
             <div className={`p-3 rounded-full ${card.bgColor}`}>
               <div className={card.color}>

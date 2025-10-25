@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Subscription, PaymentCreateInput, PaymentMethod } from '../api/types';
+import { Subscription, PaymentMethod } from '../api/types';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -15,9 +15,10 @@ import { DollarSign, CreditCard, AlertCircle } from 'lucide-react';
 // Validation schema
 const paymentFormSchema = z.object({
   amount: z.string().min(1, 'Debe ingresar un monto'),
-  payment_method: z.nativeEnum(PaymentMethod, {
-    errorMap: () => ({ message: 'Debe seleccionar un método de pago' }),
-  }),
+  payment_method: z.nativeEnum(PaymentMethod).refine(
+    (value) => Object.values(PaymentMethod).includes(value),
+    { message: 'Debe seleccionar un método de pago' }
+  ),
 });
 
 type PaymentFormData = z.infer<typeof paymentFormSchema>;
@@ -28,14 +29,12 @@ interface PaymentFormProps {
   onSuccess: () => void;
   subscription: Subscription;
   maxAmount?: number;
-  className?: string;
+  remainingDebt?: number; // Deuda pendiente total
 }
 
 const PAYMENT_METHODS = [
   { value: PaymentMethod.CASH, label: 'Efectivo', icon: '💵' },
   { value: PaymentMethod.QR, label: 'Código QR', icon: '📱' },
-  { value: PaymentMethod.TRANSFER, label: 'Transferencia', icon: '🏦' },
-  { value: PaymentMethod.CARD, label: 'Tarjeta', icon: '💳' },
 ];
 
 export const PaymentForm: React.FC<PaymentFormProps> = ({
@@ -44,9 +43,10 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   onSuccess,
   subscription,
   maxAmount,
-  className = '',
+  remainingDebt,
 }) => {
   const [amountError, setAmountError] = useState<string>('');
+  const [paymentType, setPaymentType] = useState<'partial' | 'full'>('partial');
   const createPaymentMutation = useCreatePayment();
 
   const {
@@ -64,6 +64,19 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   });
 
   const watchedAmount = watch('amount');
+
+  // Handle payment type change
+  const handlePaymentTypeChange = (type: 'partial' | 'full') => {
+    setPaymentType(type);
+    if (type === 'full' && remainingDebt) {
+      // Set amount to full debt and disable input
+      register('amount').onChange({ target: { value: remainingDebt.toString() } });
+    } else {
+      // Clear amount for partial payment
+      register('amount').onChange({ target: { value: '' } });
+    }
+    setAmountError('');
+  };
 
   // Validate amount in real-time
   React.useEffect(() => {
@@ -94,6 +107,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       
       reset();
       setAmountError('');
+      setPaymentType('partial');
       onSuccess();
       onClose();
     } catch (error) {
@@ -104,6 +118,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const handleClose = () => {
     reset();
     setAmountError('');
+    setPaymentType('partial');
     onClose();
   };
 
@@ -112,7 +127,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title="Registrar Pago"
-      className={className}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Subscription Info */}
@@ -121,13 +135,61 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           <div className="text-sm text-blue-700">
             <p>ID: {subscription.id.slice(0, 8)}</p>
             <p>Estado: {subscription.status}</p>
-            {maxAmount && (
+            {remainingDebt && (
               <p className="font-medium mt-1">
-                Deuda máxima: {formatCurrency(maxAmount)}
+                Deuda pendiente: {formatCurrency(remainingDebt)}
               </p>
             )}
           </div>
         </Card>
+
+        {/* Payment Type Selection */}
+        {remainingDebt && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Tipo de Pago
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <Card
+                className={`p-4 cursor-pointer transition-all ${
+                  paymentType === 'partial'
+                    ? 'ring-2 ring-blue-500 bg-blue-50'
+                    : 'hover:bg-gray-50'
+                }`}
+                onClick={() => handlePaymentTypeChange('partial')}
+              >
+                <div className="text-center">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span className="text-orange-600 text-sm">💰</span>
+                  </div>
+                  <h4 className="font-medium text-gray-900">Pago Parcial</h4>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Ingresa el monto que deseas pagar
+                  </p>
+                </div>
+              </Card>
+              
+              <Card
+                className={`p-4 cursor-pointer transition-all ${
+                  paymentType === 'full'
+                    ? 'ring-2 ring-green-500 bg-green-50'
+                    : 'hover:bg-gray-50'
+                }`}
+                onClick={() => handlePaymentTypeChange('full')}
+              >
+                <div className="text-center">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <span className="text-green-600 text-sm">✅</span>
+                  </div>
+                  <h4 className="font-medium text-gray-900">Pago Completo</h4>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Pagar toda la deuda: {formatCurrency(remainingDebt)}
+                  </p>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
 
         {/* Amount Input */}
         <div>
@@ -142,8 +204,11 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               type="number"
               step="0.01"
               min="0.01"
-              placeholder="0.00"
-              className={`pl-10 ${errors.amount || amountError ? 'border-red-500' : ''}`}
+              placeholder={paymentType === 'full' ? 'Monto automático' : '0.00'}
+              disabled={paymentType === 'full'}
+              className={`pl-10 ${errors.amount || amountError ? 'border-red-500' : ''} ${
+                paymentType === 'full' ? 'bg-gray-100 cursor-not-allowed' : ''
+              }`}
               {...register('amount')}
             />
           </div>

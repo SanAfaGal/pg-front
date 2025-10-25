@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UUID } from '../../../shared/types/common';
+import { UUID, PaginationParams } from '../../../shared/types/common';
 import { subscriptionKeys } from '../api/types';
 import {
   createPayment,
@@ -16,7 +16,6 @@ import {
   PaymentCreateInput,
   PaymentStats,
   PaymentWithDebtInfo,
-  PaginationParams,
 } from '../api/types';
 
 // Hook to get all payments for a subscription
@@ -118,6 +117,18 @@ export const useCreatePayment = () => {
       // Invalidate subscription details (in case status changed)
       queryClient.invalidateQueries({
         queryKey: subscriptionKeys.detail(variables.subscriptionId),
+      });
+
+      // CRITICAL: Invalidate ALL subscription-related queries to refresh status
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.all(),
+      });
+
+      // Invalidate client-specific queries (active subscription, etc.)
+      // Note: We'll need to get client_id from the subscription or pass it separately
+      // For now, we invalidate all subscription queries to ensure consistency
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.lists(),
       });
 
       // Add the new payment to cache

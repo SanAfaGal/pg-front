@@ -17,7 +17,6 @@ export const AttendanceHistory: React.FC = () => {
     updateFilters,
     updatePagination,
     clearFilters,
-    invalidateAttendances,
   } = useAttendanceHistory();
 
   const handleViewDetails = (attendance: AttendanceWithClient) => {
@@ -32,7 +31,7 @@ export const AttendanceHistory: React.FC = () => {
 
   const handleExport = () => {
     // Create CSV content
-    const headers = ['ID', 'Client Name', 'DNI', 'Check-in Date', 'Check-in Time'];
+    const headers = ['ID', 'Nombre del Cliente', 'DNI', 'Fecha de Check-in', 'Hora de Check-in'];
     const csvContent = [
       headers.join(','),
       ...attendances.map(attendance => [
@@ -59,9 +58,9 @@ export const AttendanceHistory: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Attendance History</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Historial de Asistencias</h1>
         <p className="text-gray-600">
-          View and manage all attendance records with advanced filtering options.
+          Ve y gestiona todos los registros de asistencia con opciones de filtrado avanzadas.
         </p>
       </div>
 
@@ -86,7 +85,7 @@ export const AttendanceHistory: React.FC = () => {
       {attendances.length > 0 && (
         <div className="mt-8 flex items-center justify-between">
           <div className="text-sm text-gray-700">
-            Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.limit, attendances.length)} of {attendances.length} results
+            Mostrando {pagination.offset + 1} a {Math.min(pagination.offset + pagination.limit, attendances.length)} de {attendances.length} resultados
           </div>
           <div className="flex items-center space-x-2">
             <button
@@ -94,14 +93,14 @@ export const AttendanceHistory: React.FC = () => {
               disabled={pagination.offset === 0}
               className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Previous
+              Anterior
             </button>
             <button
               onClick={() => updatePagination({ offset: pagination.offset + pagination.limit })}
               disabled={attendances.length < pagination.limit}
               className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Next
+              Siguiente
             </button>
           </div>
         </div>

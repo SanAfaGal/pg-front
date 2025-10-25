@@ -12,7 +12,7 @@ import {
 
 // API Endpoints
 const ATTENDANCE_ENDPOINTS = {
-  checkIn: '/attendances/check-in',
+  checkIn: '/check-in',
   list: '/attendances',
   detail: (id: string) => `/attendances/${id}`,
   metrics: '/attendances/metrics',

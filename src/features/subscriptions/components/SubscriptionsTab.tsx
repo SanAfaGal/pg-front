@@ -220,6 +220,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
           onClose={() => setIsPaymentModalOpen(false)}
           onSuccess={handlePaymentCreated}
           subscription={selectedSubscription}
+          remainingDebt={paymentStats?.remaining_debt ? parseFloat(paymentStats.remaining_debt) : undefined}
         />
       )}
     </div>

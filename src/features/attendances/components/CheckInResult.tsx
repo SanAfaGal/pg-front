@@ -33,7 +33,7 @@ export const CheckInResult: React.FC<CheckInResultProps> = ({
         {/* Client Info */}
         {result.client_info && (
           <div className="bg-white p-4 rounded-lg shadow-sm mb-4 w-full max-w-sm">
-            <h4 className="font-medium text-gray-900 mb-2">Welcome,</h4>
+            <h4 className="font-medium text-gray-900 mb-2">Bienvenido,</h4>
             <div className="space-y-1">
               <p className="text-lg font-semibold text-gray-900">
                 {result.client_info.first_name} {result.client_info.last_name}
@@ -48,10 +48,10 @@ export const CheckInResult: React.FC<CheckInResultProps> = ({
         {/* Attendance Info */}
         {result.attendance && (
           <div className="bg-white p-4 rounded-lg shadow-sm w-full max-w-sm">
-            <h4 className="font-medium text-gray-900 mb-2">Check-in Details</h4>
+            <h4 className="font-medium text-gray-900 mb-2">Detalles del Check-in</h4>
             <div className="space-y-1">
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Time:</span>{' '}
+                <span className="font-medium">Hora:</span>{' '}
                 {new Date(result.attendance.check_in).toLocaleString()}
               </p>
               <p className="text-sm text-gray-600">
@@ -101,6 +101,12 @@ export const CheckInResult: React.FC<CheckInResultProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           );
+        case 'already_checked_in':
+          return (
+            <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          );
         default:
           return (
             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,6 +141,13 @@ export const CheckInResult: React.FC<CheckInResultProps> = ({
             iconBg: 'bg-yellow-100',
             text: 'text-yellow-800'
           };
+        case 'already_checked_in':
+          return {
+            bg: 'bg-gray-50',
+            border: 'border-gray-200',
+            iconBg: 'bg-gray-100',
+            text: 'text-gray-800'
+          };
         default:
           return {
             bg: 'bg-red-50',
@@ -159,20 +172,10 @@ export const CheckInResult: React.FC<CheckInResultProps> = ({
           {result.message}
         </h3>
 
-        {/* Reason and Detail */}
         <div className="bg-white p-4 rounded-lg shadow-sm mb-4 w-full max-w-sm">
-          {result.reason && (
-            <div className="mb-3">
-              <h4 className="font-medium text-gray-900 mb-1">Reason:</h4>
-              <p className="text-sm text-gray-700 capitalize">
-                {result.reason.replace('_', ' ')}
-              </p>
-            </div>
-          )}
-          
           {result.detail && (
             <div>
-              <h4 className="font-medium text-gray-900 mb-1">Details:</h4>
+              <h4 className="font-medium text-gray-900 mb-1">Detalles:</h4>
               <p className="text-sm text-gray-700">{result.detail}</p>
             </div>
           )}
@@ -181,80 +184,102 @@ export const CheckInResult: React.FC<CheckInResultProps> = ({
         {/* Suggestions based on reason */}
         {result.reason === 'subscription_expired' && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-yellow-800 mb-2">What to do:</h4>
+            <h4 className="font-medium text-yellow-800 mb-2">Qué hacer:</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Contact the front desk to renew your subscription</li>
-              <li>• Check your payment status</li>
-              <li>• Update your payment method if needed</li>
+              <li>• Contacta a recepción para renovar tu suscripción</li>
+              <li>• Verifica el estado de tu pago</li>
+              <li>• Actualiza tu método de pago si es necesario</li>
             </ul>
           </div>
         )}
 
         {result.reason === 'inactive_client' && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-yellow-800 mb-2">What to do:</h4>
+            <h4 className="font-medium text-yellow-800 mb-2">Qué hacer:</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Contact the front desk to reactivate your account</li>
-              <li>• Verify your account status</li>
-              <li>• Update your personal information if needed</li>
+              <li>• Contacta a recepción para reactivar tu cuenta</li>
+              <li>• Verifica el estado de tu cuenta</li>
+              <li>• Actualiza tu información personal si es necesario</li>
             </ul>
           </div>
         )}
 
         {result.reason === 'no_active_subscription' && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-yellow-800 mb-2">What to do:</h4>
+            <h4 className="font-medium text-yellow-800 mb-2">Qué hacer:</h4>
             <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Purchase a new subscription plan</li>
-              <li>• Contact the front desk for assistance</li>
-              <li>• Check available membership options</li>
+              <li>• Compra un nuevo plan de suscripción</li>
+              <li>• Contacta a recepción para asistencia</li>
+              <li>• Revisa las opciones de membresía disponibles</li>
+            </ul>
+          </div>
+        )}
+
+        {result.reason === 'already_checked_in' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 w-full max-w-sm mb-4">
+            <h4 className="font-medium text-blue-800 mb-2">Información:</h4>
+            <ul className="text-sm text-blue-700 space-y-1">
+              <li>• Ya has registrado tu entrada hoy</li>
+              <li>• Solo puedes hacer check-in una vez por día</li>
+              <li>• Tu asistencia ya está registrada en el sistema</li>
+              <li>• Puedes regresar mañana para tu próximo check-in</li>
             </ul>
           </div>
         )}
 
         {result.reason === 'face_not_recognized' && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-blue-800 mb-2">What to do:</h4>
+            <h4 className="font-medium text-blue-800 mb-2">Qué hacer:</h4>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Contact the front desk to register your facial data</li>
-              <li>• Ensure you're looking directly at the camera</li>
-              <li>• Try again with better lighting</li>
-              <li>• Make sure your face is clearly visible</li>
+              <li>• Contacta a recepción para registrar tus datos faciales</li>
+              <li>• Asegúrate de mirar directamente a la cámara</li>
+              <li>• Intenta de nuevo con mejor iluminación</li>
+              <li>• Asegúrate de que tu rostro esté claramente visible</li>
             </ul>
           </div>
         )}
 
         {result.reason === 'no_face_detected' && (
           <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-orange-800 mb-2">What to do:</h4>
+            <h4 className="font-medium text-orange-800 mb-2">Qué hacer:</h4>
             <ul className="text-sm text-orange-700 space-y-1">
-              <li>• Ensure your face is clearly visible in the camera</li>
-              <li>• Check that the camera is working properly</li>
-              <li>• Try adjusting the lighting</li>
-              <li>• Make sure you're positioned correctly</li>
+              <li>• Asegúrate de que tu rostro esté claramente visible en la cámara</li>
+              <li>• Verifica que la cámara esté funcionando correctamente</li>
+              <li>• Intenta ajustar la iluminación</li>
+              <li>• Asegúrate de estar posicionado correctamente</li>
             </ul>
           </div>
         )}
 
         {result.reason === 'system_error' && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-red-800 mb-2">What to do:</h4>
+            <h4 className="font-medium text-red-800 mb-2">Qué hacer:</h4>
             <ul className="text-sm text-red-700 space-y-1">
-              <li>• Try again in a few moments</li>
-              <li>• Contact technical support if the problem persists</li>
-              <li>• Check your internet connection</li>
-              <li>• Report the issue to the front desk</li>
+              {result.message.includes('conexión') ? (
+                <>
+                  <li>• Verifica tu conexión a internet</li>
+                  <li>• Asegúrate de que el servidor esté disponible</li>
+                  <li>• Intenta de nuevo en unos momentos</li>
+                  <li>• Contacta al soporte técnico si el problema persiste</li>
+                </>
+              ) : result.message.includes('tiempo') ? (
+                <>
+                  <li>• Verifica la velocidad de tu conexión a internet</li>
+                  <li>• Intenta de nuevo con una conexión más estable</li>
+                  <li>• Asegúrate de que no haya interferencias de red</li>
+                  <li>• Contacta al soporte técnico si el problema persiste</li>
+                </>
+              ) : (
+                <>
+                  <li>• Intenta de nuevo en unos momentos</li>
+                  <li>• Contacta al soporte técnico si el problema persiste</li>
+                  <li>• Verifica tu conexión a internet</li>
+                  <li>• Reporta el problema a recepción</li>
+                </>
+              )}
             </ul>
           </div>
         )}
-
-        {/* Retry Button */}
-        <button
-          onClick={onRetry}
-          className="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200"
-        >
-          Try Again
-        </button>
       </div>
     );
   }

@@ -62,7 +62,7 @@ export const cancelSubscription = async (
   subscriptionId: UUID,
   data: SubscriptionCancelInput = {}
 ): Promise<Subscription> => {
-  return apiClient.put<Subscription>(API_ENDPOINTS.subscriptions.cancel(clientId, subscriptionId), data);
+  return apiClient.patch<Subscription>(API_ENDPOINTS.subscriptions.cancel(clientId, subscriptionId), data);
 };
 
 /**

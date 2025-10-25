@@ -11,9 +11,9 @@ export const AttendanceDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Attendance Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Panel de Control de Asistencias</h1>
         <p className="text-gray-600">
-          Monitor gym attendance metrics and recent check-ins in real-time.
+          Monitorea las métricas de asistencia del gimnasio y los check-ins recientes en tiempo real.
         </p>
       </div>
 

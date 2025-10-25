@@ -13,8 +13,6 @@ export enum SubscriptionStatus {
 export enum PaymentMethod {
   CASH = 'cash',
   QR = 'qr',
-  TRANSFER = 'transfer',
-  CARD = 'card',
 }
 
 // Subscription Types

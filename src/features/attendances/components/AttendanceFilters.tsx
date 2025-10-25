@@ -44,14 +44,14 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
   return (
     <Card className={`p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Filtros</h3>
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
           >
-            {isExpanded ? 'Hide' : 'Show'} Filters
+            {isExpanded ? 'Ocultar' : 'Mostrar'} Filtros
           </Button>
           {hasActiveFilters && (
             <Button
@@ -60,7 +60,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
               onClick={handleClearFilters}
               className="text-red-600 hover:text-red-700"
             >
-              Clear All
+              Limpiar Todo
             </Button>
           )}
         </div>
@@ -71,11 +71,11 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
           {/* Search */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search by Name or DNI
+              Buscar por Nombre o DNI
             </label>
             <Input
               type="text"
-              placeholder="Enter client name or DNI..."
+              placeholder="Ingresa el nombre del cliente o DNI..."
               value={localFilters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="w-full"
@@ -86,7 +86,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Date
+                Fecha de Inicio
               </label>
               <Input
                 type="datetime-local"
@@ -100,7 +100,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Date
+                Fecha de Fin
               </label>
               <Input
                 type="datetime-local"
@@ -117,7 +117,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
           {/* Quick Date Filters */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Quick Filters
+              Filtros Rápidos
             </label>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -136,7 +136,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
                   });
                 }}
               >
-                Today
+                Hoy
               </Button>
               <Button
                 variant="outline"
@@ -155,7 +155,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
                   });
                 }}
               >
-                This Week
+                Esta Semana
               </Button>
               <Button
                 variant="outline"
@@ -174,7 +174,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
                   });
                 }}
               >
-                This Month
+                Este Mes
               </Button>
             </div>
           </div>
@@ -185,13 +185,13 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
               variant="outline"
               onClick={() => setLocalFilters(filters)}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               onClick={handleApplyFilters}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              Apply Filters
+              Aplicar Filtros
             </Button>
           </div>
         </div>
@@ -201,10 +201,10 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
       {hasActiveFilters && (
         <div className="mt-4 pt-4 border-t">
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium text-gray-700">Active filters:</span>
+            <span className="text-sm font-medium text-gray-700">Filtros activos:</span>
             {filters.search && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                Search: {filters.search}
+                Búsqueda: {filters.search}
                 <button
                   onClick={() => onFiltersChange({ ...filters, search: undefined })}
                   className="ml-1 text-blue-600 hover:text-blue-800"
@@ -215,7 +215,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
             )}
             {filters.start_date && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                From: {new Date(filters.start_date).toLocaleDateString()}
+                Desde: {new Date(filters.start_date).toLocaleDateString()}
                 <button
                   onClick={() => onFiltersChange({ ...filters, start_date: undefined })}
                   className="ml-1 text-green-600 hover:text-green-800"
@@ -226,7 +226,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
             )}
             {filters.end_date && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                To: {new Date(filters.end_date).toLocaleDateString()}
+                Hasta: {new Date(filters.end_date).toLocaleDateString()}
                 <button
                   onClick={() => onFiltersChange({ ...filters, end_date: undefined })}
                   className="ml-1 text-green-600 hover:text-green-800"

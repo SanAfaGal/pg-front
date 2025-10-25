@@ -25,7 +25,7 @@ export const clientsApi = {
   },
 
   async deleteClient(id: string): Promise<void> {
-    return apiClient.delete(API_ENDPOINTS.clients.detail(id));
+    return apiClient.patch(API_ENDPOINTS.clients.detail(id));
   },
 
   async toggleClientStatus(id: string, isActive: boolean): Promise<Client> {
