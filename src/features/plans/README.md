@@ -7,16 +7,18 @@ This feature provides plan management functionality for the subscription system.
 ```
 src/features/plans/
 ├── api/
-│   ├── planApi.ts          # API functions for fetching plans
-│   └── types.ts            # TypeScript interfaces for plans
+│   ├── planApi.ts              # API functions for fetching plans
+│   └── types.ts                # TypeScript interfaces for plans
 ├── components/
-│   ├── PlanSelector.tsx    # Modal for selecting plans
-│   └── PlanItemCard.tsx    # Individual plan card component
+│   ├── PlanAndDateSelector.tsx # Unified modal for plan + date selection
+│   ├── PlanSelector.tsx        # Legacy modal for selecting plans only
+│   ├── PlanCard.tsx            # Interactive plan card with selection
+│   └── PlanItemCard.tsx        # Display-only plan card component
 ├── hooks/
-│   └── useActivePlans.ts   # React Query hook for active plans
+│   └── useActivePlans.ts       # React Query hook for active plans
 ├── utils/
-│   └── planHelpers.ts      # Utility functions for formatting
-└── index.ts                # Feature exports
+│   └── planHelpers.ts          # Utility functions for formatting
+└── index.ts                    # Feature exports
 ```
 
 ## API Endpoints
@@ -27,22 +29,40 @@ src/features/plans/
 
 ## Components
 
-### PlanSelector
-Modal component for selecting a plan from available active plans.
+### PlanAndDateSelector ⭐ **Recommended**
+Unified modal component for selecting both plan and start date in a single flow.
 
 **Props:**
-- `onSelect: (plan: Plan) => void` - Callback when plan is selected
+- `onConfirm: (plan: Plan, startDate: string) => void` - Callback when both plan and date are selected
 - `selectedPlanId?: string` - ID of currently selected plan
 - `isOpen: boolean` - Modal open state
 - `onClose: () => void` - Close modal callback
 
-### PlanItemCard
-Individual plan display card within the selector.
+**Features:**
+- Two-step wizard interface (Plan → Date)
+- Progress indicator
+- Responsive grid layout
+- No scrolling required
+- Automatic modal close on confirmation
+
+### PlanCard
+Interactive plan card with selection functionality and modern design.
 
 **Props:**
 - `plan: Plan` - Plan object to display
 - `isSelected: boolean` - Whether this plan is selected
 - `onSelect: (plan: Plan) => void` - Selection callback
+
+### PlanItemCard
+Display-only plan card component with multiple variants.
+
+**Props:**
+- `plan: Plan` - Plan object to display
+- `variant?: 'display' | 'compact'` - Display variant
+- `className?: string` - Additional CSS classes
+
+### PlanSelector (Legacy)
+Original modal component for selecting plans only. Use `PlanAndDateSelector` for new implementations.
 
 ## Hooks
 
@@ -72,27 +92,57 @@ The PlanSelector is integrated into the SubscriptionForm component:
 4. Modal closes and selected plan is displayed
 5. Plan ID is used when creating subscription
 
-## Usage Example
+## Usage Examples
+
+### Unified Plan and Date Selection (Recommended)
 
 ```tsx
-import { PlanSelector, useActivePlans } from '@/features/plans'
+import { PlanAndDateSelector } from '@/features/plans'
 
-function MyComponent() {
-  const [selectedPlan, setSelectedPlan] = useState(null)
-  const [isOpen, setIsOpen] = useState(false)
+function SubscriptionForm() {
+  const [isModalOpen, setIsModalOpen] = useState(false)
   
-  const handleSelectPlan = (plan) => {
-    setSelectedPlan(plan)
-    setIsOpen(false)
+  const handleConfirm = (plan: Plan, startDate: string) => {
+    // Create subscription with selected plan and date
+    createSubscription({
+      planId: plan.id,
+      startDate,
+      // ... other fields
+    })
   }
   
   return (
-    <PlanSelector
-      isOpen={isOpen}
-      onClose={() => setIsOpen(false)}
-      onSelect={handleSelectPlan}
-      selectedPlanId={selectedPlan?.id}
-    />
+    <>
+      <Button onClick={() => setIsModalOpen(true)}>
+        Nueva Suscripción
+      </Button>
+      
+      <PlanAndDateSelector
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirm}
+      />
+    </>
+  )
+}
+```
+
+### Display-Only Plan Cards
+
+```tsx
+import { PlanItemCard } from '@/features/plans'
+
+function PlanList({ plans }: { plans: Plan[] }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {plans.map(plan => (
+        <PlanItemCard
+          key={plan.id}
+          plan={plan}
+          variant="compact"
+        />
+      ))}
+    </div>
   )
 }
 ```

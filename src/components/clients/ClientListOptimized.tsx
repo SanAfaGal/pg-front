@@ -189,15 +189,6 @@ export const ClientListOptimized = ({ onSelectClient }: ClientListProps) => {
                 ? 'Intenta ajustar los filtros de búsqueda'
                 : 'Comienza agregando tu primer cliente'}
             </p>
-            {!searchTerm && activeFilter === undefined && (
-              <Button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-powergym-red hover:bg-[#c50202] shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                <Plus className="w-5 h-5 mr-2" />
-                Nuevo Cliente
-              </Button>
-            )}
           </motion.div>
         ) : (
           <div className="overflow-x-auto">

@@ -10,7 +10,6 @@ import { useToast } from '../../../shared';
 import {
   SubscriptionList,
   SubscriptionDetail,
-  SubscriptionForm,
   PaymentForm,
   useSubscriptions,
   useActiveSubscription,
@@ -21,6 +20,10 @@ import {
   useCancelSubscription,
   useCreatePayment,
 } from '../index';
+
+// Import plan selector
+import { PlanAndDateSelector } from '../../plans/components/PlanAndDateSelector';
+import { Plan as PlanType } from '../../plans/api/types';
 
 import { Plus, RefreshCw, Calendar } from 'lucide-react';
 
@@ -37,7 +40,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('list');
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isPlanSelectorOpen, setIsPlanSelectorOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const { showToast } = useToast();
 
@@ -60,11 +63,24 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
 
   // Handlers
   const handleCreateSubscription = () => {
-    setIsCreateModalOpen(true);
+    setIsPlanSelectorOpen(true);
   };
 
-  const handleSubscriptionCreated = () => {
-    showToast('Suscripción creada exitosamente', 'success');
+  const handleConfirmPlanAndDate = async (plan: PlanType, startDate: string) => {
+    try {
+      await createSubscriptionMutation.mutateAsync({
+        clientId,
+        data: {
+          plan_id: plan.id,
+          start_date: startDate,
+        },
+      });
+      showToast('Suscripción creada exitosamente', 'success');
+      setIsPlanSelectorOpen(false);
+    } catch (error) {
+      showToast('Error al crear la suscripción', 'error');
+      console.error('Error creating subscription:', error);
+    }
   };
 
   const handleRenewSubscription = async (subscription: Subscription) => {
@@ -137,10 +153,6 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-green-900">Suscripción Activa</h3>
-              <p className="text-sm text-green-700">
-                ID: {activeSubscription.id.slice(0, 8)} • 
-                Vence: {new Date(activeSubscription.end_date).toLocaleDateString('es-CO')}
-              </p>
             </div>
             <Button
               variant="secondary"
@@ -207,11 +219,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       </Tabs>
 
       {/* Modals */}
-      <SubscriptionForm
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleSubscriptionCreated}
-        clientId={clientId}
+      <PlanAndDateSelector
+        isOpen={isPlanSelectorOpen}
+        onClose={() => setIsPlanSelectorOpen(false)}
+        onConfirm={handleConfirmPlanAndDate}
       />
 
       {selectedSubscription && (

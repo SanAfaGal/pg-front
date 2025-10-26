@@ -198,16 +198,22 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
               <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
                 <TabsList className="w-full mb-8">
                   <TabsTrigger value="info" activeValue={activeTab} onChange={setActiveTab}>
-                    <Activity className="w-4 h-4 mr-2" />
-                    Información General
+                    <div className="flex items-center justify-center">
+                      <Activity className="w-5 h-5 mr-2" />
+                      Información General
+                    </div>
                   </TabsTrigger>
                   <TabsTrigger value="subscriptions" activeValue={activeTab} onChange={setActiveTab}>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Suscripciones
+                    <div className="flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 mr-2" />
+                      Suscripciones
+                    </div>
                   </TabsTrigger>
                   <TabsTrigger value="attendance" activeValue={activeTab} onChange={setActiveTab}>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Asistencias
+                    <div className="flex items-center justify-center">
+                      <Calendar className="w-5 h-5 mr-2" />
+                      Asistencias
+                    </div>
                   </TabsTrigger>
                 </TabsList>
 
