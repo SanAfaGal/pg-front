@@ -59,6 +59,37 @@ export const API_ENDPOINTS = {
     metrics: '/attendances/metrics',
     stats: '/attendances/stats',
   },
+
+  // Inventory
+  inventory: {
+    // Products
+    products: {
+      list: '/inventory/products',
+      detail: (id: string) => `/inventory/products/${id}`,
+      search: '/inventory/products/search',
+    },
+    // Stock Management
+    stock: {
+      add: '/inventory/stock/add',
+      remove: '/inventory/stock/remove',
+    },
+    // Movements
+    movements: {
+      list: '/inventory/movements',
+      detail: (id: string) => `/inventory/movements/${id}`,
+    },
+    // Reports
+    reports: {
+      stats: '/inventory/reports/stats',
+      lowStock: '/inventory/reports/low-stock',
+      outOfStock: '/inventory/reports/out-of-stock',
+      overstock: '/inventory/reports/overstock',
+      productHistory: (id: string) => `/inventory/reports/products/${id}/history`,
+      dailySales: '/inventory/reports/daily-sales',
+      dailySalesByEmployee: '/inventory/reports/daily-sales-by-employee',
+      reconciliation: '/inventory/reports/reconciliation',
+    },
+  },
 } as const;
 
 // Token Management

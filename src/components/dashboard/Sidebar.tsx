@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, X, LogOut, Camera } from 'lucide-react';
+import { LayoutDashboard, Users, X, LogOut, Camera, Package } from 'lucide-react';
 
 interface User {
   id: string;
@@ -20,6 +20,7 @@ const menuItems = [
   { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'clients', label: 'Clientes', icon: Users },
   { id: 'attendances', label: 'Asistencias', icon: Camera },
+  { id: 'inventory', label: 'Inventario', icon: Package },
 ];
 
 export const Sidebar = ({ isOpen, onClose, activeItem, onItemClick, onLogout, user }: SidebarProps) => {

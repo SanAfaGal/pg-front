@@ -9,6 +9,7 @@ import { apiClient, API_ENDPOINTS, useCache } from '../shared';
 import { useAuth } from '../features/auth';
 import { Clients } from './Clients';
 import Attendances from './Attendances';
+import { InventoryPage } from '../features/inventory';
 import { PlansDebug } from '../components/debug/PlansDebug';
 import { SimplePlansTest } from '../components/debug/SimplePlansTest';
 import { ConfigDebug } from '../components/debug/ConfigDebug';
@@ -68,6 +69,10 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
 
     if (activeMenuItem === 'attendances') {
       return <Attendances />;
+    }
+
+    if (activeMenuItem === 'inventory') {
+      return <InventoryPage />;
     }
 
     if (activeMenuItem === 'debug-plans') {
