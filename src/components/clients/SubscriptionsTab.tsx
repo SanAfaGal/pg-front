@@ -17,8 +17,8 @@ export function SubscriptionsTab({ dashboard, clientId, clientName }: Subscripti
   const [isNewSubscriptionModalOpen, setIsNewSubscriptionModalOpen] = useState(false);
   const queryClient = useQueryClient();
   const handleSubscriptionSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['client', clientId] });
-    queryClient.invalidateQueries({ queryKey: ['client-dashboard', clientId] });
+    queryClient.invalidateQueries({ queryKey: ['clients', 'detail', clientId] });
+    queryClient.invalidateQueries({ queryKey: ['clients', 'dashboard', clientId] });
   };
 
   return (

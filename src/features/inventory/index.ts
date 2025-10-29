@@ -5,7 +5,7 @@ export { InventoryPage } from './pages/InventoryPage';
 export { ProductList, ProductCard, StockStatusBadge } from './components/ProductList';
 export { ProductForm } from './components/ProductForm';
 export { StockManagement } from './components/StockManagement';
-export { SimpleInventoryReports } from './components/SimpleInventoryReports';
+export { InventoryReports } from './components/InventoryReports';
 
 // Hooks
 export * from './hooks';

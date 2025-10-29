@@ -9,8 +9,8 @@ interface LoginProps {
 }
 
 export const Login = ({ onLoginSuccess }: LoginProps) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('Admin123!');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
@@ -117,6 +117,7 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
               onChange={(e) => setUsername(e.target.value)}
               error={errors.username}
               disabled={isLoading}
+              autoComplete="off"
             />
 
             <Input
@@ -127,6 +128,7 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
               onChange={(e) => setPassword(e.target.value)}
               error={errors.password}
               disabled={isLoading}
+              autoComplete="off"
             />
 
             <Button

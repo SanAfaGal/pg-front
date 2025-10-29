@@ -58,11 +58,15 @@ export const useAuth = () => {
     onSuccess: () => {
       tokenManager.clearTokens();
       queryClient.clear();
+      setHasToken(false); // Explicitly set authentication status to false
+      queryClient.resetQueries({ queryKey: AUTH_QUERY_KEY, exact: false });
     },
     onError: () => {
       // Even if logout fails on server, clear local tokens
       tokenManager.clearTokens();
       queryClient.clear();
+      setHasToken(false); // Explicitly set authentication status to false
+      queryClient.resetQueries({ queryKey: AUTH_QUERY_KEY, exact: false });
     },
   });
 
@@ -71,22 +75,14 @@ export const useAuth = () => {
     const token = tokenManager.getAccessToken();
     if (!token) {
       setIsInitialized(true);
+      setHasToken(false);
       return;
     }
 
-    try {
-      await queryClient.fetchQuery({
-        queryKey: [...AUTH_QUERY_KEY, 'user'],
-        queryFn: authApi.getCurrentUser,
-      });
-    } catch (error) {
-      // Token is invalid, clear it
-      tokenManager.clearTokens();
-      queryClient.clear();
-    } finally {
-      setIsInitialized(true);
-    }
-  }, [queryClient]);
+    // Token exists, set hasToken to true and let useQuery handle fetching
+    setHasToken(true);
+    setIsInitialized(true);
+  }, []);
 
   // Initialize auth on mount
   useEffect(() => {

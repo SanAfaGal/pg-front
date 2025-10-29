@@ -6,7 +6,7 @@ import { ProductList } from '../components/ProductList';
 import { ProductForm } from '../components/ProductForm';
 import { StockManagement } from '../components/StockManagement';
 import { MovementList } from '../components/MovementList';
-import { SimpleInventoryReports } from '../components/SimpleInventoryReports';
+import { InventoryReports } from '../components/InventoryReports';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { PageLayout } from '../../../components/ui/PageLayout';
 import { Product, ProductFormData, StockAddRequest, StockRemoveRequest } from '../types';
@@ -131,10 +131,6 @@ export const InventoryPage: React.FC = () => {
               <TrendingUp className="w-4 h-4 mr-2" />
               Movimientos
             </TabsTrigger>
-            <TabsTrigger value="settings" activeValue={activeTab} onChange={setActiveTab}>
-              <Settings className="w-4 h-4 mr-2" />
-              Configuración
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="products" activeValue={activeTab}>
@@ -151,7 +147,7 @@ export const InventoryPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="reports" activeValue={activeTab}>
-            <SimpleInventoryReports />
+            <InventoryReports />
           </TabsContent>
 
           <TabsContent value="movements" activeValue={activeTab}>
@@ -179,18 +175,6 @@ export const InventoryPage: React.FC = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="settings" activeValue={activeTab}>
-            <div className="text-center py-12">
-              <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Configuración del Inventario</h3>
-              <p className="text-gray-600">
-                Aquí podrás configurar alertas de stock, unidades de medida, y otros parámetros del sistema.
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Funcionalidad en desarrollo...
-              </p>
-            </div>
-          </TabsContent>
         </Tabs>
 
         {/* Modals */}

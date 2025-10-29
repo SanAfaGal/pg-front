@@ -5,7 +5,10 @@ import {
   useInventoryStats, 
   useLowStockProducts, 
   useOutOfStockProducts, 
-  useOverstockProducts
+  useOverstockProducts,
+  useDailySales, // Added useDailySales import
+  useDailySalesByEmployee, // Added useDailySalesByEmployee import
+  useReconciliationReport // Added useReconciliationReport import
 } from '../hooks/useReports';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -17,8 +20,16 @@ import {
   AlertTriangle,
   TrendingUp,
   Package,
-  DollarSign
+  DollarSign,
+  RefreshCw, // Added RefreshCw import
+  Download   // Added Download import
 } from 'lucide-react';
+import { Input } from '../../../components/ui/Input'; // Added Input import
+import {
+  DailySalesByEmployee as DailySalesByEmployeeResponse,
+  ReconciliationReport as ReconciliationReportResponse,
+  Movement,
+} from '../types/index';
 
 interface StatsCardProps {
   title: string;
@@ -264,259 +275,269 @@ export const InventoryReports: React.FC = () => {
             />
           </div>
         </div>
-      )
+      );
+
+  const renderDailySalesTab = () => (
+    <div className="space-y-6">
+      {/* Date Selector */}
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha
+            </label>
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Empleado (opcional)
+            </label>
+            <Input
+              type="text"
+              placeholder="Nombre del empleado"
+              value={selectedEmployee}
+              onChange={(e) => setSelectedEmployee(e.target.value)}
+            />
+          </div>
+          <Button
+            variant="secondary"
+            leftIcon={<RefreshCw className="w-4 h-4" />}
+          >
+            Actualizar
+          </Button>
+        </div>
+      </Card>
+
+      {/* Sales Summary */}
+      {dailySalesLoading ? (
+        <Card className="p-6 animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded"></div>
+          </div>
+        </Card>
+      ) : dailySalesError ? (
+        <Card className="p-6 text-red-600">
+          Error: {String(dailySalesError)}
+        </Card>
+      ) : dailySales ? (
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Resumen de Ventas - {format(new Date(selectedDate), 'dd/MM/yyyy', { locale: es })}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{dailySales.total_units_sold}</p>
+              <p className="text-sm text-gray-600">Unidades Vendidas</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{dailySales.total_transactions}</p>
+              <p className="text-sm text-gray-600">Transacciones</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">
+                {dailySales.responsible || 'Todos'}
+              </p>
+              <p className="text-sm text-gray-600">Responsable</p>
+            </div>
+          </div>
+          
+          {dailySales.movements.length > 0 && (
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Movimientos Recientes</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {dailySales.movements.slice(0, 10).map((movement) => (
+                  <div key={movement.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div>
+                      <p className="text-sm font-medium">{movement.product_id.slice(0, 8)}</p>
+                      <p className="text-xs text-gray-600">{movement.notes || 'Sin notas'}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{movement.quantity}</p>
+                      <p className="text-xs text-gray-600">{movement.responsible}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      ) : null}
+
+      {/* Sales by Employee */}
+      {salesByEmployeeLoading ? (
+        <Card className="p-6 animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </Card>
+      ) : salesByEmployeeError ? (
+        <Card className="p-6 text-red-600">
+          Error: {String(salesByEmployeeError)}
+        </Card>
+      ) : salesByEmployee ? (
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Ventas por Empleado
+          </h3>
+          <div className="space-y-4">
+            {Object.entries(salesByEmployee.sales_by_employee).map(([employee, sales]: [string, DailySalesByEmployeeResponse['sales_by_employee'][string]]) => (
+              <div key={employee} className="p-4 border border-gray-200 rounded-lg">
+                <div className="flex justify-between items-start mb-2">
+                  <h4 className="font-medium text-gray-900">{employee}</h4>
+                  <span className="text-sm text-gray-600">{sales.total_transactions} transacciones</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Unidades:</span>
+                    <span className="ml-2 font-medium">{sales.total_units}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Monto:</span>
+                    <span className="ml-2 font-medium">{formatCurrency(sales.total_amount)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+    </div>
+  );
+
+  const renderReconciliationTab = () => (
+    <div className="space-y-6">
+      {/* Date Range Selector */}
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-end">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha Inicio
+            </label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha Fin
+            </label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+          <Button
+            variant="secondary"
+            leftIcon={<RefreshCw className="w-4 h-4" />}
+          >
+            Generar Reporte
+          </Button>
+          <Button
+            variant="primary"
+            leftIcon={<Download className="w-4 h-4" />}
+          >
+            Exportar
+          </Button>
+        </div>
+      </Card>
+
+      {/* Reconciliation Report */}
+      {reconciliationLoading ? (
+        <Card className="p-6 animate-pulse">
+          <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-20 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </Card>
+      ) : reconciliationError ? (
+        <Card className="p-6 text-red-600">
+          Error: {String(reconciliationError)}
+        </Card>
+      ) : reconciliation ? (
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Reporte de Conciliación
+          </h3>
+   
+          <div className="space-y-6">
+            {Object.entries(reconciliation.reconciliation).map(([employee, data]: [string, ReconciliationReportResponse['reconciliation'][string]]) => (
+              <div key={employee} className="border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-3">{employee}</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-gray-900">{data.total_units_sold}</p>
+                    <p className="text-sm text-gray-600">Unidades Vendidas</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-gray-900">{data.exit_count}</p>
+                    <p className="text-sm text-gray-600">Salidas</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-gray-900">{data.entries}</p>
+                    <p className="text-sm text-gray-600">Entradas</p>
+                  </div>
+                </div>
+                
+                {data.movements.length > 0 && (
+                  <details className="mt-4">
+                    <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                      Ver movimientos ({data.movements.length})
+                    </summary>
+                    <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                      {data.movements.map((movement: Movement) => (
+                        <div key={movement.id} className="text-xs p-2 bg-gray-50 rounded flex justify-between">
+                          <span>{movement.product_id.slice(0, 8)} - {movement.notes || 'Sin notas'}</span>
+                          <span className={movement.movement_type === 'EXIT' ? 'text-red-600' : 'text-green-600'}>
+                            {movement.quantity}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      ) : null}
+    </div>
+  );
+
+  const tabs = [
+    {
+      id: 'overview',
+      label: 'Visión General',
+      content: renderOverviewTab()
     },
     {
       id: 'sales',
       label: 'Ventas Diarias',
-      content: (
-        <div className="space-y-6">
-          {/* Date Selector */}
-          <Card className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha
-                </label>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Empleado (opcional)
-                </label>
-                <Input
-                  type="text"
-                  placeholder="Nombre del empleado"
-                  value={selectedEmployee}
-                  onChange={(e) => setSelectedEmployee(e.target.value)}
-                />
-              </div>
-              <Button
-                variant="secondary"
-                leftIcon={<RefreshCw className="w-4 h-4" />}
-              >
-                Actualizar
-              </Button>
-            </div>
-          </Card>
-
-          {/* Sales Summary */}
-          {dailySalesLoading ? (
-            <Card className="p-6 animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-              </div>
-            </Card>
-          ) : dailySalesError ? (
-            <Card className="p-6 text-red-600">
-              Error: {String(dailySalesError)}
-            </Card>
-          ) : dailySales ? (
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Resumen de Ventas - {format(new Date(selectedDate), 'dd/MM/yyyy', { locale: es })}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{dailySales.total_units_sold}</p>
-                  <p className="text-sm text-gray-600">Unidades Vendidas</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">{dailySales.total_transactions}</p>
-                  <p className="text-sm text-gray-600">Transacciones</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900">
-                    {dailySales.responsible || 'Todos'}
-                  </p>
-                  <p className="text-sm text-gray-600">Responsable</p>
-                </div>
-              </div>
-              
-              {dailySales.movements.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Movimientos Recientes</h4>
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {dailySales.movements.slice(0, 10).map((movement) => (
-                      <div key={movement.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <div>
-                          <p className="text-sm font-medium">{movement.product_id.slice(0, 8)}</p>
-                          <p className="text-xs text-gray-600">{movement.notes || 'Sin notas'}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-medium">{movement.quantity}</p>
-                          <p className="text-xs text-gray-600">{movement.responsible}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card>
-          ) : null}
-
-          {/* Sales by Employee */}
-          {salesByEmployeeLoading ? (
-            <Card className="p-6 animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-16 bg-gray-200 rounded"></div>
-                ))}
-              </div>
-            </Card>
-          ) : salesByEmployeeError ? (
-            <Card className="p-6 text-red-600">
-              Error: {String(salesByEmployeeError)}
-            </Card>
-          ) : salesByEmployee ? (
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Ventas por Empleado
-              </h3>
-              <div className="space-y-4">
-                {Object.entries(salesByEmployee.sales_by_employee).map(([employee, sales]) => (
-                  <div key={employee} className="p-4 border border-gray-200 rounded-lg">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium text-gray-900">{employee}</h4>
-                      <span className="text-sm text-gray-600">{sales.total_transactions} transacciones</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Unidades:</span>
-                        <span className="ml-2 font-medium">{sales.total_units}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Monto:</span>
-                        <span className="ml-2 font-medium">{formatCurrency(sales.total_amount)}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ) : null}
-        </div>
-      )
+      content: renderDailySalesTab()
     },
     {
       id: 'reconciliation',
       label: 'Conciliación',
-      content: (
-        <div className="space-y-6">
-          {/* Date Range Selector */}
-          <Card className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha Inicio
-                </label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha Fin
-                </label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                />
-              </div>
-              <Button
-                variant="secondary"
-                leftIcon={<RefreshCw className="w-4 h-4" />}
-              >
-                Generar Reporte
-              </Button>
-              <Button
-                variant="primary"
-                leftIcon={<Download className="w-4 h-4" />}
-              >
-                Exportar
-              </Button>
-            </div>
-          </Card>
-
-          {/* Reconciliation Report */}
-          {reconciliationLoading ? (
-            <Card className="p-6 animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="h-20 bg-gray-200 rounded"></div>
-                ))}
-              </div>
-            </Card>
-          ) : reconciliationError ? (
-            <Card className="p-6 text-red-600">
-              Error: {String(reconciliationError)}
-            </Card>
-          ) : reconciliation ? (
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Reporte de Conciliación
-              </h3>
-              <p className="text-sm text-gray-600 mb-6">
-                Período: {format(new Date(reconciliation.period.start), 'dd/MM/yyyy', { locale: es })} - {format(new Date(reconciliation.period.end), 'dd/MM/yyyy', { locale: es })}
-              </p>
-              
-              <div className="space-y-6">
-                {Object.entries(reconciliation.reconciliation).map(([employee, data]) => (
-                  <div key={employee} className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-3">{employee}</h4>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div className="text-center">
-                        <p className="text-xl font-bold text-gray-900">{data.total_units_sold}</p>
-                        <p className="text-sm text-gray-600">Unidades Vendidas</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xl font-bold text-gray-900">{data.exit_count}</p>
-                        <p className="text-sm text-gray-600">Salidas</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xl font-bold text-gray-900">{data.entries}</p>
-                        <p className="text-sm text-gray-600">Entradas</p>
-                      </div>
-                    </div>
-                    
-                    {data.movements.length > 0 && (
-                      <details className="mt-4">
-                        <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
-                          Ver movimientos ({data.movements.length})
-                        </summary>
-                        <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-                          {data.movements.map((movement) => (
-                            <div key={movement.id} className="text-xs p-2 bg-gray-50 rounded flex justify-between">
-                              <span>{movement.product_id.slice(0, 8)} - {movement.notes || 'Sin notas'}</span>
-                              <span className={movement.movement_type === 'EXIT' ? 'text-red-600' : 'text-green-600'}>
-                                {movement.quantity}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </details>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ) : null}
-        </div>
-      )
+      content: renderReconciliationTab()
     }
   ];
+
+  console.log('InventoryReports - activeTab:', activeTab);
+  console.log('InventoryReports - tabs:', tabs.map(t => ({ id: t.id, label: t.label })));
 
   return (
     <div className="space-y-6">
@@ -535,7 +556,32 @@ export const InventoryReports: React.FC = () => {
         </div>
       </div>
 
-      <Tabs tabs={tabs} defaultTab="overview" />
+      {/* Tabs Navigation */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="border-b border-gray-200">
+          <div className="flex gap-2 p-2 bg-gray-50">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  px-6 py-3 rounded-md font-medium text-sm transition-all duration-200
+                  ${activeTab === tab.id
+                    ? 'bg-white text-powergym-red shadow-sm border border-gray-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-white'
+                  }
+                `}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="p-6">
+          {tabs.find(tab => tab.id === activeTab)?.content}
+        </div>
+      </div>
     </div>
   );
 };

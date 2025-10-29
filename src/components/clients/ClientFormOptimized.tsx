@@ -10,6 +10,7 @@ import {
   Save,
   X,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { type ClientFormData } from '../../features/clients';
 import { clientHelpers, clientsApi } from '../../features/clients';
@@ -62,7 +63,8 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
     setValue,
     formState: { errors },
   } = useForm<any>({
-    defaultValues: initialData || {}
+    defaultValues: initialData || {},
+    mode: 'onBlur', // Validate on blur for better UX
   });
 
   const birthDate = watch('birth_date');
@@ -132,16 +134,28 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
 
     try {
       if (clientId) {
-        await updateClientMutation.mutateAsync({ id: clientId, data: apiData });
-        showToast('Cliente actualizado exitosamente', 'success');
+        await updateClientMutation.mutateAsync({ id: clientId, data: apiData } as any);
+        showToast({
+          type: 'success',
+          title: 'Éxito',
+          message: 'Cliente actualizado exitosamente'
+        });
       } else {
-        await createClientMutation.mutateAsync(apiData);
-        showToast('Cliente registrado exitosamente', 'success');
+        await createClientMutation.mutateAsync(apiData as any);
+        showToast({
+          type: 'success',
+          title: 'Éxito',
+          message: 'Cliente registrado exitosamente'
+        });
       }
       onSuccess();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al guardar cliente. Por favor, verifica que todos los datos sean correctos.';
-      showToast(errorMessage, 'error');
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: errorMessage
+      });
     }
   };
 
@@ -165,8 +179,12 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
             <div className="relative">
               <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <select
-                {...register('document_type')}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all hover:border-gray-400"
+                {...register('document_type', {
+                  required: 'El tipo de documento es obligatorio',
+                })}
+                className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all hover:border-gray-400 ${
+                  errors.document_type ? 'border-red-500' : 'border-gray-300'
+                }`}
               >
                 <option value="">Seleccionar</option>
                 {documentTypes.map((type) => (
@@ -177,7 +195,9 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
               </select>
             </div>
             {errors.document_type && (
-              <p className="mt-1 text-sm text-red-500">{errors.document_type.message}</p>
+              <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                <span>⚠️</span> {String(errors.document_type.message)}
+              </p>
             )}
           </div>
 
@@ -186,10 +206,29 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
               Número de documento *
             </label>
             <Input
-              {...register('document_number')}
+              {...register('document_number', {
+                required: 'El número de documento es obligatorio',
+                minLength: {
+                  value: 5,
+                  message: 'El documento debe tener al menos 5 caracteres'
+                },
+                maxLength: {
+                  value: 20,
+                  message: 'El documento no puede exceder 20 caracteres'
+                },
+                pattern: {
+                  value: /^\d+$/,
+                  message: 'Solo se permiten dígitos'
+                }
+              })}
               placeholder="Ej: 1234567890"
-              error={errors.document_number?.message || documentError}
+              error={(errors.document_number?.message as string) || documentError}
             />
+            {documentNumber && !errors.document_number && !documentError && documentNumber.length >= 5 && (
+              <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                <span>✓</span> Documento válido
+              </p>
+            )}
           </div>
 
           <div>
@@ -197,9 +236,23 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
               Primer nombre *
             </label>
             <Input
-              {...register('first_name')}
+              {...register('first_name', {
+                required: 'El primer nombre es obligatorio',
+                minLength: {
+                  value: 2,
+                  message: 'El nombre debe tener al menos 2 caracteres'
+                },
+                maxLength: {
+                  value: 50,
+                  message: 'El nombre no puede exceder 50 caracteres'
+                },
+                pattern: {
+                  value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+                  message: 'Solo se permiten letras y espacios'
+                }
+              })}
               placeholder="Ej: Juan"
-              error={errors.first_name?.message}
+              error={errors.first_name?.message as string}
             />
           </div>
 
@@ -207,7 +260,24 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Segundo nombre
             </label>
-            <Input {...register('second_name')} placeholder="Ej: Carlos" />
+            <Input 
+              {...register('second_name', {
+                minLength: {
+                  value: 2,
+                  message: 'El nombre debe tener al menos 2 caracteres'
+                },
+                maxLength: {
+                  value: 50,
+                  message: 'El nombre no puede exceder 50 caracteres'
+                },
+                pattern: {
+                  value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+                  message: 'Solo se permiten letras y espacios'
+                }
+              })}
+              placeholder="Ej: Carlos" 
+              error={errors.second_name?.message as string}
+            />
           </div>
 
           <div>
@@ -215,9 +285,23 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
               Primer apellido *
             </label>
             <Input
-              {...register('first_surname')}
+              {...register('first_surname', {
+                required: 'El primer apellido es obligatorio',
+                minLength: {
+                  value: 2,
+                  message: 'El apellido debe tener al menos 2 caracteres'
+                },
+                maxLength: {
+                  value: 50,
+                  message: 'El apellido no puede exceder 50 caracteres'
+                },
+                pattern: {
+                  value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+                  message: 'Solo se permiten letras y espacios'
+                }
+              })}
               placeholder="Ej: Pérez"
-              error={errors.first_surname?.message}
+              error={errors.first_surname?.message as string}
             />
           </div>
 
@@ -225,7 +309,24 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Segundo apellido
             </label>
-            <Input {...register('second_surname')} placeholder="Ej: García" />
+            <Input 
+              {...register('second_surname', {
+                minLength: {
+                  value: 2,
+                  message: 'El apellido debe tener al menos 2 caracteres'
+                },
+                maxLength: {
+                  value: 50,
+                  message: 'El apellido no puede exceder 50 caracteres'
+                },
+                pattern: {
+                  value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
+                  message: 'Solo se permiten letras y espacios'
+                }
+              })}
+              placeholder="Ej: García" 
+              error={errors.second_surname?.message as string}
+            />
           </div>
 
           <div>
@@ -236,13 +337,33 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
                 type="date"
-                {...register('birth_date')}
+                {...register('birth_date', {
+                  required: 'La fecha de nacimiento es obligatoria',
+                  validate: {
+                    notFuture: (value) => {
+                      const selectedDate = new Date(value);
+                      const today = new Date();
+                      return selectedDate <= today || 'La fecha no puede ser futura';
+                    },
+                    minimumAge: (value) => {
+                      const age = clientHelpers.calculateAge(value);
+                      return age >= 10 || 'La edad mínima es 10 años';
+                    },
+                    maximumAge: (value) => {
+                      const age = clientHelpers.calculateAge(value);
+                      return age <= 120 || 'Por favor verifica la fecha de nacimiento';
+                    }
+                  }
+                })}
                 className="pl-10"
-                error={errors.birth_date?.message}
+                max={new Date().toISOString().split('T')[0]}
+                error={errors.birth_date?.message as string}
               />
             </div>
             {calculatedAge !== null && !errors.birth_date && (
-              <p className="mt-1 text-sm text-powergym-blue-medium font-medium">Edad: {calculatedAge} años</p>
+              <p className="mt-1 text-sm text-powergym-blue-medium font-medium flex items-center gap-1">
+                <span>👤</span> Edad: {calculatedAge} años
+              </p>
             )}
           </div>
 
@@ -253,8 +374,12 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
             <div className="relative">
               <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <select
-                {...register('gender')}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all hover:border-gray-400"
+                {...register('gender', {
+                  required: 'El género es obligatorio',
+                })}
+                className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all hover:border-gray-400 ${
+                  errors.gender ? 'border-red-500' : 'border-gray-300'
+                }`}
               >
                 <option value="">Seleccionar</option>
                 {genderOptions.map((gender) => (
@@ -265,7 +390,9 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
               </select>
             </div>
             {errors.gender && (
-              <p className="mt-1 text-sm text-red-500">{errors.gender.message}</p>
+              <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                <span>⚠️</span> {String(errors.gender.message)}
+              </p>
             )}
           </div>
         </div>
@@ -292,21 +419,34 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
               >
                 {countryCodes.map((c) => (
                   <option key={c.code} value={c.code}>
-                    {c.code}
+                    {c.flag} {c.code}
                   </option>
                 ))}
               </select>
               <Input
                 type="tel"
-                {...register('phone_primary')}
+                {...register('phone_primary', {
+                  required: 'El teléfono principal es obligatorio',
+                  validate: {
+                    validFormat: (value) => {
+                      const phoneNumber = value.replace(/^\+\d+\s*/, '').replace(/\s/g, '');
+                      return /^\d{7,15}$/.test(phoneNumber) || 'El teléfono debe tener entre 7 y 15 dígitos';
+                    }
+                  }
+                })}
                 placeholder="300 1234567"
                 onChange={(e) => {
-                  const value = e.target.value.replace(/^\+\d+\s*/, '');
-                  setValue('phone_primary', `${phoneCode} ${value}`);
+                  const value = e.target.value.replace(/^\+\d+\s*/, '').replace(/[^\d\s]/g, '');
+                  setValue('phone_primary', `${phoneCode} ${value}`, { shouldValidate: true });
                 }}
-                error={errors.phone_primary?.message}
+                error={errors.phone_primary?.message as string}
               />
             </div>
+            {!errors.phone_primary && watch('phone_primary') && watch('phone_primary').replace(/^\+\d+\s*/, '').replace(/\s/g, '').length >= 7 && (
+              <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                <span>✓</span> Teléfono válido
+              </p>
+            )}
           </div>
 
           <div>
@@ -327,12 +467,21 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
               </select>
               <Input
                 type="tel"
-                {...register('phone_secondary')}
+                {...register('phone_secondary', {
+                  validate: {
+                    validFormat: (value) => {
+                      if (!value) return true; // Optional field
+                      const phoneNumber = value.replace(/^\+\d+\s*/, '').replace(/\s/g, '');
+                      return /^\d{7,15}$/.test(phoneNumber) || 'El teléfono debe tener entre 7 y 15 dígitos';
+                    }
+                  }
+                })}
                 placeholder="300 1234567"
                 onChange={(e) => {
-                  const value = e.target.value.replace(/^\+\d+\s*/, '');
-                  setValue('phone_secondary', `${phoneCodeSecondary} ${value}`);
+                  const value = e.target.value.replace(/^\+\d+\s*/, '').replace(/[^\d\s]/g, '');
+                  setValue('phone_secondary', value ? `${phoneCodeSecondary} ${value}` : '', { shouldValidate: true });
                 }}
+                error={errors.phone_secondary?.message as string}
               />
             </div>
           </div>
@@ -344,15 +493,51 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
             <div className="relative">
               <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <textarea
-                {...register('address')}
+                {...register('address', {
+                  minLength: {
+                    value: 10,
+                    message: 'La dirección debe tener al menos 10 caracteres'
+                  },
+                  maxLength: {
+                    value: 200,
+                    message: 'La dirección no puede exceder 200 caracteres'
+                  }
+                })}
                 placeholder="Ej: Calle 123 #45-67, Bogotá"
                 rows={3}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all resize-none hover:border-gray-400"
+                className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all resize-none hover:border-gray-400 ${
+                  errors.address ? 'border-red-500' : 'border-gray-300'
+                }`}
               />
             </div>
+            {errors.address && (
+              <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
+                <span>⚠️</span> {String(errors.address.message)}
+              </p>
+            )}
           </div>
         </div>
       </div>
+
+      {Object.keys(errors).length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="text-sm font-semibold text-red-800 mb-2">
+                Por favor corrige los siguientes errores:
+              </h4>
+              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
+                {Object.entries(errors).map(([field, error]: [string, any]) => (
+                  <li key={field}>
+                    {error.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
@@ -361,8 +546,8 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
         </Button>
         <Button
           type="submit"
-          className="bg-powergym-red hover:bg-[#c50202] shadow-lg hover:shadow-xl transition-all duration-200"
-          disabled={isSubmitting || !!documentError}
+          className="bg-powergym-red hover:bg-[#c50202] shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isSubmitting || !!documentError || Object.keys(errors).length > 0}
         >
           {isSubmitting ? (
             <>
@@ -372,7 +557,7 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
           ) : (
             <>
               <Save className="w-5 h-5 mr-2" />
-              Guardar Cliente
+              {clientId ? 'Actualizar Cliente' : 'Guardar Cliente'}
             </>
           )}
         </Button>

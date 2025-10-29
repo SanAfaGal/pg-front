@@ -262,12 +262,10 @@ class RealApiClient implements ApiClient {
   private async handleErrorResponse(response: Response, endpoint: string): Promise<never> {
     const status = response.status;
     
-    // Handle authentication errors (but not for check-in endpoint)
-    if (status === 401 && !endpoint.includes('/check-in')) {
+    // Handle authentication errors (but not for check-in endpoint and logout endpoint)
+    if (status === 401 && !endpoint.includes('/check-in') && !endpoint.includes('/logout')) {
       tokenManager.clearTokens();
-      if (!API_CONFIG.disableAuth) {
-        window.location.href = '/';
-      }
+      // Don't force reload, let React handle the state change
       throw new Error('Authentication failed');
     }
 

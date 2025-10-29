@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Users, TrendingUp, DollarSign, UserPlus, Activity, Calendar } from 'lucide-react';
 import { Sidebar } from '../components/dashboard/Sidebar';
 import { StatsCard } from '../components/dashboard/StatsCard';
@@ -40,8 +40,40 @@ interface DashboardData {
 
 export const Dashboard = ({ onLogout }: DashboardProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeMenuItem, setActiveMenuItem] = useState('home');
+  
+  // Initialize activeMenuItem from URL hash or localStorage
+  const getInitialMenuItem = (): string => {
+    // First check URL hash
+    const hash = window.location.hash.substring(1); // Remove the '#'
+    if (hash) {
+      return hash;
+    }
+    // Then check localStorage
+    const saved = localStorage.getItem('dashboard_active_menu');
+    return saved || 'home';
+  };
+
+  const [activeMenuItem, setActiveMenuItem] = useState(getInitialMenuItem);
   const { user } = useAuth();
+
+  // Update URL hash and localStorage when menu item changes
+  useEffect(() => {
+    window.location.hash = activeMenuItem;
+    localStorage.setItem('dashboard_active_menu', activeMenuItem);
+  }, [activeMenuItem]);
+
+  // Listen for browser back/forward navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      if (hash) {
+        setActiveMenuItem(hash);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const { data: dashboardData, loading: isDashboardLoading } = useCache<DashboardData>(
     async () => {
