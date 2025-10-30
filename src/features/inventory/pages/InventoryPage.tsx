@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
 import { useAddStock, useRemoveStock } from '../hooks/useStock';
 import { useMovements } from '../hooks/useMovements';
-import { ProductListImproved } from '../components/ProductListImproved';
+import { ProductList } from '../components/lists/ProductList';
 import { ProductForm } from '../components/ProductForm';
 import { StockManagement } from '../components/StockManagement';
 import { MovementList } from '../components/MovementList';
@@ -141,7 +141,7 @@ export const InventoryPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="products" activeValue={activeTab}>
-            <ProductListImproved
+            <ProductList
               products={products}
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}

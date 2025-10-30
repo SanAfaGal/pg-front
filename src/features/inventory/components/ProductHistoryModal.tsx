@@ -3,21 +3,20 @@ import { Product, Movement } from '../types';
 import { useProductHistory } from '../hooks/useReports';
 import { Modal } from '../../../components/ui/Modal';
 import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
 import { 
   Package, 
-  X, 
   History as HistoryIcon,
-  TrendingUp,
-  TrendingDown,
   Calendar,
   User,
   FileText,
   AlertCircle,
-  Loader2
+  Loader2,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { ProductImage } from './common/ProductImage';
+import { MovementTypeIcon } from './common/MovementTypeIcon';
+import { formatQuantity, formatDate } from '../utils/formatters';
 
 interface ProductHistoryModalProps {
   product: Product;
@@ -25,33 +24,6 @@ interface ProductHistoryModalProps {
   onClose: () => void;
 }
 
-interface ProductImageProps {
-  url?: string;
-  name: string;
-}
-
-const ProductImage: React.FC<ProductImageProps> = ({ url, name }) => {
-  const [imageError, setImageError] = React.useState(false);
-
-  if (!url || imageError) {
-    return (
-      <div className="w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-        <Package className="w-8 h-8 text-gray-400" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-16 h-16 bg-white rounded-lg border border-gray-200 flex items-center justify-center p-2 shadow-sm">
-      <img
-        src={url}
-        alt={name}
-        className="max-w-full max-h-full object-contain"
-        onError={() => setImageError(true)}
-      />
-    </div>
-  );
-};
 
 interface MovementRowProps {
   movement: Movement;
@@ -62,42 +34,27 @@ const MovementRow: React.FC<MovementRowProps> = ({ movement }) => {
   const quantity = parseFloat(movement.quantity);
   const absQuantity = Math.abs(quantity);
 
-  const formatDate = (date: string) => {
-    try {
-      return format(new Date(date), "dd MMM yyyy, HH:mm", { locale: es });
-    } catch {
-      return date;
-    }
-  };
-
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
       {/* Fecha */}
       <td className="px-4 py-3 text-sm">
         <div className="flex items-center gap-2 text-gray-700">
           <Calendar className="w-4 h-4 text-gray-400" />
-          <span>{formatDate(movement.movement_date)}</span>
+          <span>{formatDate(movement.movement_date, 'long')}</span>
         </div>
       </td>
 
       {/* Tipo */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
-          {isEntry ? (
-            <>
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-md border border-green-200">
-                Entrada
-              </span>
-            </>
-          ) : (
-            <>
-              <TrendingDown className="w-4 h-4 text-red-600" />
-              <span className="text-sm font-medium text-red-700 bg-red-50 px-2.5 py-1 rounded-md border border-red-200">
-                Salida
-              </span>
-            </>
-          )}
+          <MovementTypeIcon type={movement.movement_type} />
+          <span className={`text-sm font-medium px-2.5 py-1 rounded-md border ${
+            isEntry 
+              ? 'text-green-700 bg-green-50 border-green-200' 
+              : 'text-red-700 bg-red-50 border-red-200'
+          }`}>
+            {isEntry ? 'Entrada' : 'Salida'}
+          </span>
         </div>
       </td>
 
@@ -142,9 +99,6 @@ export const ProductHistoryModal: React.FC<ProductHistoryModalProps> = ({
 }) => {
   const { data: history, isLoading, error } = useProductHistory(product.id, isOpen);
 
-  const formatQuantity = (quantity: string) => {
-    return parseFloat(quantity).toFixed(0);
-  };
 
   return (
     <Modal
@@ -158,7 +112,7 @@ export const ProductHistoryModal: React.FC<ProductHistoryModalProps> = ({
         <Card className="p-4 mb-6 bg-gradient-to-br from-gray-50 to-white border border-gray-200">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4 flex-1">
-              <ProductImage url={product.photo_url} name={product.name} />
+              <ProductImage url={product.photo_url} name={product.name} size="MEDIUM" />
               
               <div className="flex-1">
                 <h3 className="text-xl font-semibold text-gray-900 mb-1">

@@ -1,16 +1,10 @@
 import React from 'react';
 import { Movement } from '../types';
 import { Card } from '../../../components/ui/Card';
-import { Table } from '../../../components/ui/Table';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { 
-  Package, 
-  TrendingUp, 
-  TrendingDown, 
-  FileText,
-  User
-} from 'lucide-react';
+import { Package, User } from 'lucide-react';
+import { MovementTypeIcon } from './common/MovementTypeIcon';
+import { LoadingState } from './common/LoadingState';
+import { formatDate } from '../utils/formatters';
 
 interface MovementListProps {
   movements: Movement[];
@@ -23,34 +17,8 @@ export const MovementList: React.FC<MovementListProps> = ({
   isLoading = false,
   error,
 }) => {
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), 'dd/MM/yyyy HH:mm', { locale: es });
-  };
-
-  const getMovementIcon = (type: string) => {
-    switch (type) {
-      case 'ENTRY':
-        return <TrendingUp className="w-4 h-4 text-green-500" />;
-      case 'EXIT':
-        return <TrendingDown className="w-4 h-4 text-red-500" />;
-      default:
-        return <FileText className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
   if (isLoading) {
-    return (
-      <Card className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-          <div className="space-y-2">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-10 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </div>
-      </Card>
-    );
+    return <LoadingState variant="table" rows={5} />;
   }
 
   if (error) {
@@ -85,16 +53,16 @@ export const MovementList: React.FC<MovementListProps> = ({
                   </div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                  <div className="flex items-center">
-                    {getMovementIcon(movement.movement_type)}
-                    <span className="ml-2">{movement.movement_type}</span>
+                  <div className="flex items-center gap-2">
+                    <MovementTypeIcon type={movement.movement_type} />
+                    <span>{movement.movement_type}</span>
                   </div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                   {movement.quantity}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(movement.movement_date)}
+                  {formatDate(movement.movement_date, 'short')}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                   {movement.responsible ? (

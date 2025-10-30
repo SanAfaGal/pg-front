@@ -12,8 +12,7 @@ import {
 } from '../hooks/useReports';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
-import { StockStatusBadge } from './ProductList';
+import { StockBadge } from './common/StockBadge';
 import {
   BarChart3,
   TrendingDown,
@@ -150,7 +149,7 @@ const ProductAlertList: React.FC<ProductAlertListProps> = ({
                   {product.max_stock && ` | Máx: ${product.max_stock}`}
                 </p>
               </div>
-              <StockStatusBadge status={product.stock_status as any} />
+              <StockBadge status={product.stock_status as any} />
             </div>
           ))}
           {products.length > 5 && (

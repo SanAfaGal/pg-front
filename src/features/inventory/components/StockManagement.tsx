@@ -11,11 +11,12 @@ import {
   Package, 
   TrendingUp, 
   TrendingDown, 
-  User,
   FileText,
   AlertTriangle
 } from 'lucide-react';
-import { StockStatusBadge } from './ProductList';
+import { ProductImage } from './common/ProductImage';
+import { StockBadge } from './common/StockBadge';
+import { formatQuantity } from '../utils/formatters';
 import { useAuth } from '../../../features/auth/hooks/useAuth';
 
 interface StockOperationFormData {
@@ -81,9 +82,6 @@ export const StockManagement: React.FC<StockManagementProps> = ({
     onClose();
   };
 
-  const formatQuantity = (quantity: string, unit: string) => {
-    return `${parseFloat(quantity)} ${unit}`;
-  };
 
   const calculateNewStock = () => {
     if (!watchedQuantity) return null;
@@ -161,26 +159,17 @@ export const StockManagement: React.FC<StockManagementProps> = ({
         {/* Product Info */}
         <Card className="p-4 mb-6 bg-gray-50">
           <div className="flex items-center gap-3 mb-3">
-            {product.photo_url ? (
-              <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center p-1.5 shadow-sm">
-                <img 
-                  src={product.photo_url} 
-                  alt={product.name}
-                  className="max-w-full max-h-full object-contain"
-                />
-              </div>
-            ) : (
-              <div className="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center border border-gray-300">
-                <Package className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
+            <ProductImage 
+              url={product.photo_url} 
+              name={product.name}
+              size="SMALL"
+            />
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
               <p className="text-sm text-gray-600">
                 {formatQuantity(product.capacity_value, product.unit_type)}
               </p>
             </div>
-            <StockStatusBadge status={product.stock_status} />
           </div>
           
           <div className="grid grid-cols-3 gap-4 text-center">
@@ -317,7 +306,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
                 <div className="mt-2 pt-2 border-t border-blue-200">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">Nuevo estado:</span>
-                    <StockStatusBadge status={getNewStockStatus()!} />
+                    <StockBadge status={getNewStockStatus()!} />
                   </div>
                 </div>
               )}
