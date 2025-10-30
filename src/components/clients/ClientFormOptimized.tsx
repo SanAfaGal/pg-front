@@ -108,11 +108,11 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
     }
 
     // Map form data to API format
-    const formatPhone = (phone: string) => {
+    const formatPhone = (phone: string, countryCode: string) => {
       if (!phone) return '';
-      // Remove spaces and ensure it starts with +
+      // Remove spaces and concatenate with country code
       const cleaned = phone.replace(/\s+/g, '');
-      return cleaned.startsWith('+') ? cleaned : `+57${cleaned}`;
+      return `${countryCode}${cleaned}`;
     };
 
     const apiData: ClientFormData = {
@@ -122,8 +122,8 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
       middle_name: data.second_name || undefined,
       last_name: data.first_surname,
       second_last_name: data.second_surname || undefined,
-      phone: formatPhone(data.phone_primary),
-      alternative_phone: data.phone_secondary ? formatPhone(data.phone_secondary) : undefined,
+      phone: formatPhone(data.phone_primary, phoneCode),
+      alternative_phone: data.phone_secondary ? formatPhone(data.phone_secondary, phoneCodeSecondary) : undefined,
       birth_date: data.birth_date,
       gender: data.gender,
       address: data.address || undefined,
@@ -429,20 +429,20 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
                   required: 'El teléfono principal es obligatorio',
                   validate: {
                     validFormat: (value) => {
-                      const phoneNumber = value.replace(/^\+\d+\s*/, '').replace(/\s/g, '');
+                      const phoneNumber = value.replace(/\s/g, '');
                       return /^\d{7,15}$/.test(phoneNumber) || 'El teléfono debe tener entre 7 y 15 dígitos';
                     }
                   }
                 })}
                 placeholder="300 1234567"
                 onChange={(e) => {
-                  const value = e.target.value.replace(/^\+\d+\s*/, '').replace(/[^\d\s]/g, '');
-                  setValue('phone_primary', `${phoneCode} ${value}`, { shouldValidate: true });
+                  const value = e.target.value.replace(/[^\d\s]/g, '');
+                  setValue('phone_primary', value, { shouldValidate: true });
                 }}
                 error={errors.phone_primary?.message as string}
               />
             </div>
-            {!errors.phone_primary && watch('phone_primary') && watch('phone_primary').replace(/^\+\d+\s*/, '').replace(/\s/g, '').length >= 7 && (
+            {!errors.phone_primary && watch('phone_primary') && watch('phone_primary').replace(/\s/g, '').length >= 7 && (
               <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
                 <span>✓</span> Teléfono válido
               </p>
@@ -471,15 +471,15 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
                   validate: {
                     validFormat: (value) => {
                       if (!value) return true; // Optional field
-                      const phoneNumber = value.replace(/^\+\d+\s*/, '').replace(/\s/g, '');
+                      const phoneNumber = value.replace(/\s/g, '');
                       return /^\d{7,15}$/.test(phoneNumber) || 'El teléfono debe tener entre 7 y 15 dígitos';
                     }
                   }
                 })}
                 placeholder="300 1234567"
                 onChange={(e) => {
-                  const value = e.target.value.replace(/^\+\d+\s*/, '').replace(/[^\d\s]/g, '');
-                  setValue('phone_secondary', value ? `${phoneCodeSecondary} ${value}` : '', { shouldValidate: true });
+                  const value = e.target.value.replace(/[^\d\s]/g, '');
+                  setValue('phone_secondary', value, { shouldValidate: true });
                 }}
                 error={errors.phone_secondary?.message as string}
               />

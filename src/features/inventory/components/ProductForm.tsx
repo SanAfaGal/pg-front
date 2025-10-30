@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Product, ProductFormData, UnitType, Currency } from '../types';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
-import { Save, X, Package } from 'lucide-react';
+import { Save, X, Package, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
 interface ProductFormProps {
   product?: Product;
@@ -31,6 +31,53 @@ const CURRENCIES: { value: Currency; label: string }[] = [
   { value: 'EUR', label: 'Euro (EUR)' },
 ];
 
+// Image Preview Component
+interface ImagePreviewProps {
+  url: string;
+  onError: () => void;
+}
+
+const ImagePreview: React.FC<ImagePreviewProps> = ({ url, onError }) => {
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [url]);
+
+  if (!url || imageError) {
+    return (
+      <div className="w-full h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex flex-col items-center justify-center border-2 border-dashed border-gray-300">
+        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+          <Package className="w-8 h-8 text-gray-400" />
+        </div>
+        <p className="text-sm font-medium text-gray-500">Sin imagen</p>
+        <p className="text-xs text-gray-400 mt-1">Pega una URL para ver la vista previa</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full h-48 bg-white rounded-xl overflow-hidden border border-gray-200 group shadow-sm">
+      <div className="absolute inset-0 flex items-center justify-center p-4">
+        <img
+          src={url}
+          alt="Vista previa del producto"
+          className="max-w-full max-h-full object-contain drop-shadow-md"
+          onError={() => {
+            setImageError(true);
+            onError();
+          }}
+        />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-gray-900/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <div className="absolute top-3 right-3 bg-green-500 text-white px-2.5 py-1 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-lg">
+        <ImageIcon className="w-3.5 h-3.5" />
+        Cargada
+      </div>
+    </div>
+  );
+};
+
 export const ProductForm: React.FC<ProductFormProps> = ({
   product,
   isOpen,
@@ -39,6 +86,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   isLoading = false,
   title,
 }) => {
+  const [imageUrlError, setImageUrlError] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -48,6 +97,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   } = useForm<ProductFormData>({
     mode: 'onChange',
   });
+
+  const watchedValues = watch();
 
   useEffect(() => {
     if (product) {
@@ -75,9 +126,13 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         max_stock: '',
       });
     }
+    setImageUrlError(false);
   }, [product, reset]);
 
-  const watchedValues = watch();
+  // Reset image error when URL changes
+  useEffect(() => {
+    setImageUrlError(false);
+  }, [watchedValues.photo_url]);
 
   const handleFormSubmit = (data: ProductFormData) => {
     onSubmit(data);
@@ -85,6 +140,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleClose = () => {
     reset();
+    setImageUrlError(false);
     onClose();
   };
 
@@ -121,14 +177,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClose}
-            leftIcon={<X className="w-4 h-4" />}
-          >
-            Cerrar
-          </Button>
         </div>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -201,20 +249,43 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                 )}
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL de Imagen
+                  Imagen del Producto (opcional)
                 </label>
-                <Input
-                  {...register('photo_url', {
-                    pattern: {
-                      value: /^https?:\/\/.+/,
-                      message: 'Debe ser una URL válida (http:// o https://)'
-                    }
-                  })}
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                  error={errors.photo_url?.message}
-                />
+                
+                {/* Image Preview */}
+                <div className="mb-3">
+                  <ImagePreview 
+                    url={watchedValues.photo_url || ''} 
+                    onError={() => setImageUrlError(true)}
+                  />
+                </div>
+
+                {/* URL Input */}
+                <div className="relative">
+                  <Input
+                    {...register('photo_url', {
+                      pattern: {
+                        value: /^https?:\/\/.+/,
+                        message: 'Debe ser una URL válida (http:// o https://)'
+                      }
+                    })}
+                    placeholder="Pega el enlace de una imagen (URL)"
+                    error={errors.photo_url?.message}
+                    className="pl-10"
+                  />
+                  <ImageIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                </div>
+
+                {imageUrlError && watchedValues.photo_url && (
+                  <div className="mt-2 flex items-start gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-yellow-700">
+                      No se pudo cargar la imagen. Verifica que la URL sea válida y accesible.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

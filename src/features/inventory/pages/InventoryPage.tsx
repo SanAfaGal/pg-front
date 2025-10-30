@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
 import { useAddStock, useRemoveStock } from '../hooks/useStock';
 import { useMovements } from '../hooks/useMovements';
-import { ProductList } from '../components/ProductList';
+import { ProductListImproved } from '../components/ProductListImproved';
 import { ProductForm } from '../components/ProductForm';
 import { StockManagement } from '../components/StockManagement';
 import { MovementList } from '../components/MovementList';
 import { InventoryReports } from '../components/InventoryReports';
+import { ProductHistoryModal } from '../components/ProductHistoryModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { PageLayout } from '../../../components/ui/PageLayout';
 import { Product, ProductFormData, StockAddRequest, StockRemoveRequest } from '../types';
-import { Package, BarChart3, TrendingUp, Settings } from 'lucide-react';
+import { Package, BarChart3, TrendingUp } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 
 export const InventoryPage: React.FC = () => {
@@ -18,6 +19,7 @@ export const InventoryPage: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [showStockManagement, setShowStockManagement] = useState(false);
+  const [showProductHistory, setShowProductHistory] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [movementPage, setMovementPage] = useState(0);
 
@@ -62,8 +64,8 @@ export const InventoryPage: React.FC = () => {
   };
 
   const handleViewHistory = (product: Product) => {
-    // TODO: Implement product history view
-    console.log('View history for product:', product.id);
+    setSelectedProduct(product);
+    setShowProductHistory(true);
   };
 
   const handleProductFormSubmit = async (data: ProductFormData) => {
@@ -114,6 +116,11 @@ export const InventoryPage: React.FC = () => {
     setSelectedProduct(null);
   };
 
+  const handleCloseProductHistory = () => {
+    setShowProductHistory(false);
+    setSelectedProduct(null);
+  };
+
   return (
     <PageLayout title="Inventario" subtitle="Gestión de productos y stock">
       <div className="space-y-6">
@@ -134,7 +141,7 @@ export const InventoryPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="products" activeValue={activeTab}>
-            <ProductList
+            <ProductListImproved
               products={products}
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}
@@ -195,6 +202,14 @@ export const InventoryPage: React.FC = () => {
             onAddStock={handleAddStock}
             onRemoveStock={handleRemoveStock}
             isLoading={addStockMutation.isPending || removeStockMutation.isPending}
+          />
+        )}
+
+        {selectedProduct && (
+          <ProductHistoryModal
+            product={selectedProduct}
+            isOpen={showProductHistory}
+            onClose={handleCloseProductHistory}
           />
         )}
       </div>

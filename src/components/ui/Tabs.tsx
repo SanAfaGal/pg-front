@@ -35,7 +35,7 @@ export function Tabs({ value, onChange, children, className = '' }: TabsProps) {
 
 export function TabsList({ children, className = '' }: TabsListProps) {
   return (
-    <div className={`flex items-center gap-1 bg-gray-100 p-1 rounded-lg ${className}`}>
+    <div className={`flex items-center gap-0 border-b border-gray-200 ${className}`}>
       {children}
     </div>
   );
@@ -48,14 +48,18 @@ export function TabsTrigger({ value, children, activeValue, onChange }: TabsTrig
     <button
       onClick={() => onChange(value)}
       className={`
-        flex-1 px-6 py-3 rounded-md font-medium text-sm transition-all duration-200
+        relative px-4 py-3 font-medium text-sm transition-all duration-200
+        flex items-center justify-center
         ${isActive
-          ? 'bg-white text-powergym-red shadow-sm'
-          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          ? 'text-[#f60310]'
+          : 'text-[#A0A0A0] hover:text-gray-700'
         }
       `}
     >
       {children}
+      {isActive && (
+        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#f60310]" />
+      )}
     </button>
   );
 }

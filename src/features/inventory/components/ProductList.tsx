@@ -120,13 +120,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             {product.photo_url ? (
-              <img 
-                src={product.photo_url} 
-                alt={product.name}
-                className="w-12 h-12 rounded-lg object-cover"
-              />
+              <div className="w-12 h-12 bg-white rounded-lg border border-gray-200 flex items-center justify-center p-1.5 shadow-sm">
+                <img 
+                  src={product.photo_url} 
+                  alt={product.name}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
             ) : (
-              <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
                 <Package className="w-6 h-6 text-gray-400" />
               </div>
             )}
