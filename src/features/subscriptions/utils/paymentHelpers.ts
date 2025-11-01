@@ -1,7 +1,9 @@
 import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Payment, PaymentMethod, PaymentStats } from '../api/types';
+import { Payment, PaymentMethod, PaymentStats, SubscriptionStatus } from '../api/types';
+import { Subscription } from '../api/types';
 import { PAYMENT_METHOD_CONFIG, CURRENCY_CONFIG } from '../constants/subscriptionConstants';
+import { isSubscriptionExpired } from './subscriptionHelpers';
 
 // Payment Helper Functions
 
@@ -59,6 +61,64 @@ export const calculateRemainingDebt = (
   totalPaid: number
 ): number => {
   return Math.max(0, subscriptionPrice - totalPaid);
+};
+
+/**
+ * Check if subscription is fully paid
+ */
+export const isSubscriptionFullyPaid = (
+  paymentStats?: PaymentStats
+): boolean => {
+  if (!paymentStats) return false;
+  const remainingDebt = parseFloat(paymentStats.remaining_debt || '0');
+  return remainingDebt <= 0;
+};
+
+/**
+ * Check if payment can be made for a subscription
+ */
+export const canMakePayment = (
+  subscription: Subscription,
+  paymentStats?: PaymentStats
+): { canPay: boolean; reason?: string } => {
+  // Check if subscription is cancelled
+  if (subscription.status === SubscriptionStatus.CANCELED) {
+    return {
+      canPay: false,
+      reason: 'No se pueden registrar pagos en suscripciones canceladas',
+    };
+  }
+
+  // Check if subscription is expired
+  if (subscription.status === SubscriptionStatus.EXPIRED || isSubscriptionExpired(subscription)) {
+    return {
+      canPay: false,
+      reason: 'No se pueden registrar pagos en suscripciones expiradas',
+    };
+  }
+
+  // Check if subscription is fully paid
+  if (isSubscriptionFullyPaid(paymentStats)) {
+    return {
+      canPay: false,
+      reason: 'La suscripción ya está completamente pagada',
+    };
+  }
+
+  // Only allow payments for active or pending_payment subscriptions
+  const allowedStatuses = [
+    SubscriptionStatus.ACTIVE,
+    SubscriptionStatus.PENDING_PAYMENT,
+  ];
+
+  if (!allowedStatuses.includes(subscription.status)) {
+    return {
+      canPay: false,
+      reason: `No se pueden registrar pagos en suscripciones con estado: ${subscription.status}`,
+    };
+  }
+
+  return { canPay: true };
 };
 
 /**
@@ -127,18 +187,39 @@ export const calculatePaymentStats = (payments: Payment[]): {
 };
 
 /**
- * Validate payment amount
+ * Validate payment amount - only integers allowed
  */
-export const validatePaymentAmount = (amount: string, maxAmount?: number): {
+export const validatePaymentAmount = (
+  amount: string, 
+  maxAmount?: number,
+  remainingDebt?: number
+): {
   isValid: boolean;
   error?: string;
 } => {
+  // Check if it's a valid number
+  if (!amount || amount.trim() === '') {
+    return {
+      isValid: false,
+      error: 'Debe ingresar un monto',
+    };
+  }
+
+  // Check if it's a valid integer (no decimals)
   const numericAmount = parseFloat(amount);
   
   if (isNaN(numericAmount)) {
     return {
       isValid: false,
       error: 'El monto debe ser un número válido',
+    };
+  }
+
+  // Check if it's an integer
+  if (!Number.isInteger(numericAmount)) {
+    return {
+      isValid: false,
+      error: 'El monto debe ser un número entero (sin decimales)',
     };
   }
   
@@ -148,11 +229,15 @@ export const validatePaymentAmount = (amount: string, maxAmount?: number): {
       error: 'El monto debe ser mayor a 0',
     };
   }
+
+  // Use remainingDebt if available (more accurate), otherwise use maxAmount
+  const maxAllowed = remainingDebt !== undefined ? remainingDebt : (maxAmount || Infinity);
   
-  if (maxAmount && numericAmount > maxAmount) {
+  if (numericAmount > maxAllowed) {
+    const maxFormatted = formatCurrency(maxAllowed);
     return {
       isValid: false,
-      error: `El monto no puede exceder ${formatCurrency(maxAmount)}`,
+      error: `El monto no puede exceder ${maxFormatted}`,
     };
   }
   

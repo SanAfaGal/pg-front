@@ -18,6 +18,7 @@ import {
   SubscriptionCancelInput,
   PaginationParams,
 } from '../api/types';
+import { QUERY_STALE_TIMES, QUERY_CACHE_TIMES, RETRY_CONFIG, NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
 
 // Hook to get all subscriptions for a client
 export const useSubscriptions = (
@@ -27,9 +28,11 @@ export const useSubscriptions = (
   return useQuery({
     queryKey: subscriptionKeys.list(clientId),
     queryFn: () => getSubscriptions(clientId, params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: QUERY_STALE_TIMES.subscriptions,
+    gcTime: QUERY_CACHE_TIMES.subscriptions,
     enabled: !!clientId,
+    retry: RETRY_CONFIG.retries,
+    retryDelay: RETRY_CONFIG.retryDelay,
   });
 };
 
@@ -38,9 +41,11 @@ export const useActiveSubscription = (clientId: UUID) => {
   return useQuery({
     queryKey: subscriptionKeys.active(clientId),
     queryFn: () => getActiveSubscription(clientId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: QUERY_STALE_TIMES.subscriptions,
+    gcTime: QUERY_CACHE_TIMES.subscriptions,
     enabled: !!clientId,
+    retry: RETRY_CONFIG.retries,
+    retryDelay: RETRY_CONFIG.retryDelay,
   });
 };
 
@@ -49,9 +54,11 @@ export const useSubscriptionDetails = (subscriptionId: UUID) => {
   return useQuery({
     queryKey: subscriptionKeys.detail(subscriptionId),
     queryFn: () => getSubscriptionById(subscriptionId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: QUERY_STALE_TIMES.subscriptions,
+    gcTime: QUERY_CACHE_TIMES.subscriptions,
     enabled: !!subscriptionId,
+    retry: RETRY_CONFIG.retries,
+    retryDelay: RETRY_CONFIG.retryDelay,
   });
 };
 
@@ -68,7 +75,7 @@ export const useCreateSubscription = () => {
         queryKey: subscriptionKeys.list(variables.clientId),
       });
       
-      // Invalidate active subscription
+      // CRITICAL: Invalidate active subscription (new subscription might be active)
       queryClient.invalidateQueries({
         queryKey: subscriptionKeys.active(variables.clientId),
       });
@@ -77,6 +84,16 @@ export const useCreateSubscription = () => {
       queryClient.setQueryData(
         subscriptionKeys.detail(data.id),
         data
+      );
+
+      // Also add to list cache optimistically
+      queryClient.setQueryData(
+        subscriptionKeys.list(variables.clientId),
+        (old: Subscription[] = []) => {
+          // Check if already exists
+          if (old.some(s => s.id === data.id)) return old;
+          return [data, ...old];
+        }
       );
     },
   });
@@ -97,20 +114,28 @@ export const useRenewSubscription = () => {
       data?: SubscriptionRenewInput 
     }) => renewSubscription(clientId, subscriptionId, data),
     onSuccess: (data, variables) => {
-      // Invalidate subscriptions list
-      queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.list(variables.clientId),
-      });
-
-      // Invalidate active subscription
-      queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.active(variables.clientId),
-      });
-
       // Update the subscription in cache
       queryClient.setQueryData(
         subscriptionKeys.detail(variables.subscriptionId),
         data
+      );
+
+      // CRITICAL: Invalidate subscriptions list to refresh
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.list(variables.clientId),
+      });
+
+      // CRITICAL: Invalidate active subscription (renewed might be active now)
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.active(variables.clientId),
+      });
+
+      // Update in list cache optimistically
+      queryClient.setQueryData(
+        subscriptionKeys.list(variables.clientId),
+        (old: Subscription[] = []) => {
+          return old.map(s => s.id === variables.subscriptionId ? data : s);
+        }
       );
     },
   });
@@ -131,21 +156,34 @@ export const useCancelSubscription = () => {
       data?: SubscriptionCancelInput 
     }) => cancelSubscription(clientId, subscriptionId, data),
     onSuccess: (data, variables) => {
-      // Invalidate subscriptions list
-      queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.list(variables.clientId),
-      });
-
-      // Invalidate active subscription
-      queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.active(variables.clientId),
-      });
-
       // Update the subscription in cache
       queryClient.setQueryData(
         subscriptionKeys.detail(variables.subscriptionId),
         data
       );
+
+      // CRITICAL: Invalidate subscriptions list
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.list(variables.clientId),
+      });
+
+      // CRITICAL: Invalidate active subscription (cancelled subscription is no longer active)
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.active(variables.clientId),
+      });
+
+      // Update in list cache optimistically
+      queryClient.setQueryData(
+        subscriptionKeys.list(variables.clientId),
+        (old: Subscription[] = []) => {
+          return old.map(s => s.id === variables.subscriptionId ? data : s);
+        }
+      );
+
+      // CRITICAL: Invalidate payment stats for this subscription since status changed
+      queryClient.invalidateQueries({
+        queryKey: ['paymentStats', variables.subscriptionId],
+      });
     },
   });
 };
@@ -157,10 +195,12 @@ export const useUpdateSubscription = () => {
   return useMutation({
     mutationFn: ({ 
       subscriptionId, 
-      data 
+      data,
+      clientId,
     }: { 
       subscriptionId: UUID; 
-      data: Partial<SubscriptionCreateInput> 
+      data: Partial<SubscriptionCreateInput>;
+      clientId?: UUID;
     }) => updateSubscription(subscriptionId, data),
     onSuccess: (data, variables) => {
       // Update the subscription in cache
@@ -169,10 +209,20 @@ export const useUpdateSubscription = () => {
         data
       );
 
-      // Invalidate all subscription lists to ensure consistency
-      queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.lists(),
-      });
+      // If clientId available, invalidate client-specific queries
+      if (variables.clientId) {
+        queryClient.invalidateQueries({
+          queryKey: subscriptionKeys.list(variables.clientId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: subscriptionKeys.active(variables.clientId),
+        });
+      } else {
+        // Fallback: Invalidate all subscription lists
+        queryClient.invalidateQueries({
+          queryKey: subscriptionKeys.lists(),
+        });
+      }
     },
   });
 };
@@ -182,17 +232,35 @@ export const useDeleteSubscription = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (subscriptionId: UUID) => deleteSubscription(subscriptionId),
-    onSuccess: (_, subscriptionId) => {
+    mutationFn: ({ 
+      subscriptionId,
+      clientId,
+    }: { 
+      subscriptionId: UUID;
+      clientId?: UUID;
+    }) => deleteSubscription(subscriptionId),
+    onSuccess: (_, variables) => {
+      const { subscriptionId, clientId } = variables;
+
       // Remove from cache
       queryClient.removeQueries({
         queryKey: subscriptionKeys.detail(subscriptionId),
       });
 
-      // Invalidate all subscription lists
-      queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.lists(),
-      });
+      // If clientId available, invalidate client-specific queries
+      if (clientId) {
+        queryClient.invalidateQueries({
+          queryKey: subscriptionKeys.list(clientId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: subscriptionKeys.active(clientId),
+        });
+      } else {
+        // Fallback: Invalidate all subscription lists
+        queryClient.invalidateQueries({
+          queryKey: subscriptionKeys.lists(),
+        });
+      }
     },
   });
 };

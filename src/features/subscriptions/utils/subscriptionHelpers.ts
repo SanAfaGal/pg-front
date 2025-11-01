@@ -22,7 +22,7 @@ export const formatDate = (dateString: string, formatStr: string = 'dd/MM/yyyy')
  * Format a datetime string for display
  */
 export const formatDateTime = (dateString: string): string => {
-  return formatDate(dateString, 'dd/MM/yyyy HH:mm');
+  return formatDate(dateString, 'dd/MM/yyyy');
 };
 
 /**

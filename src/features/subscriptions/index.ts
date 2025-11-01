@@ -14,6 +14,12 @@ export { SubscriptionForm } from './components/SubscriptionForm';
 export { PaymentForm } from './components/PaymentForm';
 export { PaymentHistory } from './components/PaymentHistory';
 export { SubscriptionStatusComponent } from './components/SubscriptionStatus';
+export { CancelSubscriptionModal } from './components/CancelSubscriptionModal';
+export { PaymentProgressIndicator } from './components/PaymentProgressIndicator';
+export { ActiveSubscriptionCard } from './components/ActiveSubscriptionCard';
+export { SubscriptionHistoryTable } from './components/SubscriptionHistoryTable';
+export { SubscriptionDetailModal } from './components/SubscriptionDetailModal';
+export { RenewSubscriptionModal } from './components/RenewSubscriptionModal';
 
 // Utility exports
 export * from './utils/subscriptionHelpers';

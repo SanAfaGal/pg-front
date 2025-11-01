@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Subscription, SubscriptionStatus } from '../api/types';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
+import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { 
   getSubscriptionStatusInfo, 
   formatDate, 
@@ -11,15 +12,14 @@ import {
   canCancelSubscription,
   getSubscriptionProgress
 } from '../utils/subscriptionHelpers';
-import { formatCurrency } from '../utils/paymentHelpers';
-import { Calendar, Clock, DollarSign, RefreshCw, X } from 'lucide-react';
+import { Calendar, Clock, RefreshCw, X, ArrowRight } from 'lucide-react';
 
 interface SubscriptionStatusBadgeProps {
   status: SubscriptionStatus;
   className?: string;
 }
 
-export const SubscriptionStatusBadge: React.FC<SubscriptionStatusBadgeProps> = ({ 
+export const SubscriptionStatusBadge: React.FC<SubscriptionStatusBadgeProps> = memo(({ 
   status, 
   className = '' 
 }) => {
@@ -34,7 +34,9 @@ export const SubscriptionStatusBadge: React.FC<SubscriptionStatusBadgeProps> = (
       {statusInfo.label}
     </Badge>
   );
-};
+});
+
+SubscriptionStatusBadge.displayName = 'SubscriptionStatusBadge';
 
 interface SubscriptionCardProps {
   subscription: Subscription;
@@ -45,7 +47,7 @@ interface SubscriptionCardProps {
   className?: string;
 }
 
-export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
+export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
   subscription,
   onRenew,
   onCancel,
@@ -59,13 +61,13 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   const canCancel = canCancelSubscription(subscription);
 
   return (
-    <Card className={`p-6 ${className}`}>
+    <Card className={`p-6 hover:shadow-md transition-all duration-200 ${className}`}>
       <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">
             Suscripción #{subscription.id.slice(0, 8)}
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-500">
             Plan ID: {subscription.plan_id.slice(0, 8)}
           </p>
         </div>
@@ -73,45 +75,49 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="flex items-center text-sm text-gray-600">
-          <Calendar className="w-4 h-4 mr-2" />
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-4 h-4 text-blue-600" />
+          </div>
           <div>
-            <p className="font-medium">Inicio</p>
-            <p>{formatDate(subscription.start_date)}</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Inicio</p>
+            <p className="text-sm font-semibold text-gray-900">{formatDate(subscription.start_date)}</p>
           </div>
         </div>
         
-        <div className="flex items-center text-sm text-gray-600">
-          <Calendar className="w-4 h-4 mr-2" />
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+            <Calendar className="w-4 h-4 text-red-600" />
+          </div>
           <div>
-            <p className="font-medium">Fin</p>
-            <p>{formatDate(subscription.end_date)}</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fin</p>
+            <p className="text-sm font-semibold text-gray-900">{formatDate(subscription.end_date)}</p>
           </div>
         </div>
       </div>
 
       {subscription.status === SubscriptionStatus.ACTIVE && (
-        <div className="mb-4">
+        <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Progreso</span>
-            <span className="text-sm text-gray-600">{progress}%</span>
+            <span className="text-sm font-semibold text-gray-900">{progress}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden">
             <div 
-              className="bg-green-500 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="flex items-center mt-2 text-sm text-gray-600">
-            <Clock className="w-4 h-4 mr-1" />
-            <span>{daysRemaining} días restantes</span>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Clock className="w-4 h-4" />
+            <span className="font-medium">{daysRemaining} día{daysRemaining !== 1 ? 's' : ''} restante{daysRemaining !== 1 ? 's' : ''}</span>
           </div>
         </div>
       )}
 
       {subscription.cancellation_date && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800">
+          <p className="text-sm text-red-800 font-medium">
             <strong>Cancelada:</strong> {formatDate(subscription.cancellation_date)}
           </p>
           {subscription.cancellation_reason && (
@@ -129,8 +135,10 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onViewDetails(subscription)}
+              className="flex-1"
             >
               Ver Detalles
+              <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           )}
           
@@ -140,6 +148,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               size="sm"
               onClick={() => onRenew(subscription)}
               leftIcon={<RefreshCw className="w-4 h-4" />}
+              className="flex-1"
             >
               Renovar
             </Button>
@@ -151,6 +160,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               size="sm"
               onClick={() => onCancel(subscription)}
               leftIcon={<X className="w-4 h-4" />}
+              className="flex-1"
             >
               Cancelar
             </Button>
@@ -159,7 +169,9 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       )}
     </Card>
   );
-};
+});
+
+SubscriptionCard.displayName = 'SubscriptionCard';
 
 interface SubscriptionListProps {
   subscriptions: Subscription[];
@@ -171,7 +183,7 @@ interface SubscriptionListProps {
   className?: string;
 }
 
-export const SubscriptionList: React.FC<SubscriptionListProps> = ({
+export const SubscriptionList: React.FC<SubscriptionListProps> = memo(({
   subscriptions,
   onRenew,
   onCancel,
@@ -185,11 +197,21 @@ export const SubscriptionList: React.FC<SubscriptionListProps> = ({
       <div className={`space-y-4 ${className}`}>
         {[...Array(3)].map((_, index) => (
           <Card key={index} className="p-6 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="space-y-2">
-              <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-6 bg-gray-200 rounded w-20"></div>
             </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </div>
+            <div className="h-10 bg-gray-200 rounded"></div>
           </Card>
         ))}
       </div>
@@ -198,26 +220,31 @@ export const SubscriptionList: React.FC<SubscriptionListProps> = ({
 
   if (error) {
     return (
-      <Card className={`p-6 text-center ${className}`}>
-        <div className="text-red-600 mb-2">
-          <X className="w-8 h-8 mx-auto mb-2" />
-          <p className="font-medium">Error al cargar suscripciones</p>
+      <Card className={`p-8 text-center ${className}`}>
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <X className="w-6 h-6 text-red-600" />
+          </div>
+          <p className="font-semibold text-red-900 mb-2">Error al cargar suscripciones</p>
+          <p className="text-gray-600 text-sm">{error}</p>
         </div>
-        <p className="text-gray-600 text-sm">{error}</p>
       </Card>
     );
   }
 
   if (subscriptions.length === 0) {
     return (
-      <Card className={`p-6 text-center ${className}`}>
-        <div className="text-gray-400 mb-2">
-          <Calendar className="w-8 h-8 mx-auto mb-2" />
-          <p className="font-medium">No hay suscripciones</p>
+      <Card className={`p-12 text-center ${className}`}>
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Calendar className="w-8 h-8 text-gray-400" />
+          </div>
+          <p className="font-semibold text-gray-900 mb-2">No hay suscripciones</p>
+          <p className="text-gray-600 text-sm max-w-md">
+            Este cliente no tiene suscripciones registradas. 
+            Crea una nueva suscripción para comenzar.
+          </p>
         </div>
-        <p className="text-gray-600 text-sm">
-          Este cliente no tiene suscripciones registradas.
-        </p>
       </Card>
     );
   }
@@ -235,4 +262,6 @@ export const SubscriptionList: React.FC<SubscriptionListProps> = ({
       ))}
     </div>
   );
-};
+});
+
+SubscriptionList.displayName = 'SubscriptionList';

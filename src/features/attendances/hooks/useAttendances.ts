@@ -37,6 +37,9 @@ export const useAttendances = (
     queryKey: ATTENDANCE_QUERY_KEYS.list(filters, pagination),
     queryFn: () => attendanceApi.getAttendances(filters, pagination),
     staleTime: 30 * 1000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // Invalidate and refetch attendances

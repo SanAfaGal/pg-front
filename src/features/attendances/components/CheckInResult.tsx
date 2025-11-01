@@ -1,5 +1,18 @@
 import React from 'react';
 import { CheckInResponse } from '../types';
+import { Button } from '../../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
+import { 
+  CheckCircle2, 
+  XCircle, 
+  AlertTriangle, 
+  Clock, 
+  User,
+  UserX,
+  CreditCard,
+  Camera,
+  RefreshCw
+} from 'lucide-react';
 
 interface CheckInResultProps {
   result: CheckInResponse;
@@ -15,274 +28,306 @@ export const CheckInResult: React.FC<CheckInResultProps> = ({
   const isSuccess = result.success && result.can_enter;
   const isDenied = !result.success || !result.can_enter;
 
+  // Get icon based on result reason
+  const getIcon = () => {
+    if (isSuccess) {
+      return <CheckCircle2 className="w-12 h-12 text-green-600" />;
+    }
+
+    switch (result.reason) {
+      case 'face_not_recognized':
+        return <UserX className="w-12 h-12 text-blue-600" />;
+      case 'no_face_detected':
+        return <Camera className="w-12 h-12 text-orange-600" />;
+      case 'subscription_expired':
+      case 'no_active_subscription':
+      case 'inactive_client':
+        return <CreditCard className="w-12 h-12 text-yellow-600" />;
+      case 'already_checked_in':
+        return <Clock className="w-12 h-12 text-gray-600" />;
+      default:
+        return <XCircle className="w-12 h-12 text-red-600" />;
+    }
+  };
+
+  // Get color scheme based on result
+  const getColorScheme = () => {
+    if (isSuccess) {
+      return {
+        bg: 'bg-green-50',
+        border: 'border-green-200',
+        iconBg: 'bg-green-100',
+        text: 'text-green-900',
+        textLight: 'text-green-800',
+        button: 'bg-green-600 hover:bg-green-700'
+      };
+    }
+
+    switch (result.reason) {
+      case 'face_not_recognized':
+        return {
+          bg: 'bg-blue-50',
+          border: 'border-blue-200',
+          iconBg: 'bg-blue-100',
+          text: 'text-blue-900',
+          textLight: 'text-blue-800',
+          button: 'bg-blue-600 hover:bg-blue-700'
+        };
+      case 'no_face_detected':
+        return {
+          bg: 'bg-orange-50',
+          border: 'border-orange-200',
+          iconBg: 'bg-orange-100',
+          text: 'text-orange-900',
+          textLight: 'text-orange-800',
+          button: 'bg-orange-600 hover:bg-orange-700'
+        };
+      case 'subscription_expired':
+      case 'no_active_subscription':
+      case 'inactive_client':
+        return {
+          bg: 'bg-yellow-50',
+          border: 'border-yellow-200',
+          iconBg: 'bg-yellow-100',
+          text: 'text-yellow-900',
+          textLight: 'text-yellow-800',
+          button: 'bg-yellow-600 hover:bg-yellow-700'
+        };
+      case 'already_checked_in':
+        return {
+          bg: 'bg-gray-50',
+          border: 'border-gray-200',
+          iconBg: 'bg-gray-100',
+          text: 'text-gray-900',
+          textLight: 'text-gray-800',
+          button: 'bg-gray-600 hover:bg-gray-700'
+        };
+      default:
+        return {
+          bg: 'bg-red-50',
+          border: 'border-red-200',
+          iconBg: 'bg-red-100',
+          text: 'text-red-900',
+          textLight: 'text-red-800',
+          button: 'bg-red-600 hover:bg-red-700'
+        };
+    }
+  };
+
+  const colors = getColorScheme();
+
+  // Success View
   if (isSuccess) {
     return (
-      <div className={`flex flex-col items-center p-6 bg-green-50 border border-green-200 rounded-lg ${className}`}>
-        {/* Success Icon */}
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
+      <div className={`space-y-3 ${className}`}>
+        {/* Success Header */}
+        <Card className={`p-4 ${colors.bg} border-2 ${colors.border} shadow-sm`}>
+          <div className="flex flex-col items-center text-center space-y-3">
+            <div className={`w-16 h-16 ${colors.iconBg} rounded-full flex items-center justify-center shadow-md`}>
+              {getIcon()}
+            </div>
 
-        {/* Success Message */}
-        <h3 className="text-xl font-semibold text-green-800 mb-2">
-          {result.message}
-        </h3>
+            <div>
+              <h3 className={`text-xl font-bold ${colors.text} mb-1.5`}>
+                {result.message}
+              </h3>
+              <div className="w-24 h-1 bg-green-200 rounded-full mx-auto">
+                <div className="w-full h-full bg-green-600 rounded-full animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </Card>
 
-        {/* Client Info */}
+        {/* Client Info - Compact */}
         {result.client_info && (
-          <div className="bg-white p-4 rounded-lg shadow-sm mb-4 w-full max-w-sm">
-            <h4 className="font-medium text-gray-900 mb-2">Bienvenido,</h4>
-            <div className="space-y-1">
-              <p className="text-lg font-semibold text-gray-900">
-                {result.client_info.first_name} {result.client_info.last_name}
-              </p>
-              <p className="text-sm text-gray-600">
-                DNI: {result.client_info.dni_number}
-              </p>
+          <Card className="p-3 bg-white border border-gray-200 shadow-sm">
+            <div className="flex items-start gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs font-medium text-gray-600 mb-0.5">Cliente Identificado</h4>
+                <p className="text-base font-bold text-gray-900 truncate">
+                  {result.client_info.first_name} {result.client_info.last_name}
+                </p>
+                <p className="text-xs text-gray-600">
+                  DNI: {result.client_info.dni_number}
+                </p>
+              </div>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* Attendance Info */}
+        {/* Attendance Info - Compact */}
         {result.attendance && (
-          <div className="bg-white p-4 rounded-lg shadow-sm w-full max-w-sm">
-            <h4 className="font-medium text-gray-900 mb-2">Detalles del Check-in</h4>
-            <div className="space-y-1">
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">Hora:</span>{' '}
-                {new Date(result.attendance.check_in).toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-600">
-                <span className="font-medium">ID:</span> {result.attendance.id}
-              </p>
+          <Card className="p-3 bg-white border border-gray-200 shadow-sm">
+            <div className="flex items-start gap-2">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-xs font-medium text-gray-600 mb-1.5">Detalles del Check-in</h4>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Fecha:</span>
+                    <span className="font-medium text-gray-900 text-right">
+                      {new Date(result.attendance.check_in).toLocaleDateString('es-CO', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Hora:</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(result.attendance.check_in).toLocaleTimeString('es-CO', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">ID:</span>
+                    <span className="font-mono text-xs text-gray-900">
+                      {result.attendance.id.slice(0, 8)}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </Card>
         )}
 
-        {/* Success Animation */}
-        <div className="mt-4 text-green-600">
-          <div className="animate-pulse">
-            <svg className="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
+        {/* Success Message - Compact */}
+        <Card className="p-2.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+          <p className="text-xs font-medium text-green-800 text-center">
+            ✓ Tu entrada al gimnasio ha sido registrada exitosamente
+          </p>
+        </Card>
       </div>
     );
   }
 
-  if (isDenied) {
-    // Get appropriate icon and colors based on error type
-    const getErrorIcon = () => {
-      switch (result.reason) {
-        case 'face_not_recognized':
-          return (
-            <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" />
-            </svg>
-          );
-        case 'no_face_detected':
-          return (
-            <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01" />
-            </svg>
-          );
-        case 'subscription_expired':
-        case 'no_active_subscription':
-        case 'inactive_client':
-          return (
-            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          );
-        case 'already_checked_in':
-          return (
-            <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          );
-        default:
-          return (
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          );
-      }
-    };
+  // Error/Denied View
+  return (
+    <div className={`space-y-3 ${className}`}>
+      {/* Error Header */}
+      <Card className={`p-4 ${colors.bg} border-2 ${colors.border} shadow-sm`}>
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className={`w-16 h-16 ${colors.iconBg} rounded-full flex items-center justify-center shadow-md`}>
+            {getIcon()}
+          </div>
 
-    const getErrorColors = () => {
-      switch (result.reason) {
-        case 'face_not_recognized':
-          return {
-            bg: 'bg-blue-50',
-            border: 'border-blue-200',
-            iconBg: 'bg-blue-100',
-            text: 'text-blue-800'
-          };
-        case 'no_face_detected':
-          return {
-            bg: 'bg-orange-50',
-            border: 'border-orange-200',
-            iconBg: 'bg-orange-100',
-            text: 'text-orange-800'
-          };
-        case 'subscription_expired':
-        case 'no_active_subscription':
-        case 'inactive_client':
-          return {
-            bg: 'bg-yellow-50',
-            border: 'border-yellow-200',
-            iconBg: 'bg-yellow-100',
-            text: 'text-yellow-800'
-          };
-        case 'already_checked_in':
-          return {
-            bg: 'bg-gray-50',
-            border: 'border-gray-200',
-            iconBg: 'bg-gray-100',
-            text: 'text-gray-800'
-          };
-        default:
-          return {
-            bg: 'bg-red-50',
-            border: 'border-red-200',
-            iconBg: 'bg-red-100',
-            text: 'text-red-800'
-          };
-      }
-    };
-
-    const colors = getErrorColors();
-
-    return (
-      <div className={`flex flex-col items-center p-6 ${colors.bg} border ${colors.border} rounded-lg ${className}`}>
-        {/* Denied Icon */}
-        <div className={`w-16 h-16 ${colors.iconBg} rounded-full flex items-center justify-center mb-4`}>
-          {getErrorIcon()}
+          <div>
+            <h3 className={`text-xl font-bold ${colors.text} mb-1.5`}>
+              {result.message}
+            </h3>
+            {result.detail && (
+              <p className={`text-xs ${colors.textLight} mt-1.5 max-w-md leading-relaxed`}>
+                {result.detail}
+              </p>
+            )}
+          </div>
         </div>
+      </Card>
 
-        {/* Denied Message */}
-        <h3 className={`text-xl font-semibold ${colors.text} mb-2`}>
-          {result.message}
-        </h3>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm mb-4 w-full max-w-sm">
-          {result.detail && (
-            <div>
-              <h4 className="font-medium text-gray-900 mb-1">Detalles:</h4>
-              <p className="text-sm text-gray-700">{result.detail}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Suggestions based on reason */}
-        {result.reason === 'subscription_expired' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-yellow-800 mb-2">Qué hacer:</h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Contacta a recepción para renovar tu suscripción</li>
-              <li>• Verifica el estado de tu pago</li>
-              <li>• Actualiza tu método de pago si es necesario</li>
-            </ul>
-          </div>
-        )}
-
-        {result.reason === 'inactive_client' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-yellow-800 mb-2">Qué hacer:</h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Contacta a recepción para reactivar tu cuenta</li>
-              <li>• Verifica el estado de tu cuenta</li>
-              <li>• Actualiza tu información personal si es necesario</li>
-            </ul>
-          </div>
-        )}
-
-        {result.reason === 'no_active_subscription' && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-yellow-800 mb-2">Qué hacer:</h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Compra un nuevo plan de suscripción</li>
-              <li>• Contacta a recepción para asistencia</li>
-              <li>• Revisa las opciones de membresía disponibles</li>
-            </ul>
-          </div>
-        )}
-
-        {result.reason === 'already_checked_in' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-blue-800 mb-2">Información:</h4>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Ya has registrado tu entrada hoy</li>
-              <li>• Solo puedes hacer check-in una vez por día</li>
-              <li>• Tu asistencia ya está registrada en el sistema</li>
-              <li>• Puedes regresar mañana para tu próximo check-in</li>
-            </ul>
-          </div>
-        )}
-
-        {result.reason === 'face_not_recognized' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-blue-800 mb-2">Qué hacer:</h4>
-            <ul className="text-sm text-blue-700 space-y-1">
-              <li>• Contacta a recepción para registrar tus datos faciales</li>
-              <li>• Asegúrate de mirar directamente a la cámara</li>
-              <li>• Intenta de nuevo con mejor iluminación</li>
-              <li>• Asegúrate de que tu rostro esté claramente visible</li>
-            </ul>
-          </div>
-        )}
-
-        {result.reason === 'no_face_detected' && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-orange-800 mb-2">Qué hacer:</h4>
-            <ul className="text-sm text-orange-700 space-y-1">
-              <li>• Asegúrate de que tu rostro esté claramente visible en la cámara</li>
-              <li>• Verifica que la cámara esté funcionando correctamente</li>
-              <li>• Intenta ajustar la iluminación</li>
-              <li>• Asegúrate de estar posicionado correctamente</li>
-            </ul>
-          </div>
-        )}
-
-        {result.reason === 'system_error' && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full max-w-sm mb-4">
-            <h4 className="font-medium text-red-800 mb-2">Qué hacer:</h4>
-            <ul className="text-sm text-red-700 space-y-1">
-              {result.message.includes('conexión') ? (
+      {/* Detailed Error Information */}
+      <Card className="p-3 bg-white border border-gray-200 shadow-sm">
+        <div className="space-y-3">
+          {/* Action Suggestions */}
+          <div>
+            <h4 className="text-xs font-semibold text-gray-900 mb-2 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-gray-600" />
+              Qué puedes hacer:
+            </h4>
+            <ul className="space-y-1.5">
+              {result.reason === 'subscription_expired' || result.reason === 'no_active_subscription' ? (
                 <>
-                  <li>• Verifica tu conexión a internet</li>
-                  <li>• Asegúrate de que el servidor esté disponible</li>
-                  <li>• Intenta de nuevo en unos momentos</li>
-                  <li>• Contacta al soporte técnico si el problema persiste</li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-yellow-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Contacta a recepción para renovar tu suscripción</span>
+                  </li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-yellow-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Verifica el estado de tu pago</span>
+                  </li>
                 </>
-              ) : result.message.includes('tiempo') ? (
+              ) : result.reason === 'inactive_client' ? (
                 <>
-                  <li>• Verifica la velocidad de tu conexión a internet</li>
-                  <li>• Intenta de nuevo con una conexión más estable</li>
-                  <li>• Asegúrate de que no haya interferencias de red</li>
-                  <li>• Contacta al soporte técnico si el problema persiste</li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-yellow-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Contacta a recepción para reactivar tu cuenta</span>
+                  </li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-yellow-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Verifica el estado de tu cuenta</span>
+                  </li>
+                </>
+              ) : result.reason === 'already_checked_in' ? (
+                <>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-gray-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Ya has registrado tu entrada hoy</span>
+                  </li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-gray-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Solo puedes hacer check-in una vez por día</span>
+                  </li>
+                </>
+              ) : result.reason === 'face_not_recognized' ? (
+                <>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-blue-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Contacta a recepción para registrar tus datos faciales</span>
+                  </li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-blue-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Asegúrate de mirar directamente a la cámara</span>
+                  </li>
+                </>
+              ) : result.reason === 'no_face_detected' ? (
+                <>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-orange-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Asegúrate de que tu rostro esté claramente visible</span>
+                  </li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-orange-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Verifica que la cámara esté funcionando</span>
+                  </li>
                 </>
               ) : (
                 <>
-                  <li>• Intenta de nuevo en unos momentos</li>
-                  <li>• Contacta al soporte técnico si el problema persiste</li>
-                  <li>• Verifica tu conexión a internet</li>
-                  <li>• Reporta el problema a recepción</li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-red-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Intenta de nuevo en unos momentos</span>
+                  </li>
+                  <li className="flex items-start gap-1.5 text-xs text-gray-700">
+                    <span className="text-red-600 mt-0.5 text-xs">•</span>
+                    <span className="leading-relaxed">Contacta al soporte técnico si el problema persiste</span>
+                  </li>
                 </>
               )}
             </ul>
           </div>
-        )}
-      </div>
-    );
-  }
 
-  return null;
+          {/* Retry Button */}
+          {result.reason !== 'already_checked_in' && (
+            <div className="pt-2 border-t border-gray-200">
+              <Button
+                onClick={onRetry}
+                variant="outline"
+                size="sm"
+                className="w-full"
+                leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+              >
+                Intentar de Nuevo
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
 };

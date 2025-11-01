@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Card } from '../../../components/ui/Card';
@@ -19,11 +19,34 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
 }) => {
   const [localFilters, setLocalFilters] = useState<AttendanceFilterOptions>(filters);
   const [isExpanded, setIsExpanded] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update local filters when props change
   useEffect(() => {
     setLocalFilters(filters);
   }, [filters]);
+
+  // Debounced search effect - auto-apply search filter after user stops typing
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    const searchValue = localFilters.search;
+    
+    // Only auto-apply if search value changed and is different from current filters
+    if (searchValue !== undefined && searchValue !== filters.search) {
+      searchTimeoutRef.current = setTimeout(() => {
+        onFiltersChange({ ...localFilters, search: searchValue });
+      }, 500);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [localFilters.search, filters.search, localFilters, onFiltersChange]);
 
   const handleFilterChange = (key: keyof AttendanceFilterOptions, value: string) => {
     const newFilters = { ...localFilters, [key]: value || undefined };
@@ -31,6 +54,9 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
   };
 
   const handleApplyFilters = () => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
     onFiltersChange(localFilters);
   };
 
