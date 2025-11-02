@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { attendanceApi } from '../api/attendanceApi';
 import {
+  Attendance,
   AttendanceWithClient,
   CheckInRequest,
   CheckInResponse,
@@ -25,6 +26,9 @@ export const attendanceKeys = {
     [...attendanceKeys.lists(), filters, pagination] as const,
   detail: (id: string) => [...attendanceKeys.all, 'detail', id] as const,
   details: () => [...attendanceKeys.all, 'detail'] as const,
+  client: (clientId: string) => [...attendanceKeys.all, 'client', clientId] as const,
+  clientList: (clientId: string, pagination: AttendancePagination) => 
+    [...attendanceKeys.client(clientId), 'list', pagination] as const,
   metrics: () => [...attendanceKeys.all, 'metrics'] as const,
   stats: () => [...attendanceKeys.all, 'stats'] as const,
 } as const;
@@ -180,6 +184,38 @@ export const useCheckIn = () => {
     error: mutation.error,
     data: mutation.data,
     reset: mutation.reset,
+  };
+};
+
+/**
+ * Hook for client-specific attendances
+ * Fetches attendances for a specific client with pagination
+ */
+export const useClientAttendances = (
+  clientId: string,
+  pagination: AttendancePagination = PAGINATION_DEFAULTS
+) => {
+  const {
+    data: attendances = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: attendanceKeys.clientList(clientId, pagination),
+    queryFn: () => attendanceApi.getClientAttendances(clientId, pagination),
+    enabled: !!clientId,
+    staleTime: QUERY_STALE_TIMES.attendances,
+    gcTime: QUERY_CACHE_TIMES.attendances,
+    retry: RETRY_CONFIG.retries,
+    retryDelay: RETRY_CONFIG.retryDelay,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    attendances,
+    isLoading,
+    error,
+    refetch,
   };
 };
 

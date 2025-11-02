@@ -109,7 +109,7 @@ export const ProductHistoryModal: React.FC<ProductHistoryModalProps> = ({
     >
       <div className="p-6">
         {/* Header con info del producto */}
-        <Card className="p-4 mb-6 bg-gradient-to-br from-gray-50 to-white border border-gray-200">
+        <Card className="p-4 mb-6 bg-white border border-gray-200">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4 flex-1">
               <ProductImage url={product.photo_url} name={product.name} size="MEDIUM" />

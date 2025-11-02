@@ -14,6 +14,29 @@ import { formatCurrency, validatePaymentAmount, canMakePayment, isSubscriptionFu
 import { NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
 import { DollarSign, CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react';
 
+/**
+ * Format number input to display as currency while typing
+ */
+const formatCurrencyInput = (value: string): string => {
+  if (!value) return '';
+  
+  // Remove all non-numeric characters
+  const numericValue = value.replace(/\D/g, '');
+  
+  if (!numericValue) return '';
+  
+  // Format with thousand separators (Colombian format)
+  const number = parseInt(numericValue, 10);
+  return new Intl.NumberFormat('es-CO').format(number);
+};
+
+/**
+ * Remove currency formatting to get numeric value
+ */
+const unformatCurrencyInput = (value: string): string => {
+  return value.replace(/\D/g, '');
+};
+
 // Validation schema - only integers allowed
 const paymentFormSchema = z.object({
   amount: z.string()
@@ -57,7 +80,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   paymentStats,
 }) => {
   const [amountError, setAmountError] = useState<string>('');
-  const [paymentType, setPaymentType] = useState<'partial' | 'full'>('partial');
+  const [paymentType, setPaymentType] = useState<'partial' | 'full'>('full');
   const createPaymentMutation = useCreatePayment();
 
   // Check if payment can be made
@@ -95,9 +118,13 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     if (!isOpen) {
       reset();
       setAmountError('');
-      setPaymentType('partial');
+      setPaymentType('full');
+    } else if (isOpen && paymentType === 'full' && currentRemainingDebt !== undefined && currentRemainingDebt > 0) {
+      // Set full payment amount when modal opens with 'full' selected
+      const fullAmount = Math.floor(currentRemainingDebt);
+      setValue('amount', fullAmount.toString(), { shouldValidate: true });
     }
-  }, [isOpen, reset]);
+  }, [isOpen, reset, paymentType, currentRemainingDebt, setValue]);
 
   // Handle payment type change
   const handlePaymentTypeChange = useCallback((type: 'partial' | 'full') => {
@@ -126,21 +153,31 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     }
   }, [watchedAmount, maxAmount, currentRemainingDebt]);
 
-  // Handle input to only allow integers
+  // Handle input to only allow integers and format as currency
   const handleAmountInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     
-    // Remove any non-numeric characters except the minus sign at the start
-    value = value.replace(/[^\d]/g, '');
+    // Remove all non-numeric characters
+    const numericValue = value.replace(/\D/g, '');
     
-    // Update the input value
-    if (value !== e.target.value) {
-      e.target.value = value;
+    // Update form value with numeric value for validation
+    setValue('amount', numericValue, { shouldValidate: true });
+  }, [setValue]);
+  
+  // Get formatted display value for the input
+  const displayAmount = useMemo(() => {
+    if (paymentType === 'full') {
+      if (currentRemainingDebt !== undefined && currentRemainingDebt > 0) {
+        return formatCurrencyInput(Math.floor(currentRemainingDebt).toString());
+      }
+      return '';
     }
     
-    // Update form value
-    setValue('amount', value, { shouldValidate: true });
-  }, [setValue]);
+    if (!watchedAmount) return '';
+    const numericValue = unformatCurrencyInput(watchedAmount);
+    if (!numericValue) return '';
+    return formatCurrencyInput(numericValue);
+  }, [watchedAmount, paymentType, currentRemainingDebt]);
 
   // Prevent spinner/wheel changes
   const handleAmountWheel = useCallback((e: React.WheelEvent<HTMLInputElement>) => {
@@ -180,7 +217,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       
       reset();
       setAmountError('');
-      setPaymentType('partial');
+      setPaymentType('full');
       onSuccess();
       onClose();
     } catch (error: any) {
@@ -192,7 +229,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const handleClose = useCallback(() => {
     reset();
     setAmountError('');
-    setPaymentType('partial');
+    setPaymentType('full');
     onClose();
   }, [reset, onClose]);
 
@@ -210,12 +247,12 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title="Registrar Pago"
-      size="md"
+      size="lg"
     >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
         {/* Payment Validation Warning */}
         {!paymentValidation.canPay && (
-          <Card className="p-4 bg-red-50 border-red-200">
+          <Card className="p-3 bg-red-50 border-red-200">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -228,7 +265,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
         {/* Fully Paid Info */}
         {isFullyPaid && paymentValidation.canPay && (
-          <Card className="p-4 bg-green-50 border-green-200">
+          <Card className="p-3 bg-green-50 border-green-200">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -241,87 +278,77 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           </Card>
         )}
 
-        {/* Subscription Info */}
-        <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <CreditCard className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-blue-900 mb-1">Información de Suscripción</h3>
-              <div className="text-sm text-blue-700 space-y-0.5">
-                <p><span className="font-medium">ID:</span> {subscription.id.slice(0, 8)}</p>
-                <p><span className="font-medium">Estado:</span> <span className="capitalize">{subscription.status}</span></p>
-                {currentRemainingDebt !== undefined && (
-                  <p className="font-semibold mt-1 text-blue-900">
-                    Deuda pendiente: {formatCurrency(currentRemainingDebt)}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
-
         {/* Payment Type Selection */}
         {paymentValidation.canPay && currentRemainingDebt !== undefined && currentRemainingDebt > 0 && !isFullyPaid && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Tipo de Pago
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <Card
-                className={`p-4 cursor-pointer transition-all duration-200 ${
+                className={`p-3 cursor-pointer transition-all duration-200 ${
                   paymentType === 'partial'
-                    ? 'ring-2 ring-blue-500 bg-blue-50 shadow-sm'
+                    ? 'ring-2 ring-blue-500 bg-gradient-to-br from-blue-50 to-blue-100 shadow-md'
                     : 'hover:bg-gray-50 hover:shadow-sm border-gray-200'
                 }`}
                 onClick={() => handlePaymentTypeChange('partial')}
               >
                 <div className="text-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 transition-colors ${
-                    paymentType === 'partial' ? 'bg-blue-100' : 'bg-orange-100'
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 transition-colors ${
+                    paymentType === 'partial' ? 'bg-blue-500' : 'bg-orange-100'
                   }`}>
-                    <span className="text-xl">💰</span>
+                    <span className={`text-lg ${paymentType === 'partial' ? '' : 'text-orange-600'}`}>💰</span>
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Pago Parcial</h4>
+                  <h4 className={`font-semibold mb-0.5 ${paymentType === 'partial' ? 'text-blue-900' : 'text-gray-900'}`}>Pago Parcial</h4>
                   <p className="text-xs text-gray-600">
-                    Ingresa el monto que deseas pagar
+                    Ingresa el monto
                   </p>
                 </div>
               </Card>
               
               <Card
-                className={`p-4 cursor-pointer transition-all duration-200 ${
+                className={`p-3 cursor-pointer transition-all duration-200 ${
                   paymentType === 'full'
-                    ? 'ring-2 ring-green-500 bg-green-50 shadow-sm'
+                    ? 'ring-2 ring-green-500 bg-gradient-to-br from-green-50 to-green-100 shadow-md'
                     : 'hover:bg-gray-50 hover:shadow-sm border-gray-200'
                 }`}
                 onClick={() => handlePaymentTypeChange('full')}
               >
                 <div className="text-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 transition-colors ${
-                    paymentType === 'full' ? 'bg-green-100' : 'bg-gray-100'
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 transition-colors ${
+                    paymentType === 'full' ? 'bg-green-500' : 'bg-gray-100'
                   }`}>
-                    <span className="text-xl">✅</span>
+                    <span className={`text-lg ${paymentType === 'full' ? '' : 'text-gray-600'}`}>✅</span>
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-1">Pago Completo</h4>
+                  <h4 className={`font-semibold mb-0.5 ${paymentType === 'full' ? 'text-green-900' : 'text-gray-900'}`}>Pago Completo</h4>
                   <p className="text-xs text-gray-600">
-                    Pagar {formatCurrency(Math.floor(currentRemainingDebt))}
+                    {formatCurrency(Math.floor(currentRemainingDebt))}
                   </p>
                 </div>
               </Card>
             </div>
+            {/* Warning message for partial payment */}
+            {paymentType === 'partial' && (
+              <Card className="p-2.5 mt-2 bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800">
+                    <span className="font-semibold">Importante:</span> Solo se puede realizar un pago parcial por día.
+                  </p>
+                </div>
+              </Card>
+            )}
           </div>
         )}
 
-        {/* Amount Input - Only Integers */}
+        {/* Amount Input - Only Integers with Currency Format */}
         {paymentValidation.canPay && !isFullyPaid && (
         <div>
           <label htmlFor="payment-amount" className="block text-sm font-medium text-gray-700 mb-2">
-            Monto del Pago <span className="text-gray-500 font-normal">(solo valores enteros)</span>
+            Monto del Pago
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
               <DollarSign className="h-5 w-5 text-gray-400" />
             </div>
             <Input
@@ -329,16 +356,22 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              placeholder={paymentType === 'full' && currentRemainingDebt ? formatCurrency(Math.floor(currentRemainingDebt)) : '0'}
+              value={displayAmount}
+              placeholder={paymentType === 'partial' ? '0' : formatCurrencyInput(Math.floor(currentRemainingDebt || 0).toString())}
               disabled={paymentType === 'full'}
-              className={`pl-10 ${errors.amount || amountError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'} ${
-                paymentType === 'full' ? 'bg-gray-100 cursor-not-allowed' : ''
+              className={`pl-10 pr-16 text-lg font-semibold ${errors.amount || amountError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'} ${
+                paymentType === 'full' ? 'bg-gray-100 cursor-not-allowed' : paymentType === 'partial' ? 'bg-blue-50 border-blue-200 focus:border-blue-400 focus:ring-blue-200' : ''
               }`}
               {...register('amount')}
               onChange={handleAmountInput}
               onWheel={handleAmountWheel}
               onKeyDown={handleAmountKeyDown}
             />
+            {paymentType === 'partial' && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <span className="text-sm font-medium text-blue-600">COP</span>
+              </div>
+            )}
           </div>
           {(errors.amount || amountError) && (
             <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
@@ -346,7 +379,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               {errors.amount?.message || amountError}
             </p>
           )}
-          {currentRemainingDebt !== undefined && currentRemainingDebt > 0 && !amountError && (
+          {currentRemainingDebt !== undefined && currentRemainingDebt > 0 && !amountError && paymentType === 'partial' && (
             <p className="mt-1 text-xs text-gray-500">
               Deuda restante: {formatCurrency(currentRemainingDebt)}
             </p>
@@ -360,13 +393,13 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Método de Pago
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {PAYMENT_METHODS.map((method) => {
               const isSelected = watchedPaymentMethod === method.value;
               return (
                 <Card
                   key={method.value}
-                  className={`p-4 cursor-pointer transition-all duration-200 ${
+                  className={`p-3 cursor-pointer transition-all duration-200 ${
                     isSelected
                       ? `ring-2 ring-blue-500 bg-blue-50 shadow-sm`
                       : 'hover:bg-gray-50 hover:shadow-sm border-gray-200'
@@ -374,7 +407,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                   onClick={() => handlePaymentMethodSelect(method.value)}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <span className="text-2xl">{method.icon}</span>
+                    <span className="text-xl">{method.icon}</span>
                     <span className={`text-sm font-medium ${isSelected ? 'text-blue-900' : 'text-gray-900'}`}>
                       {method.label}
                     </span>
@@ -397,12 +430,12 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
         {/* Payment Summary */}
         {watchedAmount && !amountError && parseFloat(watchedAmount) > 0 && (
-          <Card className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <h3 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5" />
+          <Card className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <h3 className="font-semibold text-green-900 mb-2 flex items-center gap-2 text-sm">
+              <CheckCircle2 className="w-4 h-4" />
               Resumen del Pago
             </h3>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1.5 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-green-700">Monto a pagar:</span>
                 <span className="font-bold text-green-900 text-lg">
@@ -437,7 +470,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
         {/* Error Display */}
         {createPaymentMutation.error && (
-          <Card className="p-4 bg-red-50 border-red-200">
+          <Card className="p-3 bg-red-50 border-red-200">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -453,7 +486,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-end gap-3 pt-3 border-t border-gray-200">
           <Button
             type="button"
             variant="ghost"

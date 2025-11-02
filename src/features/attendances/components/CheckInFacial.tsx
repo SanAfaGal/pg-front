@@ -182,7 +182,7 @@ export const CheckInFacial: React.FC = () => {
       <div className="space-y-6 w-full">
         {/* Camera Section - Only show when idle */}
         {showCamera && (
-          <Card className="p-6 md:p-8 shadow-lg border-2 border-blue-200 bg-gradient-to-br from-white to-blue-50 w-full">
+          <Card className="p-6 md:p-8 shadow-lg border-2 border-blue-200 bg-white w-full">
             <div className="space-y-6">
               
               <CameraCapture

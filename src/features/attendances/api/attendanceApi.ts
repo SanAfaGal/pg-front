@@ -15,6 +15,7 @@ const ATTENDANCE_ENDPOINTS = {
   checkIn: '/check-in',
   list: '/attendances',
   detail: (id: string) => `/attendances/${id}`,
+  clientAttendances: (clientId: string) => `/clients/${clientId}/attendances`,
   metrics: '/attendances/metrics',
   stats: '/attendances/stats',
 } as const;
@@ -61,5 +62,18 @@ export const attendanceApi = {
   // Get attendance statistics
   async getStats(): Promise<AttendanceStats> {
     return apiClient.get<AttendanceStats>(ATTENDANCE_ENDPOINTS.stats);
+  },
+
+  // Get client-specific attendances with pagination
+  async getClientAttendances(
+    clientId: string,
+    pagination: AttendancePagination = { limit: 50, offset: 0 }
+  ): Promise<Attendance[]> {
+    const params: Record<string, number> = {
+      limit: pagination.limit,
+      offset: pagination.offset,
+    };
+
+    return apiClient.get<Attendance[]>(ATTENDANCE_ENDPOINTS.clientAttendances(clientId), { params });
   },
 };

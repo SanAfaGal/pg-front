@@ -545,14 +545,6 @@ export const InventoryReports: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Reportes de Inventario</h1>
           <p className="text-gray-600">Análisis y estadísticas del inventario</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            leftIcon={<BarChart3 className="w-4 h-4" />}
-          >
-            Dashboard
-          </Button>
-        </div>
       </div>
 
       {/* Tabs Navigation */}

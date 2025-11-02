@@ -2,6 +2,7 @@
 export * from './types';
 export * from './api/attendanceApi';
 export * from './hooks/useAttendances';
+export { useClientAttendances } from './hooks/useAttendances';
 export * from './utils/cameraUtils';
 export * from './utils/imageUtils';
 export * from './utils/dateUtils';

@@ -58,7 +58,7 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
           </div>
           <p className="font-semibold text-gray-900 mb-2">No hay historial de suscripciones</p>
           <p className="text-gray-600 text-sm max-w-md">
-            Este cliente solo tiene la suscripción activa. El historial aparecerá aquí cuando haya más suscripciones.
+            El historial aparecerá aquí cuando haya más suscripciones.
           </p>
         </div>
       </Card>
