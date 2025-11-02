@@ -46,16 +46,12 @@
   }
 
   html {
-    @apply overflow-hidden;
+    @apply scroll-smooth;
   }
 
   body {
-    @apply text-neutral-800 bg-gray-50 font-sans leading-relaxed overflow-hidden;
+    @apply text-neutral-800 bg-neutral-50 font-sans leading-relaxed;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  }
-  
-  #root {
-    @apply overflow-hidden;
   }
 
   /* Tipografía jerárquica moderna */

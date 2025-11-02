@@ -2,60 +2,50 @@ import React, { useState, useCallback } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { CameraCapture } from './CameraCapture';
 import { CheckInResult } from './CheckInResult';
+import { CheckInProcessingStatus } from './CheckInProcessingStatus';
 import { useCheckIn } from '../hooks/useAttendances';
 import { CheckInResponse } from '../types';
-import { Camera, Loader2 } from 'lucide-react';
+import { Camera } from 'lucide-react';
 
-type ProcessingStage = 'idle' | 'capturing' | 'uploading' | 'processing' | 'verifying' | 'completed' | 'error';
+type ProcessingStage = 'idle' | 'uploading' | 'processing' | 'verifying' | 'finalizing' | 'completed';
 
 export const CheckInFacial: React.FC = () => {
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
-  const [stageMessage, setStageMessage] = useState<string>('');
 
-  const { checkIn, isLoading, reset } = useCheckIn();
-
-  const updateProcessingStage = useCallback((stage: ProcessingStage, message: string) => {
-    setProcessingStage(stage);
-    setStageMessage(message);
-  }, []);
+  const { checkIn, reset } = useCheckIn();
 
   const handleImageCaptured = async (base64Image: string) => {
-    setIsProcessing(true);
+    setProcessingStage('uploading');
     setCheckInResult(null);
     
     try {
-      // Stage 1: Capturing
-      updateProcessingStage('capturing', 'Imagen capturada correctamente');
+      // Stage 1: Uploading (simulated delay for better UX)
       await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Stage 2: Uploading
-      updateProcessingStage('uploading', 'Subiendo imagen al servidor...');
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Stage 3: Processing
-      updateProcessingStage('processing', 'Procesando reconocimiento facial...');
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Stage 4: Verifying
-      updateProcessingStage('verifying', 'Verificando suscripción y permisos...');
+      
+      // Stage 2: Processing facial recognition
+      setProcessingStage('processing');
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Stage 3: Verifying subscription
+      setProcessingStage('verifying');
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Stage 4: Finalizing
+      setProcessingStage('finalizing');
       
       // Make actual API call
       const result = await checkIn(base64Image);
       
       // Stage 5: Completed
-      updateProcessingStage('completed', 'Proceso completado');
-      await new Promise(resolve => setTimeout(resolve, 300));
+      setProcessingStage('completed');
+      await new Promise(resolve => setTimeout(resolve, 200));
       
       setCheckInResult(result);
     } catch (err: any) {
       console.error('Check-in failed:', err);
-      updateProcessingStage('error', 'Error en el proceso');
       
-      // Handle different types of errors
       let errorResult: CheckInResponse;
-      
       const errorType = err?.type;
       const status = err?.status;
       
@@ -157,104 +147,89 @@ export const CheckInFacial: React.FC = () => {
       }
       
       setCheckInResult(errorResult);
+      setProcessingStage('completed');
     } finally {
-      setIsProcessing(false);
-      setProcessingStage('idle');
-      setStageMessage('');
+      if (processingStage !== 'completed') {
+        setProcessingStage('completed');
+      }
     }
   };
 
   const handleRetry = useCallback(() => {
     setCheckInResult(null);
     setProcessingStage('idle');
-    setStageMessage('');
     reset();
   }, [reset]);
 
-  const handleError = (error: string) => {
+  const handleError = useCallback((error: string) => {
     console.error('Camera error:', error);
-  };
+  }, []);
+
+  // Determine what to show
+  const showCamera = processingStage === 'idle' && !checkInResult;
+  const showProcessing = processingStage !== 'idle' && processingStage !== 'completed' && !checkInResult;
+  const showResult = checkInResult !== null;
+  
+  const processingStageForStatus = showProcessing 
+    ? (processingStage === 'uploading' ? 'uploading' :
+       processingStage === 'processing' ? 'processing' :
+       processingStage === 'verifying' ? 'verifying' : 'finalizing')
+    : 'uploading';
 
   return (
-    <div className="space-y-4">
-      {/* Header - Compact */}
-      <div className="mb-3">
-        <h1 className="text-xl font-bold text-gray-900 mb-0.5 flex items-center gap-2">
-          <Camera className="w-5 h-5 text-blue-600" />
-          Check-in Facial
-        </h1>
-        <p className="text-xs text-gray-600">
-          Captura tu foto para hacer check-in automático
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Camera Section */}
-        <Card className="p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-            <Camera className="w-4 h-4 text-blue-600" />
-            Captura de Imagen
-          </h2>
-          <CameraCapture
-            onImageCaptured={handleImageCaptured}
-            onError={handleError}
-            isProcessing={isProcessing || isLoading}
-          />
-        </Card>
-
-        {/* Result & Status Section */}
-        <Card className="p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-gray-900 mb-3">Estado del Proceso</h2>
-          
-          {/* Processing Status - Always visible when processing */}
-          {isProcessing && processingStage !== 'idle' && (
-            <div className="mb-3">
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
-                  <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
-                  <span className="text-sm font-semibold text-blue-900">Procesando Check-in</span>
-                </div>
-                <div className="space-y-1.5">
-                  <p className="text-xs text-blue-800 font-medium">{stageMessage}</p>
-                  <div className="w-full bg-blue-200 rounded-full h-1.5">
-                    <div 
-                      className="bg-blue-600 h-1.5 rounded-full transition-all duration-500"
-                      style={{
-                        width: processingStage === 'capturing' ? '20%' :
-                               processingStage === 'uploading' ? '40%' :
-                               processingStage === 'processing' ? '60%' :
-                               processingStage === 'verifying' ? '80%' :
-                               processingStage === 'completed' ? '100%' : '0%'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
+    <div className="w-full">
+      {/* Single Column Flow */}
+      <div className="space-y-6 w-full">
+        {/* Camera Section - Only show when idle */}
+        {showCamera && (
+          <Card className="p-6 md:p-8 shadow-lg border-2 border-blue-200 bg-gradient-to-br from-white to-blue-50 w-full">
+            <div className="space-y-6">
+              
+              <CameraCapture
+                onImageCaptured={handleImageCaptured}
+                onError={handleError}
+                isProcessing={false}
+              />
             </div>
-          )}
+          </Card>
+        )}
 
-          {/* Final Result */}
-          <div className="overflow-hidden">
-            {checkInResult ? (
+        {/* Processing Status - Show during processing */}
+        {showProcessing && (
+          <CheckInProcessingStatus 
+            stage={processingStageForStatus}
+          />
+        )}
+
+        {/* Result Section - Show after completion */}
+        {showResult && checkInResult && (
+          <Card className="p-6 md:p-8 shadow-lg border-2 w-full">
+            <div className="space-y-4">
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6 text-center">
+                Resultado del Check-in
+              </h2>
               <CheckInResult
                 result={checkInResult}
                 onRetry={handleRetry}
               />
-            ) : !isProcessing ? (
-              <div className="flex items-center justify-center py-4">
-                <div className="text-center space-y-2">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
-                    <Camera className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-700 mb-0.5">Esperando Captura</p>
-                    <p className="text-xs text-gray-500">Captura tu foto para comenzar</p>
-                  </div>
-                </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Empty State - Only show if nothing else is displayed */}
+        {!showCamera && !showProcessing && !showResult && (
+          <Card className="p-12 text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+                <Camera className="w-10 h-10 text-gray-400" />
               </div>
-            ) : null}
-          </div>
-        </Card>
+              <div>
+                <p className="text-lg font-medium text-gray-700 mb-1">Listo para Check-in</p>
+                <p className="text-sm text-gray-500">Captura tu foto para comenzar el proceso</p>
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );

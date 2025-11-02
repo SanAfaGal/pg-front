@@ -13,9 +13,9 @@ export const AttendancePage: React.FC = () => {
       title="Asistencias"
       subtitle="Gestión de check-in y registros de asistencia"
     >
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
         <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
-          <TabsList className="w-full border-b border-gray-200 px-6 pt-4 bg-white">
+          <TabsList className="w-full border-b border-gray-200 px-6 pt-4">
             <TabsTrigger 
               value="checkin" 
               activeValue={activeTab} 
@@ -38,9 +38,11 @@ export const AttendancePage: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
-          <div className="p-4 overflow-hidden">
+          <div className={activeTab === 'checkin' ? 'p-0' : 'p-6'}>
             <TabsContent value="checkin" activeValue={activeTab}>
-              <CheckInFacial />
+              <div className="px-4 sm:px-6 lg:px-8 py-6">
+                <CheckInFacial />
+              </div>
             </TabsContent>
 
             <TabsContent value="history" activeValue={activeTab}>

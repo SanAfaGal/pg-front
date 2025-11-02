@@ -62,10 +62,6 @@ export const RecentAttendances: React.FC<RecentAttendancesProps> = ({
     return date.toLocaleDateString();
   };
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
-
   return (
     <Card className={`p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
@@ -81,7 +77,7 @@ export const RecentAttendances: React.FC<RecentAttendancesProps> = ({
           >
             {/* Avatar */}
             <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-              {getInitials(attendance.client_first_name, attendance.client_last_name)}
+              {getAttendanceInitials(attendance.client_first_name, attendance.client_last_name)}
             </div>
             
             {/* Client Info */}

@@ -27,6 +27,13 @@ export {
 
 // Utils
 export { clientHelpers } from './utils/clientHelpers';
+export { formatPhoneNumber, unformatPhoneNumber } from './utils/phoneFormatter';
+
+// Constants
+export * from './constants/clientConstants';
+
+// Query Keys
+export { clientKeys } from './hooks/useClients';
 
 // Components (to be added later)
 // export { ClientList } from './components/ClientList';

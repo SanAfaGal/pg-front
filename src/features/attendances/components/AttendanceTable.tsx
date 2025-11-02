@@ -1,65 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, memo } from 'react';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { AttendanceWithClient } from '../types';
+import { formatAttendanceDateTime } from '../utils/dateUtils';
+import { 
+  getAttendanceInitials, 
+  sortAttendances, 
+  getAttendanceStatus 
+} from '../utils/attendanceHelpers';
+import { ArrowUpDown, Download, User, Calendar, Clock } from 'lucide-react';
 
 interface AttendanceTableProps {
   attendances: AttendanceWithClient[];
   isLoading: boolean;
-  onViewDetails: (attendance: AttendanceWithClient) => void;
   onExport?: () => void;
   className?: string;
 }
 
-export const AttendanceTable: React.FC<AttendanceTableProps> = ({
+type SortableField = 'client_first_name' | 'client_dni_number' | 'check_in';
+
+export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
   attendances,
   isLoading,
-  onViewDetails,
   onExport,
   className = '',
 }) => {
-  const [sortField, setSortField] = useState<keyof AttendanceWithClient>('check_in');
+  const [sortField, setSortField] = useState<SortableField>('check_in');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  const handleSort = (field: keyof AttendanceWithClient) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
+  const handleSort = useCallback((field: SortableField) => {
+    setSortField((currentField) => {
+      if (currentField === field) {
+        setSortDirection((currentDir) => currentDir === 'asc' ? 'desc' : 'asc');
+      } else {
+        setSortDirection('desc');
+      }
+      return field;
+    });
+  }, []);
+
+  const sortedAttendances = useMemo(() => {
+    if (isLoading || !attendances || attendances.length === 0) {
+      return [];
     }
-  };
+    return sortAttendances(attendances, sortField, sortDirection);
+  }, [attendances, sortField, sortDirection, isLoading]);
 
-  const sortedAttendances = [...attendances].sort((a, b) => {
-    const aValue = a[sortField];
-    const bValue = b[sortField];
-    
-    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+  const renderSortIcon = useCallback((field: SortableField) => {
+    if (sortField !== field) return null;
+    return (
+      <ArrowUpDown 
+        className={`w-4 h-4 transition-transform ${sortDirection === 'asc' ? 'rotate-180' : ''}`} 
+      />
+    );
+  }, [sortField, sortDirection]);
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString(),
-      time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-  };
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
-
+  // Loading State
   if (isLoading) {
     return (
       <Card className={`p-6 ${className}`}>
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div className="animate-pulse space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="h-6 bg-gray-200 rounded w-48"></div>
+            <div className="h-10 bg-gray-200 rounded w-32"></div>
+          </div>
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+              <div key={i} className="h-16 bg-gray-100 rounded-lg"></div>
             ))}
           </div>
         </div>
@@ -67,135 +75,141 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
     );
   }
 
+  // Empty State
   if (!attendances || attendances.length === 0) {
     return (
       <Card className={`p-6 ${className}`}>
-        <div className="text-center py-12">
-          <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron asistencias</h3>
-          <p className="text-gray-500">Intenta ajustar tus filtros o revisa más tarde.</p>
+        <div className="text-center py-16">
+          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-10 h-10 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No se encontraron asistencias
+          </h3>
+          <p className="text-sm text-gray-500 max-w-sm mx-auto">
+            Intenta ajustar tus filtros o revisa más tarde para ver los registros de asistencia.
+          </p>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className={`p-6 ${className}`}>
+    <Card className={`p-6 shadow-sm border border-gray-200 ${className}`}>
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Registros de Asistencia ({attendances.length})
-        </h3>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <Calendar className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Registros de Asistencia
+            </h3>
+            <p className="text-sm text-gray-500">
+              {attendances.length} {attendances.length === 1 ? 'registro' : 'registros'}
+            </p>
+          </div>
+        </div>
         {onExport && (
           <Button
             variant="outline"
+            size="sm"
             onClick={onExport}
-            className="flex items-center space-x-2"
+            leftIcon={<Download className="w-4 h-4" />}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span>Exportar</span>
+            Exportar
           </Button>
         )}
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Table */}
+      <div className="overflow-x-auto -mx-6 px-6">
         <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
+          <thead>
+            <tr className="bg-gray-50/50">
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors rounded-l-lg"
                 onClick={() => handleSort('client_first_name')}
               >
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center gap-2">
+                  <User className="w-3.5 h-3.5 text-gray-500" />
                   <span>Cliente</span>
-                  {sortField === 'client_first_name' && (
-                    <svg className={`w-4 h-4 ${sortDirection === 'asc' ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                  )}
+                  {renderSortIcon('client_first_name')}
                 </div>
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort('client_dni_number')}
               >
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center gap-2">
                   <span>DNI</span>
-                  {sortField === 'client_dni_number' && (
-                    <svg className={`w-4 h-4 ${sortDirection === 'asc' ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                  )}
+                  {renderSortIcon('client_dni_number')}
                 </div>
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort('check_in')}
               >
-                <div className="flex items-center space-x-1">
-                  <span>Hora de Check-in</span>
-                  {sortField === 'check_in' && (
-                    <svg className={`w-4 h-4 ${sortDirection === 'asc' ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                  )}
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Check-in</span>
+                  {renderSortIcon('check_in')}
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider rounded-r-lg">
                 Estado
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-gray-100">
             {sortedAttendances.map((attendance) => {
-              const { date, time } = formatDateTime(attendance.check_in);
-              const isRecent = new Date(attendance.check_in) > new Date(Date.now() - 24 * 60 * 60 * 1000);
+              const { date, time } = formatAttendanceDateTime(attendance.check_in);
+              const status = getAttendanceStatus(attendance.check_in);
               
               return (
-                <tr key={attendance.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm mr-3">
-                        {getInitials(attendance.client_first_name, attendance.client_last_name)}
+                <tr 
+                  key={attendance.id} 
+                  className="hover:bg-blue-50/50 transition-colors group"
+                >
+                  {/* Client Info */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                        {getAttendanceInitials(attendance.client_first_name, attendance.client_last_name)}
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 truncate">
                           {attendance.client_first_name} {attendance.client_last_name}
                         </div>
-                        <div className="text-sm text-gray-500">ID: {attendance.id.slice(0, 8)}...</div>
+                        <div className="text-xs text-gray-500 font-mono">
+                          {attendance.id.slice(0, 8)}...
+                        </div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {attendance.client_dni_number}
+
+                  {/* DNI */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900 font-mono">
+                      {attendance.client_dni_number}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{date}</div>
-                    <div className="text-sm text-gray-500">{time}</div>
+
+                  {/* Check-in DateTime */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{date}</div>
+                    <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                      <Clock className="w-3 h-3" />
+                      {time}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge
-                      variant={isRecent ? 'success' : 'default'}
-                      className={isRecent ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-                    >
-                      {isRecent ? 'Reciente' : 'Completado'}
+
+                  {/* Status */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <Badge variant={status.variant} size="sm">
+                      {status.label}
                     </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onViewDetails(attendance)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Ver Detalles
-                    </Button>
                   </td>
                 </tr>
               );
@@ -205,4 +219,6 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = ({
       </div>
     </Card>
   );
-};
+});
+
+AttendanceTable.displayName = 'AttendanceTable';

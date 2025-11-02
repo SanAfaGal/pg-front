@@ -130,7 +130,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const handleAmountInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value;
     
-    // Remove any non-numeric characters
+    // Remove any non-numeric characters except the minus sign at the start
     value = value.replace(/[^\d]/g, '');
     
     // Update the input value

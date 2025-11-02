@@ -1,4 +1,5 @@
 import { type ClientFormData, type Client } from '../features/clients';
+import { extractCountryCode } from './phoneParser';
 
 export interface ClientApiPayload {
   dni_type: string;
@@ -44,7 +45,13 @@ export const mapClientToApi = (client: ClientFormData): ClientApiPayload => {
   return payload;
 };
 
-export const mapClientFromApi = (apiClient: Client): ClientFormData => {
+export const mapClientFromApi = (apiClient: Client): ClientFormData & { phoneCode?: string; phoneCodeSecondary?: string } => {
+  // Extract country codes from phone numbers
+  const primaryPhone = extractCountryCode(apiClient.phone || '');
+  const secondaryPhone = apiClient.alternative_phone 
+    ? extractCountryCode(apiClient.alternative_phone)
+    : { code: '+57', number: '' };
+
   return {
     document_type: apiClient.dni_type as any,
     document_number: apiClient.dni_number,
@@ -54,10 +61,13 @@ export const mapClientFromApi = (apiClient: Client): ClientFormData => {
     second_surname: apiClient.second_last_name || '',
     birth_date: apiClient.birth_date,
     gender: apiClient.gender,
-    phone_primary: apiClient.phone,
-    phone_secondary: apiClient.alternative_phone || '',
+    phone_primary: primaryPhone.number, // Only the number, without country code
+    phone_secondary: secondaryPhone.number, // Only the number, without country code
     email: '',
     address: apiClient.address || '',
     photo_url: '',
+    // Store phone codes separately for form use
+    phoneCode: primaryPhone.code,
+    phoneCodeSecondary: secondaryPhone.code,
   };
 };

@@ -1,3 +1,4 @@
+import { memo, useMemo, useCallback } from 'react';
 import { Modal } from '../ui/Modal';
 import { ClientFormOptimized } from './ClientFormOptimized';
 import { type Client } from '../../features/clients';
@@ -11,29 +12,46 @@ interface ClientFormModalProps {
   onSuccess?: () => void;
 }
 
-export const ClientFormModal = ({
+/**
+ * Modal wrapper for client form
+ * Handles both create and edit modes
+ */
+export const ClientFormModal = memo(({
   isOpen,
   onClose,
   client,
   onSaved,
   onSuccess,
 }: ClientFormModalProps) => {
-  const handleSuccess = () => {
+  // Memoize initial form data
+  const initialData = useMemo(() => 
+    client ? mapClientFromApi(client) : undefined,
+    [client]
+  );
+
+  // Handle form success with proper callback chain
+  const handleSuccess = useCallback(() => {
     if (onSuccess) {
       onSuccess();
     } else if (onSaved) {
       onSaved();
       onClose();
+    } else {
+      onClose();
     }
-  };
+  }, [onSuccess, onSaved, onClose]);
 
-  const initialData = client ? mapClientFromApi(client) : undefined;
+  // Memoize modal title
+  const modalTitle = useMemo(() => 
+    client ? 'Editar Cliente' : 'Registrar Nuevo Cliente',
+    [client]
+  );
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={client ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}
+      title={modalTitle}
       size="xl"
     >
       <ClientFormOptimized
@@ -44,4 +62,6 @@ export const ClientFormModal = ({
       />
     </Modal>
   );
-};
+});
+
+ClientFormModal.displayName = 'ClientFormModal';

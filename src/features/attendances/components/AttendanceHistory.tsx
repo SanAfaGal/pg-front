@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import { AttendanceFilters } from './AttendanceFilters';
 import { AttendanceTable } from './AttendanceTable';
-import { AttendanceDetail } from './AttendanceDetail';
 import { useAttendanceHistory } from '../hooks/useAttendances';
-import { AttendanceWithClient } from '../types';
+import { Button } from '../../../components/ui/Button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const AttendanceHistory: React.FC = () => {
-  const [selectedAttendance, setSelectedAttendance] = useState<AttendanceWithClient | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
   const {
     attendances,
     isLoading,
@@ -19,17 +16,7 @@ export const AttendanceHistory: React.FC = () => {
     clearFilters,
   } = useAttendanceHistory();
 
-  const handleViewDetails = (attendance: AttendanceWithClient) => {
-    setSelectedAttendance(attendance);
-    setIsDetailModalOpen(true);
-  };
-
-  const handleCloseDetail = () => {
-    setSelectedAttendance(null);
-    setIsDetailModalOpen(false);
-  };
-
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     // Create CSV content
     const headers = ['ID', 'Nombre del Cliente', 'DNI', 'Fecha de Check-in', 'Hora de Check-in'];
     const csvContent = [
@@ -53,65 +40,68 @@ export const AttendanceHistory: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, [attendances]);
+
+  const handlePreviousPage = useCallback(() => {
+    updatePagination({ offset: Math.max(0, pagination.offset - pagination.limit) });
+  }, [pagination.offset, pagination.limit, updatePagination]);
+
+  const handleNextPage = useCallback(() => {
+    updatePagination({ offset: pagination.offset + pagination.limit });
+  }, [pagination.offset, pagination.limit, updatePagination]);
+
+  const canGoPrevious = pagination.offset > 0;
+  const canGoNext = attendances.length >= pagination.limit;
+  const startItem = pagination.offset + 1;
+  const endItem = Math.min(pagination.offset + pagination.limit, pagination.offset + attendances.length);
+  const totalItems = pagination.offset + attendances.length;
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Historial de Asistencias</h1>
-        <p className="text-gray-600">
-          Ve y gestiona todos los registros de asistencia con opciones de filtrado avanzadas.
-        </p>
-      </div>
-
-      {/* Filters */}
-      <div className="mb-8">
-        <AttendanceFilters
-          filters={filters}
-          onFiltersChange={updateFilters}
-          onClearFilters={clearFilters}
-        />
-      </div>
+    <div className="space-y-6">
+      {/* Filters - Always Visible */}
+      <AttendanceFilters
+        filters={filters}
+        onFiltersChange={updateFilters}
+        onClearFilters={clearFilters}
+      />
 
       {/* Table */}
       <AttendanceTable
         attendances={attendances}
         isLoading={isLoading}
-        onViewDetails={handleViewDetails}
         onExport={handleExport}
       />
 
       {/* Pagination */}
       {attendances.length > 0 && (
-        <div className="mt-8 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Mostrando {pagination.offset + 1} a {Math.min(pagination.offset + pagination.limit, attendances.length)} de {attendances.length} resultados
+        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+          <div className="text-sm text-gray-600">
+            Mostrando <span className="font-semibold text-gray-900">{startItem}</span> a{' '}
+            <span className="font-semibold text-gray-900">{endItem}</span> de{' '}
+            <span className="font-semibold text-gray-900">{totalItems}</span> resultados
           </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => updatePagination({ offset: Math.max(0, pagination.offset - pagination.limit) })}
-              disabled={pagination.offset === 0}
-              className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousPage}
+              disabled={!canGoPrevious}
+              leftIcon={<ChevronLeft className="w-4 h-4" />}
             >
               Anterior
-            </button>
-            <button
-              onClick={() => updatePagination({ offset: pagination.offset + pagination.limit })}
-              disabled={attendances.length < pagination.limit}
-              className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={!canGoNext}
+              rightIcon={<ChevronRight className="w-4 h-4" />}
             >
               Siguiente
-            </button>
+            </Button>
           </div>
         </div>
       )}
-
-      {/* Detail Modal */}
-      <AttendanceDetail
-        attendance={selectedAttendance}
-        isOpen={isDetailModalOpen}
-        onClose={handleCloseDetail}
-      />
     </div>
   );
 };

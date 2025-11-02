@@ -4,10 +4,15 @@ export * from './api/attendanceApi';
 export * from './hooks/useAttendances';
 export * from './utils/cameraUtils';
 export * from './utils/imageUtils';
+export * from './utils/dateUtils';
+export * from './utils/filterHelpers';
+export * from './utils/attendanceHelpers';
+export * from './constants/attendanceConstants';
 
 // Components
 export { AttendancePage } from './components/AttendancePage';
 export { CheckInFacial } from './components/CheckInFacial';
+export { CheckInProcessingStatus } from './components/CheckInProcessingStatus';
 export { AttendanceDashboard } from './components/AttendanceDashboard';
 export { AttendanceHistory } from './components/AttendanceHistory';
 export { CameraCapture } from './components/CameraCapture';

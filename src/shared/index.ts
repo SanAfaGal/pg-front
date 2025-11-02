@@ -34,6 +34,7 @@ export type {
 // Hooks
 export { useToast, type Toast } from './hooks/useToast';
 export { useCache } from './hooks/useCache';
+export { useDebounce } from './hooks/useDebounce';
 
 // Components (to be added later)
 // export { Button } from './components/Button';

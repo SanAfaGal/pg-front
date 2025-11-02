@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   User,
   FileText,
@@ -9,35 +9,30 @@ import {
   MapPin,
   Save,
   X,
-  Loader2,
   AlertTriangle,
+  CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { type ClientFormData } from '../../features/clients';
 import { clientHelpers, clientsApi } from '../../features/clients';
+import {
+  COUNTRY_CODES,
+  DOCUMENT_TYPES,
+  GENDER_OPTIONS,
+  VALIDATION_RULES,
+  DOCUMENT_VALIDATION,
+  NOTIFICATION_MESSAGES,
+  VALIDATION_DEBOUNCE_MS,
+} from '../../features/clients/constants/clientConstants';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { Card } from '../ui/Card';
 import { useCreateClient, useUpdateClient } from '../../features/clients';
 import { useToast } from '../../shared';
-
-const countryCodes = [
-  { code: '+57', country: 'Colombia', flag: '🇨🇴' },
-  { code: '+58', country: 'Venezuela', flag: '🇻🇪' },
-  { code: '+1', country: 'Estados Unidos', flag: '🇺🇸' }
-];
-
-const documentTypes = [
-  { value: 'CC', label: 'Cédula de Ciudadanía' },
-  { value: 'TI', label: 'Tarjeta de Identidad' },
-  { value: 'CE', label: 'Cédula de Extranjería' },
-  { value: 'PP', label: 'Pasaporte' }
-];
-
-const genderOptions = [
-  { value: 'male', label: 'Masculino' },
-  { value: 'female', label: 'Femenino' },
-  { value: 'other', label: 'Otro' }
-];
-
+import { useDebounce } from '../../shared';
+import { formatPhoneNumber, unformatPhoneNumber } from '../../features/clients/utils/phoneFormatter';
+import { extractCountryCode } from '../../utils/phoneParser';
 
 interface ClientFormProps {
   initialData?: ClientFormData;
@@ -46,15 +41,72 @@ interface ClientFormProps {
   onCancel: () => void;
 }
 
-export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel }: ClientFormProps) => {
+/**
+ * Modern, visually enhanced client form component
+ * Handles creation and editing of client information with improved UX
+ */
+export const ClientFormOptimized = memo(({ 
+  initialData, 
+  clientId, 
+  onSuccess, 
+  onCancel 
+}: ClientFormProps) => {
   const [documentError, setDocumentError] = useState('');
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
-  const [phoneCode, setPhoneCode] = useState('+57');
-  const [phoneCodeSecondary, setPhoneCodeSecondary] = useState('+57');
+  
+  // Extract phone codes from initial data if available
+  const initialPhoneCode = useMemo(() => {
+    if (initialData && 'phoneCode' in initialData && initialData.phoneCode) {
+      return initialData.phoneCode;
+    }
+    return '+57';
+  }, [initialData]);
+
+  const initialPhoneCodeSecondary = useMemo(() => {
+    if (initialData && 'phoneCodeSecondary' in initialData && initialData.phoneCodeSecondary) {
+      return initialData.phoneCodeSecondary;
+    }
+    return '+57';
+  }, [initialData]);
+
+  const [phoneCode, setPhoneCode] = useState(initialPhoneCode);
+  const [phoneCodeSecondary, setPhoneCodeSecondary] = useState(initialPhoneCodeSecondary);
+
+  // Update phone codes when initialData changes (e.g., when editing)
+  useEffect(() => {
+    if (initialData) {
+      if ('phoneCode' in initialData && initialData.phoneCode) {
+        setPhoneCode(initialData.phoneCode);
+      }
+      if ('phoneCodeSecondary' in initialData && initialData.phoneCodeSecondary) {
+        setPhoneCodeSecondary(initialData.phoneCodeSecondary);
+      }
+    }
+  }, [initialData]);
 
   const { showToast } = useToast();
   const createClientMutation = useCreateClient();
   const updateClientMutation = useUpdateClient();
+
+  // Prepare initial form values - remove country codes from phone numbers
+  const initialFormValues = useMemo(() => {
+    if (!initialData) return {};
+    
+    const formData: any = { ...initialData };
+    
+    // Extract country codes and store only the numbers
+    if (initialData.phone_primary) {
+      const { number } = extractCountryCode(initialData.phone_primary);
+      formData.phone_primary = number;
+    }
+    
+    if (initialData.phone_secondary) {
+      const { number } = extractCountryCode(initialData.phone_secondary);
+      formData.phone_secondary = number;
+    }
+    
+    return formData;
+  }, [initialData]);
 
   const {
     register,
@@ -63,13 +115,14 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
     setValue,
     formState: { errors },
   } = useForm<any>({
-    defaultValues: initialData || {},
-    mode: 'onBlur', // Validate on blur for better UX
+    defaultValues: initialFormValues,
+    mode: 'onBlur',
   });
 
   const birthDate = watch('birth_date');
   const documentNumber = watch('document_number');
 
+  // Calculate age from birth date
   useEffect(() => {
     if (birthDate) {
       const age = clientHelpers.calculateAge(birthDate);
@@ -79,41 +132,47 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
     }
   }, [birthDate]);
 
+  // Debounced document validation
+  const debouncedDocumentNumber = useDebounce(documentNumber?.trim() || '', VALIDATION_DEBOUNCE_MS);
+
   useEffect(() => {
     const checkDocument = async () => {
-      if (documentNumber && documentNumber.length >= 5) {
+      if (debouncedDocumentNumber && debouncedDocumentNumber.length >= DOCUMENT_VALIDATION.minLength) {
         try {
           const exists = await clientsApi.checkDocumentExists(
-            String(documentNumber),
+            debouncedDocumentNumber,
             clientId
           );
           if (exists) {
-            setDocumentError('Este número de documento ya está registrado');
+            setDocumentError(NOTIFICATION_MESSAGES.documentExists);
           } else {
             setDocumentError('');
           }
         } catch (error) {
           console.error('Error checking document:', error);
         }
+      } else {
+        setDocumentError('');
       }
     };
 
-    const timeoutId = setTimeout(checkDocument, 500);
-    return () => clearTimeout(timeoutId);
-  }, [documentNumber, clientId]);
+    checkDocument();
+  }, [debouncedDocumentNumber, clientId]);
 
-  const onSubmit = async (data: any) => {
+  // Format phone number with country code for API
+  const formatPhone = useCallback((phone: string, countryCode: string) => {
+    if (!phone) return '';
+    const cleaned = unformatPhoneNumber(phone);
+    return `${countryCode}${cleaned}`;
+  }, []);
+
+  /**
+   * Handles form submission
+   */
+  const onSubmit = useCallback(async (data: any) => {
     if (documentError) {
       return;
     }
-
-    // Map form data to API format
-    const formatPhone = (phone: string, countryCode: string) => {
-      if (!phone) return '';
-      // Remove spaces and concatenate with country code
-      const cleaned = phone.replace(/\s+/g, '');
-      return `${countryCode}${cleaned}`;
-    };
 
     const apiData: ClientFormData = {
       dni_type: data.document_type,
@@ -127,10 +186,8 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
       birth_date: data.birth_date,
       gender: data.gender,
       address: data.address || undefined,
-      is_active: true
+      is_active: true,
     };
-
-    console.log('Sending data to API:', apiData);
 
     try {
       if (clientId) {
@@ -138,430 +195,603 @@ export const ClientFormOptimized = ({ initialData, clientId, onSuccess, onCancel
         showToast({
           type: 'success',
           title: 'Éxito',
-          message: 'Cliente actualizado exitosamente'
+          message: NOTIFICATION_MESSAGES.updateSuccess,
         });
       } else {
         await createClientMutation.mutateAsync(apiData as any);
         showToast({
           type: 'success',
           title: 'Éxito',
-          message: 'Cliente registrado exitosamente'
+          message: NOTIFICATION_MESSAGES.createSuccess,
         });
       }
       onSuccess();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error al guardar cliente. Por favor, verifica que todos los datos sean correctos.';
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : (clientId ? NOTIFICATION_MESSAGES.updateError : NOTIFICATION_MESSAGES.createError);
       showToast({
         type: 'error',
         title: 'Error',
-        message: errorMessage
+        message: errorMessage,
       });
     }
-  };
+  }, [documentError, formatPhone, phoneCode, phoneCodeSecondary, clientId, updateClientMutation, createClientMutation, showToast, onSuccess]);
+
+  // Memoized validation states
+  const isDocumentValid = useMemo(() => 
+    documentNumber && 
+    documentNumber.length >= DOCUMENT_VALIDATION.minLength && 
+    !errors.document_number && 
+    !documentError,
+    [documentNumber, errors.document_number, documentError]
+  );
+
+  const isPhoneValid = useMemo(() => {
+    const phone = watch('phone_primary');
+    if (!phone) return false;
+    const cleaned = unformatPhoneNumber(phone);
+    return cleaned.length >= VALIDATION_RULES.phone.minLength && !errors.phone_primary;
+  }, [watch('phone_primary'), errors.phone_primary]);
 
   const isSubmitting = createClientMutation.isPending || updateClientMutation.isPending;
+  const hasErrors = Object.keys(errors).length > 0 || !!documentError;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 pb-3 border-b-2 border-powergym-blue-medium/20">
-          <div className="p-2.5 bg-powergym-blue-medium bg-opacity-10 rounded-xl">
-            <User className="w-5 h-5 text-powergym-blue-medium" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">Información Personal</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tipo de documento *
-            </label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                {...register('document_type', {
-                  required: 'El tipo de documento es obligatorio',
-                })}
-                className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all hover:border-gray-400 ${
-                  errors.document_type ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Seleccionar</option>
-                {documentTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
+      {/* Personal Information Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <Card className="p-8 bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 border-2 border-blue-100/50 shadow-lg">
+          <div className="flex items-center gap-4 mb-8 pb-6 border-b-2 border-gradient-to-r from-blue-500 to-purple-500">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <User className="w-7 h-7 text-white" />
             </div>
-            {errors.document_type && (
-              <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-                <span>⚠️</span> {String(errors.document_type.message)}
-              </p>
-            )}
+            <div>
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Información Personal
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">Datos básicos de identificación</p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Número de documento *
-            </label>
-            <Input
-              {...register('document_number', {
-                required: 'El número de documento es obligatorio',
-                minLength: {
-                  value: 5,
-                  message: 'El documento debe tener al menos 5 caracteres'
-                },
-                maxLength: {
-                  value: 20,
-                  message: 'El documento no puede exceder 20 caracteres'
-                },
-                pattern: {
-                  value: /^\d+$/,
-                  message: 'Solo se permiten dígitos'
-                }
-              })}
-              placeholder="Ej: 1234567890"
-              error={(errors.document_number?.message as string) || documentError}
-            />
-            {documentNumber && !errors.document_number && !documentError && documentNumber.length >= 5 && (
-              <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
-                <span>✓</span> Documento válido
-              </p>
-            )}
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Document Type */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600" />
+                Tipo de documento *
+              </label>
+              <div className="relative group">
+                <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors z-10" />
+                <select
+                  {...register('document_type', {
+                    required: 'El tipo de documento es obligatorio',
+                  })}
+                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white hover:border-gray-400 ${
+                    errors.document_type ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
+                  }`}
+                >
+                  <option value="">Seleccionar tipo...</option>
+                  {DOCUMENT_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {errors.document_type && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-red-600 flex items-center gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  {String(errors.document_type.message)}
+                </motion.p>
+              )}
+            </motion.div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Primer nombre *
-            </label>
-            <Input
-              {...register('first_name', {
-                required: 'El primer nombre es obligatorio',
-                minLength: {
-                  value: 2,
-                  message: 'El nombre debe tener al menos 2 caracteres'
-                },
-                maxLength: {
-                  value: 50,
-                  message: 'El nombre no puede exceder 50 caracteres'
-                },
-                pattern: {
-                  value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-                  message: 'Solo se permiten letras y espacios'
-                }
-              })}
-              placeholder="Ej: Juan"
-              error={errors.first_name?.message as string}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Segundo nombre
-            </label>
-            <Input 
-              {...register('second_name', {
-                minLength: {
-                  value: 2,
-                  message: 'El nombre debe tener al menos 2 caracteres'
-                },
-                maxLength: {
-                  value: 50,
-                  message: 'El nombre no puede exceder 50 caracteres'
-                },
-                pattern: {
-                  value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-                  message: 'Solo se permiten letras y espacios'
-                }
-              })}
-              placeholder="Ej: Carlos" 
-              error={errors.second_name?.message as string}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Primer apellido *
-            </label>
-            <Input
-              {...register('first_surname', {
-                required: 'El primer apellido es obligatorio',
-                minLength: {
-                  value: 2,
-                  message: 'El apellido debe tener al menos 2 caracteres'
-                },
-                maxLength: {
-                  value: 50,
-                  message: 'El apellido no puede exceder 50 caracteres'
-                },
-                pattern: {
-                  value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-                  message: 'Solo se permiten letras y espacios'
-                }
-              })}
-              placeholder="Ej: Pérez"
-              error={errors.first_surname?.message as string}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Segundo apellido
-            </label>
-            <Input 
-              {...register('second_surname', {
-                minLength: {
-                  value: 2,
-                  message: 'El apellido debe tener al menos 2 caracteres'
-                },
-                maxLength: {
-                  value: 50,
-                  message: 'El apellido no puede exceder 50 caracteres'
-                },
-                pattern: {
-                  value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
-                  message: 'Solo se permiten letras y espacios'
-                }
-              })}
-              placeholder="Ej: García" 
-              error={errors.second_surname?.message as string}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de nacimiento *
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            {/* Document Number */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Número de documento *
+              </label>
               <Input
-                type="date"
-                {...register('birth_date', {
-                  required: 'La fecha de nacimiento es obligatoria',
-                  validate: {
-                    notFuture: (value) => {
-                      const selectedDate = new Date(value);
-                      const today = new Date();
-                      return selectedDate <= today || 'La fecha no puede ser futura';
-                    },
-                    minimumAge: (value) => {
-                      const age = clientHelpers.calculateAge(value);
-                      return age >= 10 || 'La edad mínima es 10 años';
-                    },
-                    maximumAge: (value) => {
-                      const age = clientHelpers.calculateAge(value);
-                      return age <= 120 || 'Por favor verifica la fecha de nacimiento';
-                    }
-                  }
-                })}
-                className="pl-10"
-                max={new Date().toISOString().split('T')[0]}
-                error={errors.birth_date?.message as string}
-              />
-            </div>
-            {calculatedAge !== null && !errors.birth_date && (
-              <p className="mt-1 text-sm text-powergym-blue-medium font-medium flex items-center gap-1">
-                <span>👤</span> Edad: {calculatedAge} años
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Género *
-            </label>
-            <div className="relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                {...register('gender', {
-                  required: 'El género es obligatorio',
-                })}
-                className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all hover:border-gray-400 ${
-                  errors.gender ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option value="">Seleccionar</option>
-                {genderOptions.map((gender) => (
-                  <option key={gender.value} value={gender.value}>
-                    {gender.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {errors.gender && (
-              <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-                <span>⚠️</span> {String(errors.gender.message)}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 pb-3 border-b-2 border-powergym-blue-medium/20">
-          <div className="p-2.5 bg-powergym-blue-medium bg-opacity-10 rounded-xl">
-            <Phone className="w-5 h-5 text-powergym-blue-medium" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">Información de Contacto</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Teléfono principal *
-            </label>
-            <div className="flex gap-2">
-              <select
-                value={phoneCode}
-                onChange={(e) => setPhoneCode(e.target.value)}
-                className="w-32 px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none"
-              >
-                {countryCodes.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.flag} {c.code}
-                  </option>
-                ))}
-              </select>
-              <Input
-                type="tel"
-                {...register('phone_primary', {
-                  required: 'El teléfono principal es obligatorio',
-                  validate: {
-                    validFormat: (value) => {
-                      const phoneNumber = value.replace(/\s/g, '');
-                      return /^\d{7,15}$/.test(phoneNumber) || 'El teléfono debe tener entre 7 y 15 dígitos';
-                    }
-                  }
-                })}
-                placeholder="300 1234567"
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^\d\s]/g, '');
-                  setValue('phone_primary', value, { shouldValidate: true });
-                }}
-                error={errors.phone_primary?.message as string}
-              />
-            </div>
-            {!errors.phone_primary && watch('phone_primary') && watch('phone_primary').replace(/\s/g, '').length >= 7 && (
-              <p className="mt-1 text-sm text-green-600 flex items-center gap-1">
-                <span>✓</span> Teléfono válido
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Teléfono alternativo
-            </label>
-            <div className="flex gap-2">
-              <select
-                value={phoneCodeSecondary}
-                onChange={(e) => setPhoneCodeSecondary(e.target.value)}
-                className="w-32 px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none"
-              >
-                {countryCodes.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.flag} {c.code}
-                  </option>
-                ))}
-              </select>
-              <Input
-                type="tel"
-                {...register('phone_secondary', {
-                  validate: {
-                    validFormat: (value) => {
-                      if (!value) return true; // Optional field
-                      const phoneNumber = value.replace(/\s/g, '');
-                      return /^\d{7,15}$/.test(phoneNumber) || 'El teléfono debe tener entre 7 y 15 dígitos';
-                    }
-                  }
-                })}
-                placeholder="300 1234567"
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^\d\s]/g, '');
-                  setValue('phone_secondary', value, { shouldValidate: true });
-                }}
-                error={errors.phone_secondary?.message as string}
-              />
-            </div>
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Dirección completa
-            </label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-              <textarea
-                {...register('address', {
+                {...register('document_number', {
+                  required: 'El número de documento es obligatorio',
                   minLength: {
-                    value: 10,
-                    message: 'La dirección debe tener al menos 10 caracteres'
+                    value: VALIDATION_RULES.document.minLength,
+                    message: `El documento debe tener al menos ${VALIDATION_RULES.document.minLength} caracteres`,
                   },
                   maxLength: {
-                    value: 200,
-                    message: 'La dirección no puede exceder 200 caracteres'
-                  }
+                    value: VALIDATION_RULES.document.maxLength,
+                    message: `El documento no puede exceder ${VALIDATION_RULES.document.maxLength} caracteres`,
+                  },
+                  pattern: {
+                    value: VALIDATION_RULES.document.pattern,
+                    message: 'Solo se permiten dígitos',
+                  },
                 })}
-                placeholder="Ej: Calle 123 #45-67, Bogotá"
-                rows={3}
-                className={`w-full pl-10 pr-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-powergym-blue-medium focus:border-transparent outline-none transition-all resize-none hover:border-gray-400 ${
-                  errors.address ? 'border-red-500' : 'border-gray-300'
-                }`}
+                placeholder="Ej: 1234567890"
+                error={(errors.document_number?.message as string) || documentError}
               />
-            </div>
-            {errors.address && (
-              <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-                <span>⚠️</span> {String(errors.address.message)}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
+              <AnimatePresence>
+                {isDocumentValid && (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="mt-2 text-sm text-green-600 flex items-center gap-2 font-medium"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {NOTIFICATION_MESSAGES.documentValid}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </motion.div>
 
-      {Object.keys(errors).length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            {/* First Name */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Primer nombre *
+              </label>
+              <Input
+                {...register('first_name', {
+                  required: 'El primer nombre es obligatorio',
+                  minLength: {
+                    value: VALIDATION_RULES.name.minLength,
+                    message: `El nombre debe tener al menos ${VALIDATION_RULES.name.minLength} caracteres`,
+                  },
+                  maxLength: {
+                    value: VALIDATION_RULES.name.maxLength,
+                    message: `El nombre no puede exceder ${VALIDATION_RULES.name.maxLength} caracteres`,
+                  },
+                  pattern: {
+                    value: VALIDATION_RULES.name.pattern,
+                    message: 'Solo se permiten letras y espacios',
+                  },
+                })}
+                placeholder="Ej: Juan"
+                error={errors.first_name?.message as string}
+              />
+            </motion.div>
+
+            {/* Second Name */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Segundo nombre
+              </label>
+              <Input 
+                {...register('second_name', {
+                  minLength: {
+                    value: VALIDATION_RULES.name.minLength,
+                    message: `El nombre debe tener al menos ${VALIDATION_RULES.name.minLength} caracteres`,
+                  },
+                  maxLength: {
+                    value: VALIDATION_RULES.name.maxLength,
+                    message: `El nombre no puede exceder ${VALIDATION_RULES.name.maxLength} caracteres`,
+                  },
+                  pattern: {
+                    value: VALIDATION_RULES.name.pattern,
+                    message: 'Solo se permiten letras y espacios',
+                  },
+                })}
+                placeholder="Ej: Carlos" 
+                error={errors.second_name?.message as string}
+              />
+            </motion.div>
+
+            {/* First Surname */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Primer apellido *
+              </label>
+              <Input
+                {...register('first_surname', {
+                  required: 'El primer apellido es obligatorio',
+                  minLength: {
+                    value: VALIDATION_RULES.name.minLength,
+                    message: `El apellido debe tener al menos ${VALIDATION_RULES.name.minLength} caracteres`,
+                  },
+                  maxLength: {
+                    value: VALIDATION_RULES.name.maxLength,
+                    message: `El apellido no puede exceder ${VALIDATION_RULES.name.maxLength} caracteres`,
+                  },
+                  pattern: {
+                    value: VALIDATION_RULES.name.pattern,
+                    message: 'Solo se permiten letras y espacios',
+                  },
+                })}
+                placeholder="Ej: Pérez"
+                error={errors.first_surname?.message as string}
+              />
+            </motion.div>
+
+            {/* Second Surname */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Segundo apellido
+              </label>
+              <Input 
+                {...register('second_surname', {
+                  minLength: {
+                    value: VALIDATION_RULES.name.minLength,
+                    message: `El apellido debe tener al menos ${VALIDATION_RULES.name.minLength} caracteres`,
+                  },
+                  maxLength: {
+                    value: VALIDATION_RULES.name.maxLength,
+                    message: `El apellido no puede exceder ${VALIDATION_RULES.name.maxLength} caracteres`,
+                  },
+                  pattern: {
+                    value: VALIDATION_RULES.name.pattern,
+                    message: 'Solo se permiten letras y espacios',
+                  },
+                })}
+                placeholder="Ej: García" 
+                error={errors.second_surname?.message as string}
+              />
+            </motion.div>
+
+            {/* Birth Date */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                Fecha de nacimiento *
+              </label>
+              <div className="relative group">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors z-10" />
+                <Input
+                  type="date"
+                  {...register('birth_date', {
+                    required: 'La fecha de nacimiento es obligatoria',
+                    validate: {
+                      notFuture: (value) => {
+                        const selectedDate = new Date(value);
+                        const today = new Date();
+                        return selectedDate <= today || 'La fecha no puede ser futura';
+                      },
+                      minimumAge: (value) => {
+                        const age = clientHelpers.calculateAge(value);
+                        return age >= VALIDATION_RULES.age.minimum || `La edad mínima es ${VALIDATION_RULES.age.minimum} años`;
+                      },
+                      maximumAge: (value) => {
+                        const age = clientHelpers.calculateAge(value);
+                        return age <= VALIDATION_RULES.age.maximum || 'Por favor verifica la fecha de nacimiento';
+                      },
+                    },
+                  })}
+                  className="pl-12"
+                  max={new Date().toISOString().split('T')[0]}
+                  error={errors.birth_date?.message as string}
+                />
+              </div>
+              <AnimatePresence>
+                {calculatedAge !== null && !errors.birth_date && (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="mt-2 text-sm text-blue-600 font-semibold flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg w-fit"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Edad: {calculatedAge} años
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Gender */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                Género *
+              </label>
+              <div className="relative group">
+                <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors z-10" />
+                <select
+                  {...register('gender', {
+                    required: 'El género es obligatorio',
+                  })}
+                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white hover:border-gray-400 ${
+                    errors.gender ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
+                  }`}
+                >
+                  <option value="">Seleccionar género...</option>
+                  {GENDER_OPTIONS.map((gender) => (
+                    <option key={gender.value} value={gender.value}>
+                      {gender.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {errors.gender && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-red-600 flex items-center gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  {String(errors.gender.message)}
+                </motion.p>
+              )}
+            </motion.div>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Contact Information Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+      >
+        <Card className="p-8 bg-gradient-to-br from-white via-green-50/30 to-emerald-50/20 border-2 border-green-100/50 shadow-lg">
+          <div className="flex items-center gap-4 mb-8 pb-6 border-b-2 border-gradient-to-r from-green-500 to-emerald-500">
+            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+              <Phone className="w-7 h-7 text-white" />
+            </div>
             <div>
-              <h4 className="text-sm font-semibold text-red-800 mb-2">
-                Por favor corrige los siguientes errores:
-              </h4>
-              <ul className="text-sm text-red-700 space-y-1 list-disc list-inside">
-                {Object.entries(errors).map(([field, error]: [string, any]) => (
-                  <li key={field}>
-                    {error.message}
-                  </li>
-                ))}
-              </ul>
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Información de Contacto
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">Datos para comunicación</p>
             </div>
           </div>
-        </div>
-      )}
 
-      <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Primary Phone */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Teléfono principal *
+              </label>
+              <div className="flex gap-3">
+                <select
+                  value={phoneCode}
+                  onChange={(e) => setPhoneCode(e.target.value)}
+                  className="w-24 px-3 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all bg-white hover:border-gray-400 font-medium text-center"
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  type="tel"
+                  {...register('phone_primary', {
+                    required: 'El teléfono principal es obligatorio',
+                    validate: {
+                      validFormat: (value) => {
+                        const phoneNumber = unformatPhoneNumber(value);
+                        return VALIDATION_RULES.phone.pattern.test(phoneNumber) || 
+                          `El teléfono debe tener entre ${VALIDATION_RULES.phone.minLength} y ${VALIDATION_RULES.phone.maxLength} dígitos`;
+                      },
+                    },
+                  })}
+                  placeholder="300 123 4567"
+                  value={formatPhoneNumber(watch('phone_primary') || '')}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/[^\d]/g, '');
+                    const formatted = formatPhoneNumber(rawValue);
+                    setValue('phone_primary', formatted, { shouldValidate: true });
+                  }}
+                  error={errors.phone_primary?.message as string}
+                  className="flex-1"
+                />
+              </div>
+              <AnimatePresence>
+                {isPhoneValid && (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="mt-2 text-sm text-green-600 flex items-center gap-2 font-medium"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Teléfono válido
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
+            {/* Secondary Phone */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.35 }}
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                Teléfono alternativo
+              </label>
+              <div className="flex gap-3">
+                <select
+                  value={phoneCodeSecondary}
+                  onChange={(e) => setPhoneCodeSecondary(e.target.value)}
+                  className="w-24 px-3 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all bg-white hover:border-gray-400 font-medium text-center"
+                >
+                  {COUNTRY_CODES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  type="tel"
+                  {...register('phone_secondary', {
+                    validate: {
+                      validFormat: (value) => {
+                        if (!value) return true;
+                        const phoneNumber = unformatPhoneNumber(value);
+                        return VALIDATION_RULES.phone.pattern.test(phoneNumber) || 
+                          `El teléfono debe tener entre ${VALIDATION_RULES.phone.minLength} y ${VALIDATION_RULES.phone.maxLength} dígitos`;
+                      },
+                    },
+                  })}
+                  placeholder="300 123 4567"
+                  value={formatPhoneNumber(watch('phone_secondary') || '')}
+                  onChange={(e) => {
+                    const rawValue = e.target.value.replace(/[^\d]/g, '');
+                    const formatted = formatPhoneNumber(rawValue);
+                    setValue('phone_secondary', formatted, { shouldValidate: true });
+                  }}
+                  error={errors.phone_secondary?.message as string}
+                  className="flex-1"
+                />
+              </div>
+            </motion.div>
+
+            {/* Address */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="md:col-span-2"
+            >
+              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-green-600" />
+                Dirección completa
+              </label>
+              <div className="relative group">
+                <MapPin className="absolute left-4 top-4 w-5 h-5 text-gray-400 group-focus-within:text-green-600 transition-colors z-10" />
+                <textarea
+                  {...register('address', {
+                    minLength: {
+                      value: VALIDATION_RULES.address.minLength,
+                      message: `La dirección debe tener al menos ${VALIDATION_RULES.address.minLength} caracteres`,
+                    },
+                    maxLength: {
+                      value: VALIDATION_RULES.address.maxLength,
+                      message: `La dirección no puede exceder ${VALIDATION_RULES.address.maxLength} caracteres`,
+                    },
+                  })}
+                  placeholder="Ej: Calle 123 #45-67, Bogotá"
+                  rows={3}
+                  className={`w-full pl-12 pr-4 py-3.5 border-2 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all resize-none hover:border-gray-400 bg-white ${
+                    errors.address ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200'
+                  }`}
+                />
+              </div>
+              {errors.address && (
+                <motion.p
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 text-sm text-red-600 flex items-center gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  {String(errors.address.message)}
+                </motion.p>
+              )}
+            </motion.div>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Error Summary */}
+      <AnimatePresence>
+        {hasErrors && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-2xl p-6 shadow-lg"
+          >
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-base font-bold text-red-900 mb-3">
+                  Por favor corrige los siguientes errores:
+                </h4>
+                <ul className="text-sm text-red-800 space-y-2">
+                  {Object.entries(errors).map(([field, error]: [string, any]) => (
+                    <li key={field} className="flex items-start gap-2">
+                      <span className="text-red-600 mt-0.5">•</span>
+                      <span>{error.message}</span>
+                    </li>
+                  ))}
+                  {documentError && (
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-600 mt-0.5">•</span>
+                      <span>{documentError}</span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Form Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="flex items-center justify-end gap-4 pt-6 border-t-2 border-gray-200"
+      >
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onCancel} 
+          disabled={isSubmitting}
+          className="px-8"
+        >
           <X className="w-5 h-5 mr-2" />
           Cancelar
         </Button>
         <Button
           type="submit"
-          className="bg-powergym-red hover:bg-[#c50202] shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isSubmitting || !!documentError || Object.keys(errors).length > 0}
+          className="bg-gradient-to-r from-powergym-red to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed px-8"
+          disabled={isSubmitting || hasErrors}
+          isLoading={isSubmitting}
+          leftIcon={!isSubmitting ? <Save className="w-5 h-5" /> : undefined}
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Guardando...
-            </>
-          ) : (
-            <>
-              <Save className="w-5 h-5 mr-2" />
-              {clientId ? 'Actualizar Cliente' : 'Guardar Cliente'}
-            </>
-          )}
+          {clientId ? 'Actualizar Cliente' : 'Guardar Cliente'}
         </Button>
-      </div>
+      </motion.div>
     </form>
   );
-};
+});
+
+ClientFormOptimized.displayName = 'ClientFormOptimized';

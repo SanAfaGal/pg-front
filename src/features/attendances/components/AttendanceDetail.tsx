@@ -3,6 +3,8 @@ import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { AttendanceWithClient } from '../types';
+import { formatAttendanceDateTimeFull } from '../utils/dateUtils';
+import { getAttendanceInitials } from '../utils/attendanceHelpers';
 
 interface AttendanceDetailProps {
   attendance: AttendanceWithClient | null;
@@ -18,25 +20,7 @@ export const AttendanceDetail: React.FC<AttendanceDetailProps> = ({
   if (!attendance) return null;
 
   const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }),
-      time: date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      }),
-    };
-  };
-
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    return formatAttendanceDateTimeFull(dateString);
   };
 
   const { date, time } = formatDateTime(attendance.check_in);
@@ -49,7 +33,7 @@ export const AttendanceDetail: React.FC<AttendanceDetailProps> = ({
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Client Information</h3>
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-xl">
-              {getInitials(attendance.client_first_name, attendance.client_last_name)}
+              {getAttendanceInitials(attendance.client_first_name, attendance.client_last_name)}
             </div>
             <div>
               <h4 className="text-xl font-semibold text-gray-900">
