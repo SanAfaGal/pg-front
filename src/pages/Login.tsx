@@ -1,19 +1,26 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Toast } from '../components/ui/Toast';
-import { API_CONFIG, API_ENDPOINTS } from '../shared';
+import { API_CONFIG, API_ENDPOINTS, tokenManager } from '../shared';
+import { useAuth } from '../features/auth';
 
-interface LoginProps {
-  onLoginSuccess: (accessToken: string, refreshToken: string) => void;
-}
-
-export const Login = ({ onLoginSuccess }: LoginProps) => {
+export const Login = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({ username: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const validate = (): boolean => {
     const newErrors = { username: '', password: '' };
@@ -69,9 +76,10 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
       const result = await response.json();
 
       if (result.access_token && result.refresh_token) {
+        tokenManager.setTokens(result.access_token, result.refresh_token);
         setToast({ message: 'Inicio de sesión exitoso', type: 'success' });
         setTimeout(() => {
-          onLoginSuccess(result.access_token, result.refresh_token);
+          navigate('/dashboard');
         }, 500);
       } else {
         setToast({ message: 'Error al iniciar sesión', type: 'error' });
@@ -83,6 +91,23 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking auth status
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-lg font-semibold text-powergym-charcoal">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render login if already authenticated (redirect will happen)
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -106,6 +131,15 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
             </div>
             <h1 className="text-3xl font-bold text-powergym-charcoal mb-2">PowerGym AG</h1>
             <p className="text-gray-500">Sistema de Gestión</p>
+          </div>
+
+          <div className="mb-6 text-center">
+            <p className="text-sm text-neutral-600">
+              ¿No tienes cuenta?{' '}
+              <Link to="/" className="text-primary-600 hover:text-primary-700 font-medium">
+                Volver al inicio
+              </Link>
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6 mt-8">

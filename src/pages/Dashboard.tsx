@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Users, TrendingUp, DollarSign, UserPlus, Activity, Calendar } from 'lucide-react';
 import { Sidebar } from '../components/dashboard/Sidebar';
 import { StatsCard } from '../components/dashboard/StatsCard';
@@ -14,10 +15,6 @@ import { PlansDebug } from '../components/debug/PlansDebug';
 import { SimplePlansTest } from '../components/debug/SimplePlansTest';
 import { ConfigDebug } from '../components/debug/ConfigDebug';
 import { AuthDebug } from '../components/debug/AuthDebug';
-
-interface DashboardProps {
-  onLogout: () => void;
-}
 
 interface DashboardStats {
   totalClients: number;
@@ -38,8 +35,10 @@ interface DashboardData {
   recentActivities: RecentActivity[];
 }
 
-export const Dashboard = ({ onLogout }: DashboardProps) => {
+export const Dashboard = () => {
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
   
   // Initialize activeMenuItem from URL hash or localStorage
   const getInitialMenuItem = (): string => {
@@ -54,7 +53,11 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   };
 
   const [activeMenuItem, setActiveMenuItem] = useState(getInitialMenuItem);
-  const { user } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   // Update URL hash and localStorage when menu item changes
   useEffect(() => {
@@ -257,7 +260,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
         onClose={() => setIsSidebarOpen(false)}
         activeItem={activeMenuItem}
         onItemClick={setActiveMenuItem}
-        onLogout={onLogout}
+        onLogout={handleLogout}
         user={user}
       />
 
