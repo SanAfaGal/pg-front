@@ -1,13 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, TrendingUp, DollarSign, UserPlus, Activity, Calendar } from 'lucide-react';
+import { format, parse } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { RefreshCw, Calendar, Filter } from 'lucide-react';
 import { Sidebar } from '../components/dashboard/Sidebar';
-import { StatsCard } from '../components/dashboard/StatsCard';
-import { Card } from '../components/ui/Card';
-import { Avatar } from '../components/ui/Avatar';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
+import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { apiClient, API_ENDPOINTS, useCache } from '../shared';
 import { useAuth } from '../features/auth';
+import { useToast } from '../shared';
+import { useDashboard, useRecentActivities } from '../features/dashboard/hooks/useDashboard';
+import { PeriodType } from '../features/dashboard/types';
+import { PERIOD_TYPES, NOTIFICATION_MESSAGES, PERIOD_OPTIONS } from '../features/dashboard/constants/dashboardConstants';
+import { PeriodSelector } from '../features/dashboard/components/PeriodSelector';
+import { DashboardStatsGrid } from '../features/dashboard/components/DashboardStatsGrid';
+import { ClientStatsCard } from '../features/dashboard/components/ClientStatsCard';
+import { FinancialStatsCard } from '../features/dashboard/components/FinancialStatsCard';
+import { AttendanceStatsCard } from '../features/dashboard/components/AttendanceStatsCard';
+import { InventoryStatsCard } from '../features/dashboard/components/InventoryStatsCard';
+import { RecentActivitiesList } from '../features/dashboard/components/RecentActivitiesList';
+import { AlertsPanel } from '../features/dashboard/components/AlertsPanel';
+import { DailyFinancialSummary } from '../features/dashboard/components/DailyFinancialSummary';
 import { Clients } from './Clients';
 import Attendances from './Attendances';
 import { InventoryPage } from '../features/inventory';
@@ -16,43 +29,58 @@ import { SimplePlansTest } from '../components/debug/SimplePlansTest';
 import { ConfigDebug } from '../components/debug/ConfigDebug';
 import { AuthDebug } from '../components/debug/AuthDebug';
 
-interface DashboardStats {
-  totalClients: number;
-  activeMembers: number;
-  monthlyRevenue: number;
-  newSignups: number;
-}
-
-interface RecentActivity {
-  id: number;
-  client: string;
-  action: string;
-  time: string;
-}
-
-interface DashboardData {
-  stats: DashboardStats;
-  recentActivities: RecentActivity[];
-}
-
 export const Dashboard = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { showToast } = useToast();
   
   // Initialize activeMenuItem from URL hash or localStorage
   const getInitialMenuItem = (): string => {
-    // First check URL hash
-    const hash = window.location.hash.substring(1); // Remove the '#'
+    const hash = window.location.hash.substring(1);
     if (hash) {
       return hash;
     }
-    // Then check localStorage
     const saved = localStorage.getItem('dashboard_active_menu');
     return saved || 'home';
   };
 
   const [activeMenuItem, setActiveMenuItem] = useState(getInitialMenuItem);
+  
+  // Period and date state for dashboard
+  const [period, setPeriod] = useState<PeriodType>(PERIOD_TYPES.MONTH);
+  const [date, setDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+
+  // Dashboard data query
+  const {
+    data: dashboardData,
+    isLoading: isDashboardLoading,
+    isRefetching: isDashboardRefetching,
+    error: dashboardError,
+    refetch: refetchDashboard,
+  } = useDashboard({ period, date });
+
+  // Recent activities query (separate endpoint)
+  const {
+    data: recentActivities = [],
+    isLoading: isActivitiesLoading,
+    error: activitiesError,
+  } = useRecentActivities();
+
+  // Handle errors
+  useEffect(() => {
+    if (dashboardError) {
+      const errorMessage = 
+        (dashboardError as any)?.response?.data?.detail || 
+        (dashboardError as any)?.message || 
+        NOTIFICATION_MESSAGES.loadError;
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: errorMessage,
+      });
+    }
+  }, [dashboardError, showToast]);
 
   const handleLogout = async () => {
     await logout();
@@ -78,24 +106,21 @@ export const Dashboard = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const { data: dashboardData, loading: isDashboardLoading } = useCache<DashboardData>(
-    async () => {
-      return await apiClient.get<DashboardData>(API_ENDPOINTS.statistics);
-    },
-    {
-      key: 'dashboard_data',
-      ttl: 5 * 60 * 1000,
-    }
-  );
-
-  const stats = dashboardData?.stats || {
-    totalClients: 0,
-    activeMembers: 0,
-    monthlyRevenue: 0,
-    newSignups: 0,
+  // Helper to format period label
+  const getPeriodLabel = (): string => {
+    const option = PERIOD_OPTIONS.find(opt => opt.value === period);
+    return option?.label || period;
   };
 
-  const recentActivities = dashboardData?.recentActivities || [];
+  // Helper to format date label
+  const getDateLabel = (): string => {
+    try {
+      const dateObj = parse(date, 'yyyy-MM-dd', new Date());
+      return format(dateObj, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
+    } catch {
+      return date;
+    }
+  };
 
   const renderContent = () => {
     if (activeMenuItem === 'clients') {
@@ -128,126 +153,123 @@ export const Dashboard = () => {
 
     if (activeMenuItem === 'home') {
       if (isDashboardLoading) {
+        return <LoadingSpinner size="lg" text="Cargando datos del dashboard..." />;
+      }
+
+      if (dashboardError || !dashboardData) {
         return (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="text-center">
-              <div className="w-12 h-12 border-4 border-powergym-red border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-500">Cargando datos...</p>
+              <p className="text-lg font-semibold text-gray-700 mb-2">
+                Error al cargar el dashboard
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                {(dashboardError as any)?.message || 'No se pudieron cargar los datos'}
+              </p>
+              <button
+                onClick={() => refetchDashboard()}
+                className="px-4 py-2 bg-powergym-red text-white rounded-lg hover:bg-powergym-red-dark transition-colors"
+              >
+                Reintentar
+              </button>
             </div>
           </div>
         );
       }
 
+      const handleRefresh = async () => {
+        try {
+          await refetchDashboard();
+          showToast({
+            type: 'success',
+            title: 'Dashboard actualizado',
+            message: 'Los datos del dashboard se han actualizado correctamente',
+          });
+        } catch (error) {
+          showToast({
+            type: 'error',
+            title: 'Error',
+            message: 'No se pudo actualizar el dashboard',
+          });
+        }
+      };
+
       return (
-        <div className="space-y-8">
-          <div className="animate-fade-in">
-            <h2 className="text-3xl font-bold text-powergym-charcoal mb-2">
-              Dashboard
-            </h2>
-            <p className="text-gray-500">
-              Resumen general del sistema PowerGym AG
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-              <StatsCard
-                title="Total Miembros"
-                value={stats.totalClients}
-                icon={Users}
-                color="blue"
-                trend="+12%"
-                trendUp={true}
-              />
-              <StatsCard
-                title="Miembros Activos"
-                value={stats.activeMembers}
-                icon={TrendingUp}
-                color="green"
-                trend="+8%"
-                trendUp={true}
-              />
-              <StatsCard
-                title="Ingresos del Mes"
-                value={`$${stats.monthlyRevenue.toLocaleString()}`}
-                icon={DollarSign}
-                color="red"
-                trend="+15%"
-                trendUp={true}
-              />
-              <StatsCard
-                title="Nuevos este Mes"
-                value={stats.newSignups}
-                icon={UserPlus}
-                color="amber"
-                trend="+23%"
-                trendUp={true}
-              />
+        <div className="space-y-6">
+          {/* Header with Period Selector and Refresh Button */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <p className="text-sm text-gray-600">
+                  Mostrando datos de: <span className="font-semibold text-powergym-charcoal">{getPeriodLabel()}</span>
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <p className="text-sm text-gray-600">
+                  Fecha de referencia: <span className="font-semibold text-powergym-charcoal">{getDateLabel()}</span>
+                </p>
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold text-powergym-charcoal flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-powergym-red" />
-                    Actividad Reciente
-                  </h3>
-                  <Badge variant="info">Hoy</Badge>
-                </div>
-                <div className="space-y-4">
-                  {recentActivities.map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors"
-                    >
-                      <Avatar name={activity.client} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-powergym-charcoal truncate">
-                          {activity.client}
-                        </p>
-                        <p className="text-sm text-gray-600">{activity.action}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {activity.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <h3 className="text-xl font-bold text-powergym-charcoal mb-6 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-powergym-blue-medium" />
-                  Clases de Hoy
-                </h3>
-                <div className="space-y-4">
-                  <div className="p-4 bg-gradient-to-br from-powergym-red/10 to-powergym-blue-medium/10 rounded-xl border border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-powergym-charcoal">Yoga Matutino</h4>
-                      <Badge variant="success">8:00 AM</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">12 participantes</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-green-50 rounded-xl border border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-powergym-charcoal">Spinning</h4>
-                      <Badge variant="warning">10:00 AM</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">20 participantes</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-gray-100">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-powergym-charcoal">CrossFit</h4>
-                      <Badge variant="info">6:00 PM</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">15 participantes</p>
-                  </div>
-                </div>
-              </Card>
+            <div className="flex items-center gap-3">
+              <PeriodSelector
+                period={period}
+                date={date}
+                onPeriodChange={setPeriod}
+                onDateChange={setDate}
+              />
+              <Button
+                variant="secondary"
+                size="md"
+                onClick={handleRefresh}
+                disabled={isDashboardRefetching}
+                leftIcon={
+                  <RefreshCw
+                    className={`w-4 h-4 ${isDashboardRefetching ? 'animate-spin' : ''}`}
+                  />
+                }
+                className="whitespace-nowrap"
+              >
+                {isDashboardRefetching ? 'Actualizando...' : 'Actualizar'}
+              </Button>
             </div>
           </div>
-        );
+
+          {/* Compact Alerts */}
+          {dashboardData.alerts.length > 0 && (
+            <AlertsPanel alerts={dashboardData.alerts} />
+          )}
+
+          {/* Daily Financial Summary - Always shown for the filtered date/period */}
+          <DailyFinancialSummary 
+            stats={dashboardData.financial_stats} 
+            period={period}
+            startDate={dashboardData.period.start_date}
+            endDate={dashboardData.period.end_date}
+          />
+
+          {/* Main Stats Grid */}
+          <DashboardStatsGrid data={dashboardData} period={period} />
+
+          {/* Detailed Stats Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ClientStatsCard stats={dashboardData.client_stats} period={period} />
+            <AttendanceStatsCard stats={dashboardData.attendance_stats} period={period} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <InventoryStatsCard stats={dashboardData.inventory_stats} />
+            <FinancialStatsCard stats={dashboardData.financial_stats} period={period} />
+          </div>
+
+          {/* Recent Activities */}
+          <RecentActivitiesList 
+            activities={recentActivities}
+            isLoading={isActivitiesLoading}
+          />
+        </div>
+      );
     }
 
     return null;
