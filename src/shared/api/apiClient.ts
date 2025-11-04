@@ -6,7 +6,6 @@ export const API_CONFIG = {
   baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1',
   timeout: 30000, // 30 seconds
   uploadTimeout: 60000, // 60 seconds
-  useMockApi: import.meta.env.VITE_USE_MOCK_API === 'true',
   disableAuth: import.meta.env.VITE_DISABLE_AUTH === 'true',
 } as const;
 

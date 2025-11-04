@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:ui:port": "vitest --ui --api.port 3001"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -38,6 +39,7 @@
     "@types/react": "^18.3.26",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^5.1.0",
+    "@vitest/ui": "^4.0.7",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^5.2.0",

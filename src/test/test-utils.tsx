@@ -49,6 +49,29 @@ const customRender = (
   options?: Omit<RenderOptions, 'wrapper'>
 ) => render(ui, { wrapper: AllTheProviders, ...options });
 
+/**
+ * Create a QueryClient with custom data for testing
+ */
+export const createTestQueryClientWithData = <T,>(queryKey: string[], data: T) => {
+  const client = createTestQueryClient();
+  client.setQueryData(queryKey, data);
+  return client;
+};
+
+/**
+ * Wait for a query to resolve
+ */
+export const waitForQuery = async (callback: () => boolean, timeout = 5000) => {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeout) {
+    if (callback()) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error('Query did not resolve within timeout');
+};
+
 // Re-export everything from @testing-library/react
 export * from '@testing-library/react';
 
