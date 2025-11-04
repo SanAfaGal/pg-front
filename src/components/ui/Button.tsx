@@ -80,7 +80,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        {...(props as any)}
+        {...props}
       >
         {isLoading ? (
           <div className="flex items-center justify-center gap-2">

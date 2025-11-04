@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Subscription, SubscriptionStatus } from '../api/types';
 import { Badge } from '../../../components/ui/Badge';
+import type { BadgeProps } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
@@ -27,7 +28,11 @@ export const SubscriptionStatusBadge: React.FC<SubscriptionStatusBadgeProps> = m
   
   return (
     <Badge
-      variant={statusInfo.color as any}
+      variant={statusInfo.color === 'green' ? 'success' : 
+               statusInfo.color === 'red' ? 'error' : 
+               statusInfo.color === 'yellow' ? 'warning' : 
+               statusInfo.color === 'blue' ? 'info' : 
+               'default'}
       className={`${statusInfo.bgColor} ${statusInfo.textColor} ${className}`}
     >
       <span className="mr-1">{statusInfo.icon}</span>

@@ -1,9 +1,8 @@
 /**
  * Mock implementation of API Client for testing
  */
-import { vi } from 'vitest';
 
-export interface MockApiResponse<T = any> {
+export interface MockApiResponse<T = unknown> {
   data: T;
   success?: boolean;
   message?: string;
@@ -12,7 +11,7 @@ export interface MockApiResponse<T = any> {
 class MockApiClient {
   private mockResponses: Map<string, MockApiResponse> = new Map();
   private mockErrors: Map<string, Error> = new Map();
-  private callLog: Array<{ method: string; url: string; data?: any }> = [];
+  private callLog: Array<{ method: string; url: string; data?: unknown }> = [];
 
   /**
    * Set a mock response for a specific endpoint and method
@@ -33,7 +32,7 @@ class MockApiClient {
   /**
    * Get call log
    */
-  getCallLog(): Array<{ method: string; url: string; data?: any }> {
+  getCallLog(): Array<{ method: string; url: string; data?: unknown }> {
     return this.callLog;
   }
 
@@ -70,7 +69,7 @@ class MockApiClient {
     return {} as T;
   }
 
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
     const key = `POST:${endpoint}`;
     this.callLog.push({ method: 'POST', url: endpoint, data });
 
@@ -84,10 +83,10 @@ class MockApiClient {
     }
 
     // Default mock response
-    return { id: 'mock-id', ...data } as T;
+    return { id: 'mock-id', ...(data as Record<string, unknown>) } as T;
   }
 
-  async put<T>(endpoint: string, data?: any): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
     const key = `PUT:${endpoint}`;
     this.callLog.push({ method: 'PUT', url: endpoint, data });
 
@@ -100,10 +99,10 @@ class MockApiClient {
       return response.data as T;
     }
 
-    return { ...data } as T;
+    return { ...(data as Record<string, unknown>) } as T;
   }
 
-  async patch<T>(endpoint: string, data?: any): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
     const key = `PATCH:${endpoint}`;
     this.callLog.push({ method: 'PATCH', url: endpoint, data });
 
@@ -116,7 +115,7 @@ class MockApiClient {
       return response.data as T;
     }
 
-    return { ...data } as T;
+    return { ...(data as Record<string, unknown>) } as T;
   }
 
   async delete<T>(endpoint: string): Promise<T> {

@@ -156,7 +156,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
   // Handle input to only allow integers and format as currency
   const handleAmountInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value;
+    const value = e.target.value;
     
     // Remove all non-numeric characters
     const numericValue = value.replace(/\D/g, '');
@@ -503,8 +503,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               <div className="flex-1">
                 <p className="font-medium text-red-900 mb-1">Error al registrar el pago</p>
                 <p className="text-red-800 text-sm">
-                  {(createPaymentMutation.error as any)?.response?.data?.detail || 
-                   (createPaymentMutation.error as any)?.message || 
+                  {(createPaymentMutation.error as Error & { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
+                   (createPaymentMutation.error as Error & { message?: string })?.message || 
                    NOTIFICATION_MESSAGES.error.generic}
                 </p>
               </div>

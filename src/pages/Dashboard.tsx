@@ -64,8 +64,8 @@ export const Dashboard = () => {
   useEffect(() => {
     if (dashboardError) {
       const errorMessage = 
-        (dashboardError as any)?.response?.data?.detail || 
-        (dashboardError as any)?.message || 
+        (dashboardError as Error & { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
+        (dashboardError as Error & { message?: string })?.message || 
         NOTIFICATION_MESSAGES.loadError;
       showToast({
         type: 'error',
@@ -141,7 +141,7 @@ export const Dashboard = () => {
                 Error al cargar el dashboard
               </p>
               <p className="text-sm text-gray-500 mb-4">
-                {(dashboardError as any)?.message || 'No se pudieron cargar los datos'}
+                {(dashboardError as Error & { message?: string })?.message || 'No se pudieron cargar los datos'}
               </p>
               <button
                 onClick={() => refetchDashboard()}
@@ -162,7 +162,7 @@ export const Dashboard = () => {
             title: 'Dashboard actualizado',
             message: 'Los datos del dashboard se han actualizado correctamente',
           });
-        } catch (error) {
+        } catch {
           showToast({
             type: 'error',
             title: 'Error',

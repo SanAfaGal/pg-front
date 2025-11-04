@@ -150,7 +150,7 @@ const ProductAlertList: React.FC<ProductAlertListProps> = ({
                   {product.max_stock && ` | Máx: ${product.max_stock}`}
                 </p>
               </div>
-              <StockBadge status={product.stock_status as any} />
+              <StockBadge status={product.stock_status} />
             </div>
           ))}
           {products.length > 5 && (

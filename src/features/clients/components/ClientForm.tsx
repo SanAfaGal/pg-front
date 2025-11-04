@@ -218,14 +218,14 @@ export const ClientForm = memo(({
 
     try {
       if (clientId) {
-        await updateClientMutation.mutateAsync({ id: clientId, data: apiData } as any);
+        await updateClientMutation.mutateAsync({ id: clientId, data: apiData });
         showToast({
           type: 'success',
           title: 'Éxito',
           message: NOTIFICATION_MESSAGES.updateSuccess,
         });
       } else {
-        await createClientMutation.mutateAsync(apiData as any);
+        await createClientMutation.mutateAsync(apiData);
         showToast({
           type: 'success',
           title: 'Éxito',
@@ -254,12 +254,12 @@ export const ClientForm = memo(({
     [documentNumber, errors.document_number, documentError]
   );
 
+  const watchedPhonePrimary = watch('phone_primary');
   const isPhoneValid = useMemo(() => {
-    const phone = watch('phone_primary');
-    if (!phone) return false;
-    const cleaned = unformatPhoneNumber(phone);
+    if (!watchedPhonePrimary) return false;
+    const cleaned = unformatPhoneNumber(watchedPhonePrimary);
     return cleaned.length >= VALIDATION_RULES.phone.minLength && !errors.phone_primary;
-  }, [watch('phone_primary'), errors.phone_primary]);
+  }, [watchedPhonePrimary, errors.phone_primary]);
 
   const isSubmitting = createClientMutation.isPending || updateClientMutation.isPending;
   const hasErrors = Object.keys(errors).length > 0 || !!documentError;
@@ -771,10 +771,10 @@ export const ClientForm = memo(({
                   Por favor corrige los siguientes errores:
                 </h4>
                 <ul className="text-sm text-red-800 space-y-2">
-                  {Object.entries(errors).map(([field, error]: [string, any]) => (
+                  {Object.entries(errors).map(([field, error]) => (
                     <li key={field} className="flex items-start gap-2">
                       <span className="text-red-600 mt-0.5">•</span>
-                      <span>{error.message}</span>
+                      <span>{(error as { message?: string })?.message || String(error)}</span>
                     </li>
                   ))}
                   {documentError && (

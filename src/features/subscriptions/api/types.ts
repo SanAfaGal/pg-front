@@ -28,7 +28,7 @@ export interface Subscription {
   final_price?: number | null; // Precio final con descuento aplicado (si aplica)
   created_at: string; // ISO datetime string
   updated_at: string; // ISO datetime string
-  meta_info?: Record<string, any>;
+  meta_info?: Record<string, unknown>;
 }
 
 export interface SubscriptionCreateInput {
@@ -53,7 +53,7 @@ export interface Payment {
   amount: string; // Decimal as string
   payment_method: PaymentMethod;
   payment_date: string; // ISO datetime string
-  meta_info?: Record<string, any>;
+  meta_info?: Record<string, unknown>;
 }
 
 export interface PaymentCreateInput {

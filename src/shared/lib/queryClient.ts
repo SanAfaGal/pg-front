@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientConfig } from '@tanstack/react-query';
-import { persistQueryClient, PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
+import { persistQueryClient } from '@tanstack/react-query-persist-client';
 import { logger } from '../utils/logger';
 
 /**
@@ -41,7 +41,7 @@ const queryClientConfig: QueryClientConfig = {
 export const queryClient = new QueryClient(queryClientConfig);
 
 const localStoragePersister = {
-  persistClient: async (client: PersistQueryClientOptions['persister'] extends { persistClient: (client: infer T) => any } ? T : never) => {
+  persistClient: async (client: unknown) => {
     try {
       window.localStorage.setItem('cache', JSON.stringify(client));
     } catch (error) {
@@ -85,12 +85,12 @@ if (import.meta.env.DEV) {
     return originalFetch(...args);
   };
 
-  (window as any).resetApiCallCount = () => {
+  (window as Window & { resetApiCallCount?: () => void }).resetApiCallCount = () => {
     apiCallCount = 0;
     logger.debug('✅ API call counter reset');
   };
 
-  (window as any).getApiCallCount = () => {
+  (window as Window & { getApiCallCount?: () => number }).getApiCallCount = () => {
     logger.debug(`📊 Total API calls: ${apiCallCount}`);
     return apiCallCount;
   };

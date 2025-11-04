@@ -110,7 +110,7 @@ export const useCamera = (options: UseCameraOptions = {}): UseCameraReturn => {
         videoRef.current.srcObject = stream;
       } else {
         // Para navegadores más antiguos
-        (videoRef.current as any).src = URL.createObjectURL(stream);
+        (videoRef.current as HTMLVideoElement & { src?: string }).src = URL.createObjectURL(stream);
       }
 
       streamRef.current = stream;
@@ -178,8 +178,8 @@ export const useCamera = (options: UseCameraOptions = {}): UseCameraReturn => {
           video.play().catch(() => {
             // Auto-play bloqueado, pero continuamos
           });
-        } catch (err) {
-          // Ignorar
+        } catch {
+          // Ignorar errores de auto-play
         }
       });
     } catch (err) {

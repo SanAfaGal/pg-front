@@ -18,7 +18,7 @@ export interface Reward {
   applied_subscription_id?: string;
   created_at: string; // ISO datetime
   updated_at: string; // ISO datetime
-  meta_info?: Record<string, any>;
+  meta_info?: Record<string, unknown>;
 }
 
 export interface RewardEligibilityResponse {

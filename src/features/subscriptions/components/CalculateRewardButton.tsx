@@ -61,8 +61,10 @@ export const CalculateRewardButton: React.FC<CalculateRewardButtonProps> = ({
           type: 'info',
         });
       }
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.detail || error?.message || NOTIFICATION_MESSAGES.error.calculate;
+    } catch (error: unknown) {
+      const errorMessage = (error as Error & { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
+                           (error as Error & { message?: string })?.message || 
+                           NOTIFICATION_MESSAGES.error.calculate;
       showToast({
         title: 'Error al Calcular',
         message: errorMessage,

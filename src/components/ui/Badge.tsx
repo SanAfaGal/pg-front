@@ -1,7 +1,7 @@
 import { HTMLAttributes } from 'react';
 import { motion } from 'framer-motion';
 
-interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: 'success' | 'warning' | 'error' | 'info' | 'default' | 'primary';
   size?: 'sm' | 'md' | 'lg';
   animated?: boolean;

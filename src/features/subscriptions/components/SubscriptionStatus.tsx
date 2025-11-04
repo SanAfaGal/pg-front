@@ -1,6 +1,7 @@
 import React from 'react';
-import { SubscriptionStatus } from '../api/types';
+import { SubscriptionStatus, Subscription } from '../api/types';
 import { Badge } from '../../../components/ui/Badge';
+import type { BadgeProps } from '../../../components/ui/Badge';
 import { 
   getSubscriptionStatusInfo,
   canRenewSubscription,
@@ -23,13 +24,17 @@ export const SubscriptionStatusComponent: React.FC<SubscriptionStatusProps> = ({
   className = '',
 }) => {
   const statusInfo = getSubscriptionStatusInfo(status);
-  const canRenew = canRenewSubscription({ status } as any);
-  const canCancel = canCancelSubscription({ status } as any);
+  const canRenew = canRenewSubscription({ status } as Subscription);
+  const canCancel = canCancelSubscription({ status } as Subscription);
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <Badge
-        variant={statusInfo.color as any}
+        variant={statusInfo.color === 'green' ? 'success' : 
+                 statusInfo.color === 'red' ? 'error' : 
+                 statusInfo.color === 'yellow' ? 'warning' : 
+                 statusInfo.color === 'blue' ? 'info' : 
+                 'default'}
         className={`${statusInfo.bgColor} ${statusInfo.textColor}`}
       >
         <span className="mr-1">{statusInfo.icon}</span>

@@ -56,7 +56,7 @@ export const getDateFilterPresets = (): DateFilterPreset[] => {
 /**
  * Check if filters have active values
  */
-export const hasActiveFilters = (filters: Record<string, any>): boolean => {
+export const hasActiveFilters = (filters: Record<string, unknown>): boolean => {
   return Object.values(filters).some(
     value => value !== undefined && value !== null && value !== ''
   );

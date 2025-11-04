@@ -45,7 +45,7 @@ export const AttendanceChart: React.FC<AttendanceChartProps> = ({
       <div className="space-y-4">
         {/* Chart */}
         <div className="flex items-end space-x-1 h-64">
-          {metrics.hourly_data.map((data, index) => {
+          {metrics.hourly_data.map((data) => {
             const height = (data.count / maxCount) * maxHeight;
             const isCurrentHour = new Date().getHours() === data.hour;
             
@@ -139,7 +139,7 @@ export const WeeklyTrendChart: React.FC<WeeklyTrendChartProps> = ({
       <div className="space-y-4">
         {/* Chart */}
         <div className="flex items-end space-x-2 h-64">
-          {metrics.weekly_trend.map((data, index) => {
+          {metrics.weekly_trend.map((data) => {
             const height = (data.count / maxCount) * maxHeight;
             const date = new Date(data.date);
             const isToday = date.toDateString() === new Date().toDateString();

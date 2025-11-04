@@ -16,6 +16,7 @@ import {
   PaymentCreateInput,
   PaymentStats,
   PaymentWithDebtInfo,
+  Subscription,
 } from '../api/types';
 import { QUERY_STALE_TIMES, QUERY_CACHE_TIMES, RETRY_CONFIG } from '../constants/subscriptionConstants';
 
@@ -199,7 +200,7 @@ export const useCreatePayment = () => {
       if (data.subscription_status) {
         queryClient.setQueryData(
           subscriptionKeys.detail(subscriptionId),
-          (old: any) => {
+          (old: Subscription | undefined) => {
             if (!old) return old;
             return {
               ...old,

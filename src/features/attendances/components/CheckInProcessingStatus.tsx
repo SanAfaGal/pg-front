@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../../../components/ui/Card';
 import { Loader2, Upload, Scan, CheckCircle2, AlertCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 type ProcessingStage = 'uploading' | 'processing' | 'verifying' | 'finalizing';
 

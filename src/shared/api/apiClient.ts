@@ -301,31 +301,30 @@ class RealApiClient implements ApiClient {
 
     // Try to parse error response
     let errorMessage = `HTTP error! status: ${status}`;
-    let errorData: unknown = null;
+    let errorData: { detail?: string | Array<{ msg?: string; message?: string }>; message?: string } | null = null;
     
     try {
-      errorData = await response.json() as { detail?: string | Array<{ msg?: string; message?: string }>; message?: string };
+      const parsed = await response.json() as { detail?: string | Array<{ msg?: string; message?: string }>; message?: string };
+      errorData = parsed;
       
       if (status === 422) {
         // Validation errors
-        const details = errorData.detail;
+        const details = parsed.detail;
         if (Array.isArray(details)) {
           errorMessage = details.map(d => d.msg || d.message).join(', ');
         } else if (typeof details === 'string') {
           errorMessage = details;
         }
       } else if (status === 400) {
-        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'Solicitud incorrecta';
+        errorMessage = (typeof parsed.detail === 'string' ? parsed.detail : undefined) || parsed.message || 'Solicitud incorrecta';
       } else if (status === 401) {
-        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'No autorizado';
+        errorMessage = (typeof parsed.detail === 'string' ? parsed.detail : undefined) || parsed.message || 'No autorizado';
       } else if (status === 403) {
-        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'Acceso denegado';
+        errorMessage = (typeof parsed.detail === 'string' ? parsed.detail : undefined) || parsed.message || 'Acceso denegado';
       } else if (status === 404) {
         errorMessage = 'Recurso no encontrado';
       } else if (status === 409) {
-        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'Conflicto - ya registrado';
-      } else if (status === 422) {
-        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'Error de validación';
+        errorMessage = (typeof parsed.detail === 'string' ? parsed.detail : undefined) || parsed.message || 'Conflicto - ya registrado';
       } else if (status === 500) {
         errorMessage = 'Error interno del servidor';
       }
@@ -450,7 +449,9 @@ class MockApiClient implements ApiClient {
 }
 
 // Export the appropriate API client
-export const apiClient: ApiClient = API_CONFIG.useMockApi 
+// Use mock API if VITE_USE_MOCK_API is set, otherwise use real API
+const useMockApi = import.meta.env.VITE_USE_MOCK_API === 'true';
+export const apiClient: ApiClient = useMockApi 
   ? new MockApiClient() 
   : new RealApiClient();
 

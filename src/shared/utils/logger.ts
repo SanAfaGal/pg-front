@@ -7,8 +7,9 @@
 
 /**
  * Log levels available in the logger
+ * @internal - Not exported, only used for type documentation
  */
-type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
+type _LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
 /**
  * Logger interface with different log level methods
@@ -37,11 +38,13 @@ const createLogger = (): Logger => {
   return {
     log: (...args: unknown[]) => {
       if (isDev) {
+        // eslint-disable-next-line no-console
         console.log(...args);
       }
     },
     info: (...args: unknown[]) => {
       if (isDev) {
+        // eslint-disable-next-line no-console
         console.info(...args);
       }
     },
@@ -53,16 +56,11 @@ const createLogger = (): Logger => {
     error: (...args: unknown[]) => {
       // Errors should always be logged, even in production
       // but we can add additional context in dev mode
-      if (isDev) {
-        console.error(...args);
-      } else {
-        // In production, only log critical errors
-        // You might want to send these to an error tracking service
-        console.error(...args);
-      }
+      console.error(...args);
     },
     debug: (...args: unknown[]) => {
       if (isDev) {
+        // eslint-disable-next-line no-console
         console.debug(...args);
       }
     },

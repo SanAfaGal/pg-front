@@ -3,7 +3,7 @@ export interface Attendance {
   id: string;
   client_id: string;
   check_in: string; // ISO 8601 datetime
-  meta_info: Record<string, any>;
+  meta_info: Record<string, unknown>;
 }
 
 export interface AttendanceWithClient extends Attendance {

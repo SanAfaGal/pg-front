@@ -5,12 +5,12 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { logger, logApiCall, logApiResponse } from './logger';
 
 describe('logger', () => {
-  let originalEnv: typeof import.meta.env.DEV;
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
-  let consoleInfoSpy: ReturnType<typeof vi.spyOn>;
-  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
-  let consoleDebugSpy: ReturnType<typeof vi.spyOn>;
+  let originalEnv: boolean;
+  let consoleLogSpy: ReturnType<typeof vi.spyOn<typeof console, 'log'>>;
+  let consoleInfoSpy: ReturnType<typeof vi.spyOn<typeof console, 'info'>>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn<typeof console, 'warn'>>;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn<typeof console, 'error'>>;
+  let consoleDebugSpy: ReturnType<typeof vi.spyOn<typeof console, 'debug'>>;
 
   beforeEach(() => {
     originalEnv = import.meta.env.DEV;

@@ -39,13 +39,31 @@ export const RewardSelector: React.FC<RewardSelectorProps> = ({
     if (selectedRewardId !== localSelectedId) {
       setLocalSelectedId(selectedRewardId || '');
     }
-  }, [selectedRewardId]);
+  }, [selectedRewardId, localSelectedId]);
 
   const handleChange = (rewardId: string) => {
     setLocalSelectedId(rewardId);
     const reward = availableRewards?.find((r) => r.id === rewardId);
     onSelect(reward || null);
   };
+
+  // Calculate derived values before conditional returns
+  const available = useMemo(() => {
+    return availableRewards ? filterAvailableRewards(availableRewards) : [];
+  }, [availableRewards]);
+  
+  // Sort rewards by priority: expiring soon first
+  const sortedRewards = useMemo(() => {
+    return sortRewardsByPriority(available);
+  }, [available]);
+
+  const selectedReward = useMemo(() => {
+    return available.find((r) => r.id === localSelectedId);
+  }, [available, localSelectedId]);
+
+  const expiringSoonRewards = useMemo(() => {
+    return available.filter(reward => isRewardExpiringSoon(reward));
+  }, [available]);
 
   if (isLoading) {
     return (
@@ -65,23 +83,6 @@ export const RewardSelector: React.FC<RewardSelectorProps> = ({
       </div>
     );
   }
-
-  const available = useMemo(() => {
-    return availableRewards ? filterAvailableRewards(availableRewards) : [];
-  }, [availableRewards]);
-  
-  // Sort rewards by priority: expiring soon first
-  const sortedRewards = useMemo(() => {
-    return sortRewardsByPriority(available);
-  }, [available]);
-
-  const selectedReward = useMemo(() => {
-    return available.find((r) => r.id === localSelectedId);
-  }, [available, localSelectedId]);
-
-  const expiringSoonRewards = useMemo(() => {
-    return available.filter(reward => isRewardExpiringSoon(reward));
-  }, [available]);
 
   if (available.length === 0) {
     return null;

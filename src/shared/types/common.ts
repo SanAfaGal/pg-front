@@ -114,7 +114,7 @@ export interface TableColumn<T> {
   key: keyof T | string;
   title: string;
   sortable?: boolean;
-  render?: (value: any, item: T) => React.ReactNode;
+  render?: (value: unknown, item: T) => React.ReactNode;
   width?: string | number;
   align?: 'left' | 'center' | 'right';
 }

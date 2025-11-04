@@ -1,4 +1,4 @@
-import { Subscription, Payment, PaymentStats, SubscriptionStatus, PaymentMethod } from '../api/types';
+import { Subscription, Payment, PaymentStats, SubscriptionStatus, PaymentMethod, SubscriptionCreateInput, PaymentCreateInput, PaymentWithDebtInfo } from '../api/types';
 import { UUID } from '../../../shared/types/common';
 
 // Mock data for development
@@ -80,7 +80,7 @@ export const mockGetPaymentStats = async (subscriptionId: UUID): Promise<Payment
   return MOCK_PAYMENT_STATS;
 };
 
-export const mockCreateSubscription = async (clientId: UUID, data: any): Promise<Subscription> => {
+export const mockCreateSubscription = async (clientId: UUID, data: SubscriptionCreateInput): Promise<Subscription> => {
   await mockApiDelay();
   const newSubscription: Subscription = {
     id: `sub-${Date.now()}`,
@@ -97,7 +97,7 @@ export const mockCreateSubscription = async (clientId: UUID, data: any): Promise
   return newSubscription;
 };
 
-export const mockCreatePayment = async (subscriptionId: UUID, data: any): Promise<any> => {
+export const mockCreatePayment = async (subscriptionId: UUID, data: PaymentCreateInput): Promise<PaymentWithDebtInfo> => {
   await mockApiDelay();
   const newPayment: Payment = {
     id: `pay-${Date.now()}`,

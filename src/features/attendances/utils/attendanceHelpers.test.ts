@@ -19,17 +19,17 @@ describe('attendanceHelpers', () => {
 
     it('should handle missing first name', () => {
       expect(getAttendanceInitials('', 'Pérez')).toBe('P');
-      expect(getAttendanceInitials(undefined as any, 'Pérez')).toBe('P');
+      expect(getAttendanceInitials(undefined as unknown as string, 'Pérez')).toBe('P');
     });
 
     it('should handle missing last name', () => {
       expect(getAttendanceInitials('Juan', '')).toBe('J');
-      expect(getAttendanceInitials('Juan', undefined as any)).toBe('J');
+      expect(getAttendanceInitials('Juan', undefined as unknown as string)).toBe('J');
     });
 
     it('should handle both names missing', () => {
       expect(getAttendanceInitials('', '')).toBe('');
-      expect(getAttendanceInitials(undefined as any, undefined as any)).toBe('');
+      expect(getAttendanceInitials(undefined as unknown as string, undefined as unknown as string)).toBe('');
     });
 
     it('should convert to uppercase', () => {
@@ -140,7 +140,7 @@ describe('attendanceHelpers', () => {
         {
           id: '4',
           client_id: 'client-4',
-          check_in: null as any,
+          check_in: null,
           check_out: null,
           client: {
             id: 'client-4',

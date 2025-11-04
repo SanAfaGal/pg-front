@@ -2,14 +2,10 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { attendanceApi } from '../api/attendanceApi';
 import {
-  Attendance,
-  AttendanceWithClient,
   CheckInRequest,
   CheckInResponse,
   AttendanceFilterOptions,
   AttendancePagination,
-  AttendanceMetrics,
-  AttendanceStats
 } from '../types';
 import {
   QUERY_STALE_TIMES,

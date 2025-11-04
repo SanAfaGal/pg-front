@@ -14,7 +14,7 @@ export interface Client {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  meta_info: Record<string, any>;
+  meta_info: Record<string, unknown>;
   biometric?: BiometricData;
 }
 
