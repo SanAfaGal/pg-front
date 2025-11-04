@@ -1,11 +1,22 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, CreditCard, Calendar, AlertCircle, Loader2 } from 'lucide-react';
+import { X, CreditCard, Calendar, AlertCircle, Loader2, Gift } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useToast } from '../../shared';
-import { planHelpers } from '../../features/plans';
-import { type Plan, type SubscriptionFormData } from '../../features/subscriptions';
+import { useActivePlans, formatPrice, formatDuration } from '../../features/plans';
+import { useCreateSubscription } from '../../features/subscriptions';
+import { RewardSelector } from '../../features/rewards/components/RewardSelector';
+import { useAvailableRewards, useApplyReward } from '../../features/rewards';
+import { 
+  calculateDiscountedPrice, 
+  calculateDiscountAmount,
+  formatDiscount,
+} from '../../features/rewards/utils/rewardHelpers';
+import { Reward } from '../../features/rewards/types';
+import type { Plan as PlanType } from '../../features/plans/api/types';
+import { addDays, format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface NewSubscriptionModalProps {
   isOpen: boolean;
@@ -13,6 +24,11 @@ interface NewSubscriptionModalProps {
   clientId: string;
   clientName: string;
   onSuccess: () => void;
+}
+
+interface SubscriptionFormData {
+  planId: string;
+  startDate: string;
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -31,9 +47,14 @@ export function NewSubscriptionModal({
   onSuccess,
 }: NewSubscriptionModalProps) {
   const { showToast } = useToast();
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
+  const { data: activePlans, isLoading: isLoadingPlans, error: plansError } = useActivePlans();
+  const createSubscriptionMutation = useCreateSubscription();
+  const applyRewardMutation = useApplyReward();
+  const { data: availableRewards } = useAvailableRewards(clientId);
+  
+  const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const today = useMemo(() => {
     const formatter = new Intl.DateTimeFormat('en-CA', {
       timeZone: 'America/Bogota',
@@ -51,48 +72,73 @@ export function NewSubscriptionModal({
   const [errors, setErrors] = useState<Partial<Record<keyof SubscriptionFormData, string>>>({});
 
   const selectedPlan = useMemo(
-    () => plans.find(p => p.id === formData.planId),
-    [plans, formData.planId]
+    () => activePlans?.find(p => p.id === formData.planId),
+    [activePlans, formData.planId]
   );
 
+  // Calculate end date based on plan duration
   const estimatedEndDate = useMemo(() => {
     if (!selectedPlan || !formData.startDate) return null;
     try {
-      const endDate = SubscriptionService.calculateEndDate(formData.startDate, selectedPlan);
-      return endDate.toLocaleDateString('es-CO', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+      const startDate = new Date(formData.startDate);
+      let endDate: Date;
+      
+      switch (selectedPlan.duration_unit) {
+        case 'day':
+          endDate = addDays(startDate, selectedPlan.duration_count);
+          break;
+        case 'week':
+          endDate = addDays(startDate, selectedPlan.duration_count * 7);
+          break;
+        case 'month':
+          endDate = addDays(startDate, selectedPlan.duration_count * 30);
+          break;
+        case 'year':
+          endDate = addDays(startDate, selectedPlan.duration_count * 365);
+          break;
+        default:
+          return null;
+      }
+      
+      return format(endDate, 'EEEE, d \'de\' MMMM, yyyy', { locale: es });
     } catch {
       return null;
     }
   }, [selectedPlan, formData.startDate]);
 
+  // Calculate price with discount
+  const originalPrice = useMemo(() => {
+    if (!selectedPlan) return 0;
+    const price = typeof selectedPlan.price === 'string' ? parseFloat(selectedPlan.price) : selectedPlan.price;
+    return isNaN(price) ? 0 : price;
+  }, [selectedPlan]);
+
+  const finalPrice = useMemo(() => {
+    if (!selectedReward || !selectedPlan) return originalPrice;
+    return calculateDiscountedPrice(originalPrice, selectedReward.discount_percentage);
+  }, [originalPrice, selectedReward, selectedPlan]);
+
+  const discountAmount = useMemo(() => {
+    if (!selectedReward || !selectedPlan) return 0;
+    return calculateDiscountAmount(originalPrice, selectedReward.discount_percentage);
+  }, [originalPrice, selectedReward, selectedPlan]);
+
+  // Convert discount percentage to number for API
+  const discountPercentageForAPI = useMemo(() => {
+    if (!selectedReward) return undefined;
+    const discount = typeof selectedReward.discount_percentage === 'string' 
+      ? parseFloat(selectedReward.discount_percentage) 
+      : selectedReward.discount_percentage;
+    return isNaN(discount) ? undefined : discount;
+  }, [selectedReward]);
+
   useEffect(() => {
     if (isOpen) {
-      loadPlans();
       setFormData({ planId: '', startDate: today });
       setErrors({});
+      setSelectedReward(null);
     }
   }, [isOpen, today]);
-
-  const loadPlans = useCallback(async () => {
-    setIsLoadingPlans(true);
-    try {
-      const data = await SubscriptionService.getActivePlans();
-      setPlans(data);
-      if (data.length === 0) {
-        showToast('No hay planes activos disponibles', 'error');
-      }
-    } catch (error) {
-      showToast('Error al cargar los planes', 'error');
-      console.error('Error loading plans:', error);
-    } finally {
-      setIsLoadingPlans(false);
-    }
-  }, [showToast]);
 
   const handleChange = useCallback((field: keyof SubscriptionFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -135,9 +181,32 @@ export function NewSubscriptionModal({
       const createData = {
         plan_id: formData.planId,
         start_date: formData.startDate,
+        ...(discountPercentageForAPI !== undefined && { discount_percentage: discountPercentageForAPI }),
       };
 
-      await SubscriptionService.createSubscription(clientId, createData);
+      // Create subscription first
+      const newSubscription = await createSubscriptionMutation.mutateAsync({
+        clientId,
+        data: createData,
+      });
+      
+      // If reward was selected, apply it to mark it as used
+      if (selectedReward && newSubscription) {
+        try {
+          await applyRewardMutation.mutateAsync({
+            rewardId: selectedReward.id,
+            data: {
+              subscription_id: newSubscription.id,
+              discount_percentage: discountPercentageForAPI!,
+            },
+          });
+        } catch (rewardError) {
+          // If applying reward fails, log but don't fail the whole operation
+          // The discount was already applied in the subscription creation
+          console.error('Error applying reward:', rewardError);
+        }
+      }
+      
       showToast('Suscripción creada exitosamente', 'success');
       onSuccess();
       onClose();
@@ -153,9 +222,9 @@ export function NewSubscriptionModal({
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, clientId, validateForm, onSuccess, onClose, showToast]);
+  }, [formData, selectedReward, discountPercentageForAPI, clientId, validateForm, onSuccess, onClose, showToast, createSubscriptionMutation, applyRewardMutation]);
 
-  const isFormDisabled = isSubmitting || isLoadingPlans || plans.length === 0;
+  const isFormDisabled = isSubmitting || isLoadingPlans || !activePlans || activePlans.length === 0;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="2xl">
@@ -191,7 +260,12 @@ export function NewSubscriptionModal({
                 <Loader2 className="w-6 h-6 animate-spin text-powergym-red" />
                 <span className="ml-2 text-gray-600">Cargando planes...</span>
               </div>
-            ) : plans.length === 0 ? (
+            ) : plansError ? (
+              <div className="text-center py-8 bg-red-50 rounded-lg border border-red-200">
+                <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                <p className="text-red-600">Error al cargar los planes</p>
+              </div>
+            ) : !activePlans || activePlans.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
                 <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                 <p className="text-gray-600">No hay planes activos disponibles</p>
@@ -208,7 +282,7 @@ export function NewSubscriptionModal({
                   disabled={isSubmitting}
                 >
                   <option value="">Seleccione un plan</option>
-                  {plans.map((plan) => (
+                  {activePlans.map((plan) => (
                     <option key={plan.id} value={plan.id}>
                       {plan.name}
                     </option>
@@ -224,15 +298,17 @@ export function NewSubscriptionModal({
 
                 {selectedPlan && (
                   <div className="mt-3 p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">Descripción:</span> {selectedPlan.description}
+                    <p className="text-sm text-gray-700 mb-2">
+                      <span className="font-semibold">Descripción:</span> {selectedPlan.description || 'Sin descripción'}
                     </p>
                     <div className="mt-2 flex gap-4 text-sm flex-wrap">
                       <span className="text-gray-600">
-                        <span className="font-semibold">Duración:</span> {SubscriptionService.formatDuration(selectedPlan)}
+                        <span className="font-semibold">Duración:</span>{' '}
+                        {formatDuration(selectedPlan.duration_count, selectedPlan.duration_unit)}
                       </span>
                       <span className="text-gray-600">
-                        <span className="font-semibold">Precio:</span> {SubscriptionService.formatPrice(selectedPlan.price, selectedPlan.currency)}
+                        <span className="font-semibold">Precio:</span>{' '}
+                        {formatPrice(selectedPlan.price)}
                       </span>
                     </div>
                   </div>
@@ -240,6 +316,46 @@ export function NewSubscriptionModal({
               </>
             )}
           </div>
+
+          {/* Reward Selector */}
+          {availableRewards && availableRewards.length > 0 && (
+            <RewardSelector
+              clientId={clientId}
+              onSelect={setSelectedReward}
+              selectedRewardId={selectedReward?.id}
+            />
+          )}
+
+          {/* Price Display with Discount */}
+          {selectedPlan && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Precio:</span>
+                {selectedReward ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500 line-through">
+                      {formatPrice(originalPrice.toString())}
+                    </span>
+                    <span className="text-lg font-bold text-green-600">
+                      {formatPrice(finalPrice.toString())}
+                    </span>
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full font-medium">
+                      {formatDiscount(selectedReward.discount_percentage)} OFF
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-lg font-bold text-gray-900">
+                    {formatPrice(originalPrice.toString())}
+                  </span>
+                )}
+              </div>
+              {selectedReward && discountAmount > 0 && (
+                <p className="text-xs text-green-700 mt-1">
+                  Ahorro: {formatPrice(discountAmount.toString())}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Start Date */}
           <div>

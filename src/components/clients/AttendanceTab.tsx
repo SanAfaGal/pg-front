@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { Calendar, Activity, Clock, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Activity, Clock, TrendingUp, ChevronLeft, ChevronRight, Gift, Sparkles } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -8,6 +8,12 @@ import { motion } from 'framer-motion';
 import { type ClientDashboardResponse } from '../../features/clients';
 import { useClientAttendances } from '../../features/attendances/hooks/useAttendances';
 import { formatAttendanceDateTime, formatAttendanceDate } from '../../features/attendances/utils/dateUtils';
+import { useActiveSubscription } from '../../features/subscriptions';
+import { useAvailableRewards, useCalculateRewardEligibility } from '../../features/rewards';
+import { RewardBadge } from '../../features/rewards/components/RewardBadge';
+import { canCalculateReward } from '../../features/rewards/utils/rewardHelpers';
+import { useToast } from '../../shared';
+import { NOTIFICATION_MESSAGES } from '../../features/rewards/constants/rewardConstants';
 
 interface AttendanceTabProps {
   dashboard: ClientDashboardResponse | undefined;
@@ -20,11 +26,47 @@ interface AttendanceTabProps {
 export function AttendanceTab({ dashboard }: AttendanceTabProps) {
   const clientId = dashboard?.client.id;
   const [pagination, setPagination] = useState({ limit: 20, offset: 0 });
+  const { showToast } = useToast();
 
   const { attendances, isLoading, error } = useClientAttendances(
     clientId || '',
     pagination
   );
+
+  // Get active subscription for cycle calculation
+  const { data: activeSubscription } = useActiveSubscription(clientId || '');
+  
+  // Get available rewards
+  const { data: availableRewards } = useAvailableRewards(clientId);
+  
+  // Calculate eligibility mutation
+  const calculateEligibilityMutation = useCalculateRewardEligibility();
+
+  // Calculate cycle attendances (for reward eligibility)
+  const cycleAttendances = useMemo(() => {
+    if (!activeSubscription || !attendances || attendances.length === 0) return 0;
+    
+    const startDate = new Date(activeSubscription.start_date);
+    const endDate = new Date(activeSubscription.end_date);
+    
+    return attendances.filter((att) => {
+      const checkIn = new Date(att.check_in);
+      return checkIn >= startDate && checkIn <= endDate;
+    }).length;
+  }, [attendances, activeSubscription]);
+
+  // Check if can calculate reward (cycle ended and plan is monthly)
+  const canCalculate = useMemo(() => {
+    if (!activeSubscription) return false;
+    
+    // Check if plan is monthly (we need to get plan info, but for now check if duration is ~30 days)
+    const durationDays = Math.ceil(
+      (new Date(activeSubscription.end_date).getTime() - new Date(activeSubscription.start_date).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const isMonthly = durationDays >= 28 && durationDays <= 31;
+    
+    return canCalculateReward(activeSubscription.end_date) && isMonthly;
+  }, [activeSubscription]);
 
   // Calculate statistics from attendances
   const stats = useMemo(() => {
@@ -66,6 +108,23 @@ export function AttendanceTab({ dashboard }: AttendanceTabProps) {
     };
   }, [attendances]);
 
+  // Handle calculate reward eligibility
+  const handleCalculateReward = useCallback(async () => {
+    if (!activeSubscription) return;
+    
+    try {
+      const result = await calculateEligibilityMutation.mutateAsync(activeSubscription.id);
+      if (result.eligible) {
+        showToast(NOTIFICATION_MESSAGES.reward.calculated, 'success');
+      } else {
+        showToast(`El cliente tiene ${result.attendance_count} asistencias. Se requieren 20 para obtener la recompensa.`, 'info');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.detail || error?.message || NOTIFICATION_MESSAGES.error.calculate;
+      showToast(errorMessage, 'error');
+    }
+  }, [activeSubscription, calculateEligibilityMutation, showToast]);
+
   // Handle pagination
   const handlePreviousPage = useCallback(() => {
     setPagination((prev) => ({
@@ -94,6 +153,98 @@ export function AttendanceTab({ dashboard }: AttendanceTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Reward Section */}
+      {activeSubscription && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card className="p-6 bg-gradient-to-br from-purple-50 via-purple-100 to-pink-50 border-2 border-purple-200 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-md">
+                  <Gift className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-purple-900">Sistema de Recompensas</h3>
+                  <p className="text-sm text-purple-700">Obtén 20% de descuento con 20+ asistencias</p>
+                </div>
+              </div>
+              {availableRewards && availableRewards.length > 0 && (
+                <RewardBadge reward={availableRewards[0]} />
+              )}
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-purple-600" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Asistencias del ciclo actual:
+                  </span>
+                </div>
+                <Badge variant={cycleAttendances >= 20 ? 'success' : 'info'} size="lg">
+                  {cycleAttendances}/20
+                </Badge>
+              </div>
+
+              {cycleAttendances >= 20 && canCalculate && (
+                <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <Sparkles className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-green-900">
+                      ¡Elegible para recompensa!
+                    </p>
+                    <p className="text-xs text-green-700">
+                      El ciclo ha terminado y cumples con el umbral de asistencias.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleCalculateReward}
+                    disabled={calculateEligibilityMutation.isPending}
+                    variant="primary"
+                    size="sm"
+                  >
+                    {calculateEligibilityMutation.isPending ? (
+                      <>
+                        <LoadingSpinner size="sm" />
+                        <span className="ml-2">Calculando...</span>
+                      </>
+                    ) : (
+                      'Calcular Recompensa'
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              {cycleAttendances < 20 && activeSubscription && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <span className="font-semibold">Progreso:</span> Te faltan{' '}
+                    <span className="font-bold">{20 - cycleAttendances}</span> asistencias para
+                    obtener la recompensa del 20% de descuento.
+                  </p>
+                </div>
+              )}
+
+              {availableRewards && availableRewards.length > 0 && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm font-semibold text-green-900 mb-1">
+                    Recompensas disponibles
+                  </p>
+                  <RewardBadge 
+                    reward={availableRewards[0]}
+                    attendanceCount={cycleAttendances}
+                    subscriptionEndDate={activeSubscription?.end_date}
+                  />
+                </div>
+              )}
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <motion.div

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Subscription } from '../api/types';
 import { Modal } from '../../../components/ui/Modal';
 import { Button } from '../../../components/ui/Button';
@@ -6,12 +6,16 @@ import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { formatDate } from '../utils/subscriptionHelpers';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
+import { RewardSelector } from '../../../features/rewards/components/RewardSelector';
+import { Reward } from '../../../features/rewards/types';
+import { useAvailableRewards, useApplyReward } from '../../../features/rewards';
 
 interface RenewSubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: (discountPercentage?: number) => Promise<string | undefined>;
   subscription: Subscription | null;
+  clientId?: string;
   isLoading?: boolean;
 }
 
@@ -20,10 +24,16 @@ export const RenewSubscriptionModal: React.FC<RenewSubscriptionModalProps> = ({
   onClose,
   onConfirm,
   subscription,
+  clientId,
   isLoading = false,
 }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
+  
+  // Get available rewards if clientId is provided
+  const { data: availableRewards } = useAvailableRewards(clientId);
+  const applyRewardMutation = useApplyReward();
 
   const handleConfirm = async () => {
     if (!subscription) return;
@@ -31,7 +41,34 @@ export const RenewSubscriptionModal: React.FC<RenewSubscriptionModalProps> = ({
     setError(null);
     setIsSubmitting(true);
     try {
-      await onConfirm();
+      // Convert discount percentage to number if it's a string
+      let discountPercentage: number | undefined;
+      if (selectedReward) {
+        const discount = typeof selectedReward.discount_percentage === 'string' 
+          ? parseFloat(selectedReward.discount_percentage) 
+          : selectedReward.discount_percentage;
+        discountPercentage = isNaN(discount) ? undefined : discount;
+      }
+      
+      // Call onConfirm which will return the new subscription ID
+      const newSubscriptionId = await onConfirm(discountPercentage);
+      
+      // If reward was selected and we have the new subscription ID, apply the reward
+      if (selectedReward && newSubscriptionId && discountPercentage) {
+        try {
+          await applyRewardMutation.mutateAsync({
+            rewardId: selectedReward.id,
+            data: {
+              subscription_id: newSubscriptionId,
+              discount_percentage: discountPercentage,
+            },
+          });
+        } catch (rewardError) {
+          // If applying reward fails, log but don't fail the whole operation
+          console.error('Error applying reward:', rewardError);
+        }
+      }
+      
       handleClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al renovar la suscripción');
@@ -43,6 +80,7 @@ export const RenewSubscriptionModal: React.FC<RenewSubscriptionModalProps> = ({
   const handleClose = () => {
     setError(null);
     setIsSubmitting(false);
+    setSelectedReward(null);
     onClose();
   };
 
@@ -86,6 +124,18 @@ export const RenewSubscriptionModal: React.FC<RenewSubscriptionModalProps> = ({
             </div>
           </div>
         </Card>
+
+        {/* Reward Selector */}
+        {clientId && availableRewards && availableRewards.length > 0 && (
+          <div className="pt-2">
+            <RewardSelector
+              clientId={clientId}
+              subscriptionId={subscription.id}
+              onSelect={setSelectedReward}
+              selectedRewardId={selectedReward?.id}
+            />
+          </div>
+        )}
 
         {/* Warning */}
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">

@@ -202,7 +202,10 @@ export const SubscriptionDetail: React.FC<SubscriptionDetailProps> = memo(({
           {/* Payment Progress Indicator */}
           {paymentStats && (
             <div className="mb-6">
-              <PaymentProgressIndicator paymentStats={paymentStats} />
+              <PaymentProgressIndicator 
+                paymentStats={paymentStats} 
+                subscription={subscription}
+              />
             </div>
           )}
 

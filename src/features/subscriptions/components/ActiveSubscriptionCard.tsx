@@ -145,7 +145,10 @@ export const ActiveSubscriptionCard: React.FC<ActiveSubscriptionCardProps> = mem
       ) : (
         paymentStats && (
           <div className="space-y-4">
-            <PaymentProgressIndicator paymentStats={paymentStats} />
+            <PaymentProgressIndicator 
+              paymentStats={paymentStats} 
+              subscription={subscription}
+            />
             
             {/* Recent Payments */}
             {payments.length > 0 && (

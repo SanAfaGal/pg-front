@@ -1,23 +1,27 @@
 import React, { memo } from 'react';
-import { PaymentStats } from '../api/types';
+import { PaymentStats, Subscription } from '../api/types';
 import { formatCurrency, calculatePaymentProgress } from '../utils/paymentHelpers';
+import { getSubscriptionPrice } from '../../../features/rewards/utils/rewardHelpers';
 import { Card } from '../../../components/ui/Card';
 import { DollarSign, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface PaymentProgressIndicatorProps {
   paymentStats: PaymentStats;
-  planPrice?: number;
+  subscription?: Subscription;
+  planPrice?: number | string;
   className?: string;
 }
 
 export const PaymentProgressIndicator: React.FC<PaymentProgressIndicatorProps> = memo(({
   paymentStats,
+  subscription,
   planPrice,
   className = '',
 }) => {
   const totalPaid = parseFloat(paymentStats.total_amount_paid);
   const remainingDebt = parseFloat(paymentStats.remaining_debt);
-  const totalRequired = planPrice || (totalPaid + remainingDebt);
+  // Use subscription.final_price if available, otherwise use planPrice or calculate from stats
+  const totalRequired = getSubscriptionPrice(subscription, planPrice) || (totalPaid + remainingDebt);
   
   const progress = calculatePaymentProgress(totalPaid, totalRequired);
   const isFullyPaid = remainingDebt === 0;

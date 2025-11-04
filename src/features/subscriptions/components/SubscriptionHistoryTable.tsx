@@ -6,20 +6,94 @@ import { Badge } from '../../../components/ui/Badge';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { SubscriptionStatusBadge } from './SubscriptionList';
 import { SubscriptionDetailModal } from './SubscriptionDetailModal';
-import { formatDate, sortSubscriptionsByStatus } from '../utils/subscriptionHelpers';
-import { Eye, Calendar, Clock } from 'lucide-react';
+import { formatDate, sortSubscriptionsByStatus, canRenewSubscription } from '../utils/subscriptionHelpers';
+import { Eye, Calendar, Clock, RefreshCw } from 'lucide-react';
+import { useRewardsBySubscription } from '../../../features/rewards/hooks/useRewards';
+import { RewardBadge } from '../../../features/rewards/components/RewardBadge';
+import { filterAvailableRewards } from '../../../features/rewards/utils/rewardHelpers';
 
 interface SubscriptionHistoryTableProps {
   subscriptions: Subscription[];
   isLoading?: boolean;
   onViewDetails?: (subscription: Subscription) => void;
+  onRenew?: (subscription: Subscription) => void;
   className?: string;
 }
+
+// Separate component for subscription row to use hooks properly
+const SubscriptionRow: React.FC<{
+  subscription: Subscription;
+  startDate: Date;
+  endDate: Date;
+  duration: number;
+  onViewDetails: (subscription: Subscription) => void;
+  onRenew?: (subscription: Subscription) => void;
+}> = ({ subscription, startDate, endDate, duration, onViewDetails, onRenew }) => {
+  const { data: rewards } = useRewardsBySubscription(subscription.id);
+  const availableRewards = rewards ? filterAvailableRewards(rewards) : [];
+  const canRenew = canRenewSubscription(subscription);
+
+  return (
+    <tr className="hover:bg-gray-50 transition-colors">
+      <td className="py-4 px-4">
+        <p className="text-sm font-mono text-gray-900">
+          {subscription.id.slice(0, 8)}
+        </p>
+      </td>
+      <td className="py-4 px-4">
+        <div className="space-y-1">
+          <SubscriptionStatusBadge status={subscription.status} />
+          {availableRewards.length > 0 && (
+            <RewardBadge reward={availableRewards[0]} />
+          )}
+        </div>
+      </td>
+      <td className="py-4 px-4">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-gray-400" />
+          <p className="text-sm text-gray-900">{formatDate(subscription.start_date)}</p>
+        </div>
+      </td>
+      <td className="py-4 px-4">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-gray-400" />
+          <p className="text-sm text-gray-900">{formatDate(subscription.end_date)}</p>
+        </div>
+      </td>
+      <td className="py-4 px-4">
+        <p className="text-sm text-gray-900">{duration} día{duration !== 1 ? 's' : ''}</p>
+      </td>
+      <td className="py-4 px-4 text-right">
+        <div className="flex items-center justify-end gap-2">
+          {canRenew && onRenew && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onRenew(subscription)}
+              leftIcon={<RefreshCw className="w-4 h-4" />}
+            >
+              Renovar
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onViewDetails(subscription)}
+            leftIcon={<Eye className="w-4 h-4" />}
+          >
+            Ver Detalle
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+};
 
 export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> = memo(({
   subscriptions,
   isLoading = false,
   onViewDetails,
+  onRenew,
   className = '',
 }) => {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
@@ -97,44 +171,15 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
                 const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
                 return (
-                  <tr 
+                  <SubscriptionRow 
                     key={subscription.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="py-4 px-4">
-                      <p className="text-sm font-mono text-gray-900">
-                        {subscription.id.slice(0, 8)}
-                      </p>
-                    </td>
-                    <td className="py-4 px-4">
-                      <SubscriptionStatusBadge status={subscription.status} />
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <p className="text-sm text-gray-900">{formatDate(subscription.start_date)}</p>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-gray-400" />
-                        <p className="text-sm text-gray-900">{formatDate(subscription.end_date)}</p>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <p className="text-sm text-gray-900">{duration} día{duration !== 1 ? 's' : ''}</p>
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleViewDetails(subscription)}
-                        leftIcon={<Eye className="w-4 h-4" />}
-                      >
-                        Ver Detalle
-                      </Button>
-                    </td>
-                  </tr>
+                    subscription={subscription}
+                    startDate={startDate}
+                    endDate={endDate}
+                    duration={duration}
+                    onViewDetails={handleViewDetails}
+                    onRenew={onRenew}
+                  />
                 );
               })}
             </tbody>
@@ -150,6 +195,7 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
             setSelectedSubscription(null);
           }}
           subscription={selectedSubscription}
+          onRenew={onRenew}
         />
       )}
     </>
@@ -157,4 +203,3 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
 });
 
 SubscriptionHistoryTable.displayName = 'SubscriptionHistoryTable';
-

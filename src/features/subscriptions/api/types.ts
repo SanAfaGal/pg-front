@@ -25,6 +25,7 @@ export interface Subscription {
   status: SubscriptionStatus;
   cancellation_date?: string; // ISO date string
   cancellation_reason?: string;
+  final_price?: number | null; // Precio final con descuento aplicado (si aplica)
   created_at: string; // ISO datetime string
   updated_at: string; // ISO datetime string
   meta_info?: Record<string, any>;
@@ -33,10 +34,12 @@ export interface Subscription {
 export interface SubscriptionCreateInput {
   plan_id: UUID;
   start_date: string; // ISO date string
+  discount_percentage?: number; // Optional discount percentage (0.01 to 100.0)
 }
 
 export interface SubscriptionRenewInput {
   plan_id?: UUID; // Optional, uses current plan if not provided
+  discount_percentage?: number; // Optional discount percentage (0.01 to 100.0)
 }
 
 export interface SubscriptionCancelInput {

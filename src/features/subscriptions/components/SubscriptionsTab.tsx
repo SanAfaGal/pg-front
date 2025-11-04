@@ -26,6 +26,7 @@ import { Plan as PlanType } from '../../plans/api/types';
 import { CancelSubscriptionModal } from './CancelSubscriptionModal';
 import { RenewSubscriptionModal } from './RenewSubscriptionModal';
 import { NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
+import { useApplyReward, useAvailableRewards } from '../../../features/rewards';
 
 import { Plus, AlertCircle, CreditCard, Calendar } from 'lucide-react';
 
@@ -83,6 +84,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
   const createSubscriptionMutation = useCreateSubscription();
   const renewSubscriptionMutation = useRenewSubscription();
   const cancelSubscriptionMutation = useCancelSubscription();
+  const applyRewardMutation = useApplyReward();
+  
+  // Get available rewards to find the selected one when renewing
+  const { data: availableRewards } = useAvailableRewards(clientId);
 
   // Memoized handlers
   const handleCreateSubscription = useCallback(() => {
@@ -115,22 +120,28 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
     setIsRenewModalOpen(true);
   }, []);
 
-  const handleConfirmRenew = useCallback(async () => {
+  const handleConfirmRenew = useCallback(async (discountPercentage?: number): Promise<string | undefined> => {
     if (!subscriptionToRenew) return;
     
     try {
-      await renewSubscriptionMutation.mutateAsync({
+      const renewedSubscription = await renewSubscriptionMutation.mutateAsync({
         clientId,
         subscriptionId: subscriptionToRenew.id,
+        data: discountPercentage ? { discount_percentage: discountPercentage } : undefined,
       });
+      
       showToast(NOTIFICATION_MESSAGES.subscription.renewed, 'success');
       setIsRenewModalOpen(false);
       setSubscriptionToRenew(null);
+      
       // Refetch to get updated active subscription
       refetchSubscriptions();
       refetchActiveSubscription();
       refetchActivePayments();
       refetchActivePaymentStats();
+      
+      // Return the new subscription ID so the modal can apply the reward
+      return renewedSubscription.id;
     } catch (error: any) {
       const errorMessage = error?.response?.data?.detail || error?.message || NOTIFICATION_MESSAGES.error.generic;
       throw new Error(errorMessage);
@@ -259,10 +270,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
 
       {/* Subscription History Section */}
       <div>
-        
         <SubscriptionHistoryTable
           subscriptions={subscriptions || []}
           isLoading={subscriptionsLoading}
+          onRenew={handleOpenRenewModal}
           onViewDetails={(subscription) => {
             // Handle view details if needed
           }}
@@ -300,6 +311,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       />
 
       <RenewSubscriptionModal
+        clientId={clientId}
         isOpen={isRenewModalOpen}
         onClose={() => {
           setIsRenewModalOpen(false);

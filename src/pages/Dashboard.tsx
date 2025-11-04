@@ -242,15 +242,15 @@ export const Dashboard = () => {
           )}
 
           {/* Daily Financial Summary - Always shown for the filtered date/period */}
-          <DailyFinancialSummary 
+          {/* <DailyFinancialSummary 
             stats={dashboardData.financial_stats} 
             period={period}
             startDate={dashboardData.period.start_date}
             endDate={dashboardData.period.end_date}
-          />
+          /> */}
 
           {/* Main Stats Grid */}
-          <DashboardStatsGrid data={dashboardData} period={period} />
+          {/* <DashboardStatsGrid data={dashboardData} period={period} /> */}
 
           {/* Detailed Stats Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
