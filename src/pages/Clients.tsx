@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ClientListOptimized } from '../components/clients/ClientListOptimized';
+import { ClientList } from '../features/clients';
 import { ClientDetailOptimized } from './ClientDetailOptimized';
 
 export const Clients = () => {
@@ -14,5 +14,5 @@ export const Clients = () => {
     );
   }
 
-  return <ClientListOptimized onSelectClient={setSelectedClientId} />;
+  return <ClientList onSelectClient={setSelectedClientId} />;
 };

@@ -12,6 +12,7 @@ import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { useCreatePayment } from '../hooks/usePayments';
 import { formatCurrency, validatePaymentAmount, canMakePayment, isSubscriptionFullyPaid } from '../utils/paymentHelpers';
 import { NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
+import { logger } from '../../../shared';
 import { DollarSign, CreditCard, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 /**
@@ -226,8 +227,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       payment_method: data.payment_method,
     };
 
-    // Log for debugging (remove in production if needed)
-    console.log('Sending payment data:', {
+    // Log for debugging (only in dev)
+    logger.debug('Sending payment data:', {
       subscriptionId: subscription.id,
       clientId: clientId || subscription.client_id,
       paymentData,
@@ -247,8 +248,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       setPaymentType('full');
       onSuccess();
       onClose();
-    } catch (error: any) {
-      console.error('Error creating payment:', error);
+    } catch (error: unknown) {
+      logger.error('Error creating payment:', error);
       // Error is handled by the error display section
     }
   };

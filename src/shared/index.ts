@@ -36,6 +36,9 @@ export { useToast, type Toast } from './hooks/useToast';
 export { useCache } from './hooks/useCache';
 export { useDebounce } from './hooks/useDebounce';
 
+// Utils
+export { logger, logApiCall, logApiResponse } from './utils/logger';
+
 // Components (to be added later)
 // export { Button } from './components/Button';
 // export { Input } from './components/Input';

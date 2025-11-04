@@ -23,7 +23,8 @@ import {
   RefreshCw, // Added RefreshCw import
   Download   // Added Download import
 } from 'lucide-react';
-import { Input } from '../../../components/ui/Input'; // Added Input import
+import { Input } from '../../../components/ui/Input';
+import { logger } from '../../../shared';
 import {
   DailySalesByEmployee as DailySalesByEmployeeResponse,
   ReconciliationReport as ReconciliationReportResponse,
@@ -535,8 +536,8 @@ export const InventoryReports: React.FC = () => {
     }
   ];
 
-  console.log('InventoryReports - activeTab:', activeTab);
-  console.log('InventoryReports - tabs:', tabs.map(t => ({ id: t.id, label: t.label })));
+  logger.debug('InventoryReports - activeTab:', activeTab);
+  logger.debug('InventoryReports - tabs:', tabs.map(t => ({ id: t.id, label: t.label })));
 
   return (
     <div className="space-y-6">

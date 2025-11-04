@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Camera, Loader2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { useCamera } from '../../hooks/useCamera';
+import { useCamera } from '../../features/attendances/hooks/useCamera';
 import { useToast } from '../../shared';
 import { useRegisterFaceBiometric, useUpdateFaceBiometric, type BiometricData } from '../../features/clients';
 

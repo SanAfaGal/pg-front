@@ -41,6 +41,9 @@ export interface ClientFormData {
   gender: 'male' | 'female' | 'other';
   address?: string;
   is_active?: boolean;
+  // Additional fields for form mapping
+  phoneCode?: string;
+  phoneCodeSecondary?: string;
 }
 
 export interface ClientFilters {

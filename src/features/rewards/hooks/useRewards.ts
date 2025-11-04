@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { UUID } from '../../../shared/types/common';
+import { logger } from '../../../shared';
 import { rewardsApi } from '../api/rewardsApi';
 import {
   Reward,
@@ -86,11 +87,11 @@ export const useCalculateRewardEligibility = () => {
 
   return useMutation({
     mutationFn: (subscriptionId: string) => {
-      console.log('Calculating reward eligibility:', subscriptionId);
+      logger.debug('Calculating reward eligibility:', subscriptionId);
       return rewardsApi.calculateEligibility(subscriptionId);
     },
     onSuccess: (data, subscriptionId) => {
-      console.log('Reward eligibility calculated:', {
+      logger.debug('Reward eligibility calculated:', {
         subscriptionId,
         eligible: data.eligible,
         attendanceCount: data.attendance_count,
@@ -115,7 +116,7 @@ export const useCalculateRewardEligibility = () => {
       }
     },
     onError: (error, subscriptionId) => {
-      console.error('Error calculating reward eligibility:', {
+      logger.error('Error calculating reward eligibility:', {
         error,
         errorMessage: error instanceof Error ? error.message : 'Error desconocido',
         subscriptionId,
@@ -137,11 +138,11 @@ export const useCalculateRewardEligibilityForRenewal = () => {
 
   return useMutation({
     mutationFn: (subscriptionId: string) => {
-      console.log('Calculating reward eligibility for renewal:', subscriptionId);
+      logger.debug('Calculating reward eligibility for renewal:', subscriptionId);
       return rewardsApi.calculateEligibility(subscriptionId);
     },
     onSuccess: (data, subscriptionId) => {
-      console.log('Reward eligibility calculated for renewal:', {
+      logger.debug('Reward eligibility calculated for renewal:', {
         subscriptionId,
         eligible: data.eligible,
         attendanceCount: data.attendance_count,
@@ -167,7 +168,7 @@ export const useCalculateRewardEligibilityForRenewal = () => {
       }
     },
     onError: (error, subscriptionId) => {
-      console.error('Error calculating reward eligibility for renewal:', {
+      logger.error('Error calculating reward eligibility for renewal:', {
         error,
         errorMessage: error instanceof Error ? error.message : 'Error desconocido',
         subscriptionId,
@@ -190,7 +191,7 @@ export const useApplyReward = () => {
       // Validate inputs using shared helper
       validateRewardApplyInput(rewardId, data);
 
-      console.log('Applying reward via API:', {
+      logger.debug('Applying reward via API:', {
         rewardId,
         subscriptionId: data.subscription_id,
         discountPercentage: data.discount_percentage,
@@ -199,7 +200,7 @@ export const useApplyReward = () => {
       return rewardsApi.applyReward(rewardId, data);
     },
     onSuccess: (data, variables) => {
-      console.log('Reward applied successfully:', {
+      logger.debug('Reward applied successfully:', {
         rewardId: variables.rewardId,
         subscriptionId: variables.data.subscription_id,
         appliedReward: data,
@@ -228,7 +229,7 @@ export const useApplyReward = () => {
       });
     },
     onError: (error, variables) => {
-      console.error('Error in applyReward mutation:', {
+      logger.error('Error in applyReward mutation:', {
         error,
         errorMessage: error instanceof Error ? error.message : 'Error desconocido',
         rewardId: variables.rewardId,

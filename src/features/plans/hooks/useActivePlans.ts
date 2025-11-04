@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchActivePlans } from '../api/planApi'
+import { logger } from '../../../shared'
 
 export const useActivePlans = () => {
-  console.log('useActivePlans hook called')
+  logger.debug('useActivePlans hook called')
   
   return useQuery({
     queryKey: ['plans', 'active'],
     queryFn: async () => {
-      console.log('useActivePlans - calling fetchActivePlans')
+      logger.debug('useActivePlans - calling fetchActivePlans')
       const result = await fetchActivePlans()
-      console.log('useActivePlans - result:', result)
+      logger.debug('useActivePlans - result:', result)
       return result
     },
     staleTime: 5 * 60 * 1000, // 5 minutos

@@ -11,6 +11,7 @@ import { ProductHistoryModal } from '../components/ProductHistoryModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { PageLayout } from '../../../components/ui/PageLayout';
 import { Product, ProductFormData, StockAddRequest, StockRemoveRequest } from '../types';
+import { logger } from '../../../shared';
 import { Package, BarChart3, TrendingUp } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 
@@ -53,7 +54,7 @@ export const InventoryPage: React.FC = () => {
       try {
         await deleteProductMutation.mutateAsync(product.id);
       } catch (error) {
-        console.error('Error deleting product:', error);
+        logger.error('Error deleting product:', error);
       }
     }
   };
@@ -81,7 +82,7 @@ export const InventoryPage: React.FC = () => {
       setShowProductForm(false);
       setSelectedProduct(null);
     } catch (error) {
-      console.error('Error saving product:', error);
+      logger.error('Error saving product:', error);
     }
   };
 
@@ -91,7 +92,7 @@ export const InventoryPage: React.FC = () => {
       setShowStockManagement(false);
       setSelectedProduct(null);
     } catch (error) {
-      console.error('Error adding stock:', error);
+      logger.error('Error adding stock:', error);
     }
   };
 
@@ -101,7 +102,7 @@ export const InventoryPage: React.FC = () => {
       setShowStockManagement(false);
       setSelectedProduct(null);
     } catch (error) {
-      console.error('Error removing stock:', error);
+      logger.error('Error removing stock:', error);
     }
   };
 

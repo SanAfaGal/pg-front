@@ -3,12 +3,20 @@ export * from './types';
 export * from './api/attendanceApi';
 export * from './hooks/useAttendances';
 export { useClientAttendances } from './hooks/useAttendances';
+export { useCamera } from './hooks/useCamera';
 export * from './utils/cameraUtils';
 export * from './utils/imageUtils';
 export * from './utils/dateUtils';
 export * from './utils/filterHelpers';
 export * from './utils/attendanceHelpers';
 export * from './constants/attendanceConstants';
+export { FaceRecognitionService } from './services/faceRecognitionService';
+export type { 
+  FaceRegistrationRequest, 
+  FaceUpdateRequest, 
+  FaceRegistrationResponse, 
+  FaceDeleteResponse 
+} from './services/faceRecognitionService';
 
 // Components
 export { AttendancePage } from './components/AttendancePage';

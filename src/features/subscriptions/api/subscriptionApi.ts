@@ -1,5 +1,5 @@
 import { UUID, PaginationParams } from '../../../shared/types/common';
-import { apiClient, API_ENDPOINTS } from '../../../shared';
+import { apiClient, API_ENDPOINTS, logger } from '../../../shared';
 import {
   Subscription,
   SubscriptionCreateInput,
@@ -16,7 +16,7 @@ export const createSubscription = async (
   clientId: UUID,
   data: SubscriptionCreateInput
 ): Promise<Subscription> => {
-  console.log('Creating subscription for client:', clientId, 'with data:', data);
+  logger.debug('Creating subscription for client:', clientId, 'with data:', data);
   return apiClient.post<Subscription>(API_ENDPOINTS.subscriptions.list(clientId), data);
 };
 

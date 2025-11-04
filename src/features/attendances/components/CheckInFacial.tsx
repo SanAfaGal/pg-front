@@ -5,6 +5,7 @@ import { CheckInResult } from './CheckInResult';
 import { CheckInProcessingStatus } from './CheckInProcessingStatus';
 import { useCheckIn } from '../hooks/useAttendances';
 import { CheckInResponse } from '../types';
+import { logger } from '../../../shared';
 import { Camera } from 'lucide-react';
 
 type ProcessingStage = 'idle' | 'uploading' | 'processing' | 'verifying' | 'finalizing' | 'completed';
@@ -42,12 +43,13 @@ export const CheckInFacial: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 200));
       
       setCheckInResult(result);
-    } catch (err: any) {
-      console.error('Check-in failed:', err);
+    } catch (err: unknown) {
+      logger.error('Check-in failed:', err);
       
       let errorResult: CheckInResponse;
-      const errorType = err?.type;
-      const status = err?.status;
+      const error = err as { type?: string; status?: number; message?: string; response?: { data?: { detail?: string } } };
+      const errorType = error?.type;
+      const status = error?.status;
       
       if (errorType === 'network') {
         errorResult = {
@@ -70,13 +72,13 @@ export const CheckInFacial: React.FC = () => {
         let apiDetail = '';
         
         try {
-          if (err.response?.data) {
-            const errorData = err.response.data;
+          if (error.response?.data) {
+            const errorData = error.response.data;
             apiMessage = errorData.message || errorData.detail || '';
             apiDetail = errorData.detail || '';
           }
         } catch (parseError) {
-          console.warn('Could not parse error response:', parseError);
+          logger.warn('Could not parse error response:', parseError);
         }
         
         if (status === 400) {
@@ -162,7 +164,7 @@ export const CheckInFacial: React.FC = () => {
   }, [reset]);
 
   const handleError = useCallback((error: string) => {
-    console.error('Camera error:', error);
+    logger.error('Camera error:', error);
   }, []);
 
   // Determine what to show

@@ -1,9 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
 import { LandingPage } from './pages/LandingPage';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { Login } from './pages/Login';
-import { Dashboard } from './pages/Dashboard';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { LoadingSpinner } from './components/ui/LoadingSpinner';
+
+// Lazy load heavy components
+const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
 
 function App() {
   return (
@@ -19,7 +23,9 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Suspense fallback={<LoadingSpinner size="lg" text="Cargando dashboard..." />}>
+                <Dashboard />
+              </Suspense>
             </ProtectedRoute>
           }
         />

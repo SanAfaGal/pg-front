@@ -1,4 +1,5 @@
 // Centralized API Configuration and Client
+import { logApiCall, logApiResponse, logger } from '../utils/logger';
 
 // Environment Configuration
 export const API_CONFIG = {
@@ -92,18 +93,32 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
-// Token Management
+/**
+ * Token Management class for handling authentication tokens
+ * Manages access and refresh tokens in memory and localStorage
+ */
 class TokenManager {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
 
-  setTokens(access: string, refresh: string) {
+  /**
+   * Set both access and refresh tokens
+   * 
+   * @param access - Access token string
+   * @param refresh - Refresh token string
+   */
+  setTokens(access: string, refresh: string): void {
     this.accessToken = access;
     this.refreshToken = refresh;
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
   }
 
+  /**
+   * Get the current access token
+   * 
+   * @returns Access token string or null if not set
+   */
   getAccessToken(): string | null {
     if (!this.accessToken) {
       this.accessToken = localStorage.getItem('access_token');
@@ -111,6 +126,11 @@ class TokenManager {
     return this.accessToken;
   }
 
+  /**
+   * Get the current refresh token
+   * 
+   * @returns Refresh token string or null if not set
+   */
   getRefreshToken(): string | null {
     if (!this.refreshToken) {
       this.refreshToken = localStorage.getItem('refresh_token');
@@ -118,7 +138,10 @@ class TokenManager {
     return this.refreshToken;
   }
 
-  clearTokens() {
+  /**
+   * Clear all tokens from memory and localStorage
+   */
+  clearTokens(): void {
     this.accessToken = null;
     this.refreshToken = null;
     localStorage.removeItem('access_token');
@@ -207,7 +230,7 @@ class RealApiClient implements ApiClient {
       body = isFormData ? (data as FormData) : JSON.stringify(data);
     }
 
-    console.log(`API ${method.toUpperCase()}:`, fullUrl, data ? { data } : '');
+    logApiCall(method, fullUrl, data);
 
     try {
       const controller = new AbortController();
@@ -232,21 +255,29 @@ class RealApiClient implements ApiClient {
       }
 
       const responseData = await response.json();
-      console.log(`API ${method.toUpperCase()} Response:`, responseData);
+      logApiResponse(method, responseData);
       return responseData;
     } catch (error) {
       // Handle different types of network errors
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           // Request was aborted due to timeout
-          const timeoutError = new Error('Tiempo de espera agotado') as any;
+          const timeoutError = new Error('Tiempo de espera agotado') as Error & {
+            status: number;
+            type: string;
+            response: { data: null };
+          };
           timeoutError.status = 0;
           timeoutError.type = 'timeout';
           timeoutError.response = { data: null };
           throw timeoutError;
         } else if (this.isNetworkError(error)) {
           // Network error (no internet, server down, etc.)
-          const networkError = new Error('Error de conexión') as any;
+          const networkError = new Error('Error de conexión') as Error & {
+            status: number;
+            type: string;
+            response: { data: null };
+          };
           networkError.status = 0;
           networkError.type = 'network';
           networkError.response = { data: null };
@@ -271,10 +302,10 @@ class RealApiClient implements ApiClient {
 
     // Try to parse error response
     let errorMessage = `HTTP error! status: ${status}`;
-    let errorData: any = null;
+    let errorData: unknown = null;
     
     try {
-      errorData = await response.json();
+      errorData = await response.json() as { detail?: string | Array<{ msg?: string; message?: string }>; message?: string };
       
       if (status === 422) {
         // Validation errors
@@ -285,17 +316,17 @@ class RealApiClient implements ApiClient {
           errorMessage = details;
         }
       } else if (status === 400) {
-        errorMessage = errorData.detail || errorData.message || 'Solicitud incorrecta';
+        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'Solicitud incorrecta';
       } else if (status === 401) {
-        errorMessage = errorData.detail || errorData.message || 'No autorizado';
+        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'No autorizado';
       } else if (status === 403) {
-        errorMessage = errorData.detail || errorData.message || 'Acceso denegado';
+        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'Acceso denegado';
       } else if (status === 404) {
         errorMessage = 'Recurso no encontrado';
       } else if (status === 409) {
-        errorMessage = errorData.detail || errorData.message || 'Conflicto - ya registrado';
+        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'Conflicto - ya registrado';
       } else if (status === 422) {
-        errorMessage = errorData.detail || errorData.message || 'Error de validación';
+        errorMessage = (typeof errorData.detail === 'string' ? errorData.detail : undefined) || errorData.message || 'Error de validación';
       } else if (status === 500) {
         errorMessage = 'Error interno del servidor';
       }
@@ -304,11 +335,14 @@ class RealApiClient implements ApiClient {
     }
 
     // Create a custom error that includes the response data
-    const error = new Error(errorMessage) as any;
-    error.status = status;
-    error.response = { data: errorData };
+    const customError = new Error(errorMessage) as Error & {
+      status: number;
+      response: { data: unknown };
+    };
+    customError.status = status;
+    customError.response = { data: errorData };
     
-    throw error;
+    throw customError;
   }
 
   async get<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
@@ -335,16 +369,16 @@ class RealApiClient implements ApiClient {
 // Mock API Client Implementation
 class MockApiClient implements ApiClient {
   async get<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
-    console.log('Mock GET:', endpoint, config);
+    logger.debug('Mock GET:', endpoint, config);
     
     // Import mock services dynamically to avoid circular dependencies
-    const { mockGetActivePlans, mockGetPlanById } = await import('../../services/mockPlanService');
+    const { mockGetActivePlans, mockGetPlanById } = await import('../../features/plans/data/mockPlans');
     const { 
       mockGetSubscriptions, 
       mockGetActiveSubscription, 
       mockGetPayments, 
       mockGetPaymentStats
-    } = await import('../../services/mockSubscriptionService');
+    } = await import('../../features/subscriptions/data/mockSubscriptions');
     
     // Handle plans endpoints
     if (endpoint.includes('/plans/')) {
@@ -383,9 +417,9 @@ class MockApiClient implements ApiClient {
   }
 
   async post<T>(endpoint: string, data?: unknown, _config: RequestConfig = {}): Promise<T> {
-    console.log('Mock POST:', endpoint, data);
+    logger.debug('Mock POST:', endpoint, data);
     
-    const { mockCreateSubscription, mockCreatePayment } = await import('../../services/mockSubscriptionService');
+    const { mockCreateSubscription, mockCreatePayment } = await import('../../features/subscriptions/data/mockSubscriptions');
     
     if (endpoint.includes('/subscriptions/') && !endpoint.includes('/payments')) {
       const parts = endpoint.split('/');
@@ -401,17 +435,17 @@ class MockApiClient implements ApiClient {
   }
 
   async put<T>(endpoint: string, data?: unknown, _config: RequestConfig = {}): Promise<T> {
-    console.log('Mock PUT:', endpoint, data);
+    logger.debug('Mock PUT:', endpoint, data);
     return { ...(data as object), updated_at: new Date().toISOString() } as T;
   }
 
   async patch<T>(endpoint: string, data?: unknown, _config: RequestConfig = {}): Promise<T> {
-    console.log('Mock PATCH:', endpoint, data);
+    logger.debug('Mock PATCH:', endpoint, data);
     return { ...(data as object), updated_at: new Date().toISOString() } as T;
   }
 
   async delete<T>(endpoint: string, _config: RequestConfig = {}): Promise<T> {
-    console.log('Mock DELETE:', endpoint);
+    logger.debug('Mock DELETE:', endpoint);
     return { success: true } as T;
   }
 }

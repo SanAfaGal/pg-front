@@ -3,7 +3,7 @@ import { UUID } from '../../../shared/types/common';
 import { Subscription, Plan } from '../api/types';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { useToast } from '../../../shared';
+import { useToast, logger } from '../../../shared';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { ActiveSubscriptionCard } from './ActiveSubscriptionCard';
 import { SubscriptionHistoryTable } from './SubscriptionHistoryTable';
@@ -109,10 +109,12 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       // Refetch to show new subscription
       refetchSubscriptions();
       refetchActiveSubscription();
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.detail || error?.message || NOTIFICATION_MESSAGES.error.generic;
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
+                            (error as { message?: string })?.message || 
+                            NOTIFICATION_MESSAGES.error.generic;
       showToast({ title: 'Error', message: errorMessage, type: 'error' });
-      console.error('Error creating subscription:', error);
+      logger.error('Error creating subscription:', error);
     }
   }, [clientId, createSubscriptionMutation, showToast, refetchSubscriptions, refetchActiveSubscription]);
 
@@ -143,8 +145,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       
       // Return the new subscription ID so the modal can apply the reward
       return renewedSubscription.id;
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.detail || error?.message || NOTIFICATION_MESSAGES.error.generic;
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
+                            (error as { message?: string })?.message || 
+                            NOTIFICATION_MESSAGES.error.generic;
       throw new Error(errorMessage);
     }
   }, [clientId, subscriptionToRenew, renewSubscriptionMutation, showToast, refetchSubscriptions, refetchActiveSubscription, refetchActivePayments, refetchActivePaymentStats]);
@@ -172,8 +176,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       refetchActiveSubscription();
       refetchActivePayments();
       refetchActivePaymentStats();
-    } catch (error: any) {
-      const errorMessage = error?.response?.data?.detail || error?.message || NOTIFICATION_MESSAGES.error.generic;
+    } catch (error: unknown) {
+      const errorMessage = (error as { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
+                            (error as { message?: string })?.message || 
+                            NOTIFICATION_MESSAGES.error.generic;
       throw new Error(errorMessage);
     }
   }, [clientId, subscriptionToCancel, cancelSubscriptionMutation, showToast, refetchSubscriptions, refetchActiveSubscription, refetchActivePayments, refetchActivePaymentStats]);
@@ -206,12 +212,11 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
   }, [subscriptions]);
 
   const handleFloatingRewardClick = useCallback(() => {
+    // Solo permitir renovar suscripciones vencidas, no la activa
     if (expiredSubscriptionToRenew) {
       handleOpenRenewModal(expiredSubscriptionToRenew);
-    } else if (activeSubscription) {
-      handleOpenRenewModal(activeSubscription);
     }
-  }, [expiredSubscriptionToRenew, activeSubscription, handleOpenRenewModal]);
+  }, [expiredSubscriptionToRenew, handleOpenRenewModal]);
 
   return (
     <div className="space-y-8 relative">
@@ -258,7 +263,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
             subscription={activeSubscription}
             payments={activeSubscriptionPayments || []}
             paymentStats={activePaymentStats}
-            onRenew={handleOpenRenewModal}
+            onRenew={undefined}
             onCancel={handleOpenCancelModal}
             onAddPayment={handleAddPayment}
             isLoadingPayments={activePaymentsLoading || activeStatsLoading}

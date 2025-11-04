@@ -1,5 +1,6 @@
-import { CheckCircle2, ScanFace, Loader2, Fingerprint } from 'lucide-react';
+import { ScanFace, Loader2, Fingerprint } from 'lucide-react';
 import { type BiometricData } from '../../features/clients';
+import { logger } from '../../shared';
 
 interface BiometricStatusProps {
   biometric?: BiometricData;
@@ -8,7 +9,7 @@ interface BiometricStatusProps {
 }
 
 export const BiometricStatus = ({ biometric, isLoading, className = '' }: BiometricStatusProps) => {
-  console.log('BiometricStatus - props received:', { biometric, isLoading });
+  logger.debug('BiometricStatus - props received:', { biometric, isLoading });
 
   if (isLoading) {
     return (
@@ -21,7 +22,7 @@ export const BiometricStatus = ({ biometric, isLoading, className = '' }: Biomet
 
   const hasBiometric = biometric?.thumbnail ? true : false;
 
-  console.log('BiometricStatus - computed values:', { hasBiometric });
+  logger.debug('BiometricStatus - computed values:', { hasBiometric });
 
   return (
     <div className={`space-y-4 ${className}`}>

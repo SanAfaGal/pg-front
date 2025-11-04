@@ -1,0 +1,57 @@
+/**
+ * Test utilities for React components
+ * Provides helpers for rendering components with providers
+ */
+import React, { ReactElement } from 'react';
+import { render, RenderOptions } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter } from 'react-router-dom';
+
+/**
+ * Create a test QueryClient with default options
+ */
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+        gcTime: 0,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+  });
+
+/**
+ * Custom render function that includes all necessary providers
+ */
+interface AllTheProvidersProps {
+  children: React.ReactNode;
+}
+
+const AllTheProviders = ({ children }: AllTheProvidersProps) => {
+  const queryClient = createTestQueryClient();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>{children}</BrowserRouter>
+    </QueryClientProvider>
+  );
+};
+
+/**
+ * Custom render function that wraps components with providers
+ * Use this instead of render() from @testing-library/react
+ */
+const customRender = (
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>
+) => render(ui, { wrapper: AllTheProviders, ...options });
+
+// Re-export everything from @testing-library/react
+export * from '@testing-library/react';
+
+// Override render method
+export { customRender as render };
+

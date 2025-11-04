@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, memo } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
-import { useCamera } from '../../../hooks/useCamera';
+import { useCamera } from '../hooks/useCamera';
 import { formatImageForAPI } from '../utils/imageUtils';
 import { Camera, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';

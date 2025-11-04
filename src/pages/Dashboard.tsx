@@ -6,28 +6,21 @@ import { RefreshCw, Calendar, Filter } from 'lucide-react';
 import { Sidebar } from '../components/dashboard/Sidebar';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
 import { useAuth } from '../features/auth';
 import { useToast } from '../shared';
 import { useDashboard, useRecentActivities } from '../features/dashboard/hooks/useDashboard';
 import { PeriodType } from '../features/dashboard/types';
 import { PERIOD_TYPES, NOTIFICATION_MESSAGES, PERIOD_OPTIONS } from '../features/dashboard/constants/dashboardConstants';
 import { PeriodSelector } from '../features/dashboard/components/PeriodSelector';
-import { DashboardStatsGrid } from '../features/dashboard/components/DashboardStatsGrid';
 import { ClientStatsCard } from '../features/dashboard/components/ClientStatsCard';
 import { FinancialStatsCard } from '../features/dashboard/components/FinancialStatsCard';
 import { AttendanceStatsCard } from '../features/dashboard/components/AttendanceStatsCard';
 import { InventoryStatsCard } from '../features/dashboard/components/InventoryStatsCard';
 import { RecentActivitiesList } from '../features/dashboard/components/RecentActivitiesList';
 import { AlertsPanel } from '../features/dashboard/components/AlertsPanel';
-import { DailyFinancialSummary } from '../features/dashboard/components/DailyFinancialSummary';
 import { Clients } from './Clients';
 import Attendances from './Attendances';
 import { InventoryPage } from '../features/inventory';
-import { PlansDebug } from '../components/debug/PlansDebug';
-import { SimplePlansTest } from '../components/debug/SimplePlansTest';
-import { ConfigDebug } from '../components/debug/ConfigDebug';
-import { AuthDebug } from '../components/debug/AuthDebug';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -135,22 +128,6 @@ export const Dashboard = () => {
       return <InventoryPage />;
     }
 
-    if (activeMenuItem === 'debug-plans') {
-      return <PlansDebug />;
-    }
-
-    if (activeMenuItem === 'simple-test') {
-      return <SimplePlansTest />;
-    }
-
-    if (activeMenuItem === 'config-debug') {
-      return <ConfigDebug />;
-    }
-
-    if (activeMenuItem === 'auth-debug') {
-      return <AuthDebug />;
-    }
-
     if (activeMenuItem === 'home') {
       if (isDashboardLoading) {
         return <LoadingSpinner size="lg" text="Cargando datos del dashboard..." />;
@@ -241,16 +218,6 @@ export const Dashboard = () => {
             <AlertsPanel alerts={dashboardData.alerts} />
           )}
 
-          {/* Daily Financial Summary - Always shown for the filtered date/period */}
-          {/* <DailyFinancialSummary 
-            stats={dashboardData.financial_stats} 
-            period={period}
-            startDate={dashboardData.period.start_date}
-            endDate={dashboardData.period.end_date}
-          /> */}
-
-          {/* Main Stats Grid */}
-          {/* <DashboardStatsGrid data={dashboardData} period={period} /> */}
 
           {/* Detailed Stats Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

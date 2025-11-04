@@ -1,11 +1,11 @@
-import { apiClient, API_ENDPOINTS } from '../../../shared'
+import { apiClient, API_ENDPOINTS, logger } from '../../../shared'
 import { Plan } from './types'
 
 export const fetchActivePlans = async (
   limit: number = 100,
   offset: number = 0
 ): Promise<Plan[]> => {
-  console.log('fetchActivePlans called with:', { limit, offset })
+  logger.debug('fetchActivePlans called with:', { limit, offset })
   
   try {
     const data = await apiClient.get<Plan[]>(API_ENDPOINTS.plans.list, {
@@ -16,10 +16,10 @@ export const fetchActivePlans = async (
       }
     })
     
-    console.log('fetchActivePlans response:', data)
+    logger.debug('fetchActivePlans response:', data)
     return data
   } catch (error) {
-    console.error('fetchActivePlans error:', error)
+    logger.error('fetchActivePlans error:', error)
     throw error
   }
 }

@@ -1,6 +1,15 @@
 import { Client, ClientFormData } from '../types';
 
+/**
+ * Helper functions for client data manipulation and formatting
+ */
 export const clientHelpers = {
+  /**
+   * Calculate age from birth date
+   * 
+   * @param birthDate - Birth date string in ISO format
+   * @returns Calculated age in years
+   */
   calculateAge(birthDate: string): number {
     const birth = new Date(birthDate);
     const today = new Date();
@@ -14,6 +23,13 @@ export const clientHelpers = {
     return age;
   },
 
+  /**
+   * Format full name from client data
+   * Handles both Client and ClientFormData types
+   * 
+   * @param client - Client or ClientFormData object
+   * @returns Formatted full name string
+   */
   formatFullName(client: Client | ClientFormData): string {
     if ('dni_type' in client) {
       const parts = [
@@ -34,6 +50,12 @@ export const clientHelpers = {
     }
   },
 
+  /**
+   * Format phone number for display
+   * 
+   * @param phone - Phone number string
+   * @returns Formatted phone number string
+   */
   formatPhoneNumber(phone: string): string {
     // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, '');
@@ -46,6 +68,12 @@ export const clientHelpers = {
     return phone; // Return original if not 10 digits
   },
 
+  /**
+   * Get initials from client name
+   * 
+   * @param client - Client or ClientFormData object
+   * @returns String with first letter of first and last name
+   */
   getInitials(client: Client | ClientFormData): string {
     const fullName = clientHelpers.formatFullName(client);
     return fullName

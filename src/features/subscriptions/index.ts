@@ -10,7 +10,6 @@ export * from './hooks/usePayments';
 // Component exports
 export { SubscriptionList, SubscriptionCard, SubscriptionStatusBadge } from './components/SubscriptionList';
 export { SubscriptionDetail } from './components/SubscriptionDetail';
-export { SubscriptionForm } from './components/SubscriptionForm';
 export { PaymentForm } from './components/PaymentForm';
 export { PaymentHistory } from './components/PaymentHistory';
 export { SubscriptionStatusComponent } from './components/SubscriptionStatus';

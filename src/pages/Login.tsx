@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Toast } from '../components/ui/Toast';
-import { API_CONFIG, API_ENDPOINTS, tokenManager } from '../shared';
+import { API_CONFIG, API_ENDPOINTS, tokenManager, logger } from '../shared';
 import { useAuth } from '../features/auth';
 
 export const Login = () => {
@@ -85,7 +85,7 @@ export const Login = () => {
         setToast({ message: 'Error al iniciar sesión', type: 'error' });
       }
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
       setToast({ message: 'Error al conectar con el servidor', type: 'error' });
     } finally {
       setIsLoading(false);

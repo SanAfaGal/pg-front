@@ -1,4 +1,6 @@
 // Camera utilities for facial recognition
+import { logger } from '../../../shared';
+
 export interface CameraConstraints {
   video: {
     width: { ideal: number };
@@ -43,7 +45,7 @@ export const initializeCamera = async (
     
     return stream;
   } catch (error) {
-    console.error('Camera initialization failed:', error);
+    logger.error('Camera initialization failed:', error);
     
     if (error instanceof Error) {
       if (error.name === 'NotAllowedError') {
@@ -79,7 +81,7 @@ export const getAvailableCameras = async (): Promise<MediaDeviceInfo[]> => {
     const devices = await navigator.mediaDevices.enumerateDevices();
     return devices.filter(device => device.kind === 'videoinput');
   } catch (error) {
-    console.error('Failed to get camera devices:', error);
+    logger.error('Failed to get camera devices:', error);
     return [];
   }
 };

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../api/authApi';
 import { LoginCredentials, AuthTokens } from '../types';
 import { tokenManager } from '../../../shared/api/apiClient';
+import { logger } from '../../../shared';
 
 const AUTH_QUERY_KEY = ['auth'] as const;
 
@@ -48,7 +49,7 @@ export const useAuth = () => {
       queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEY });
     },
     onError: (error) => {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
     },
   });
 
@@ -95,7 +96,7 @@ export const useAuth = () => {
         await loginMutation.mutateAsync(credentials);
         return true;
       } catch (error) {
-        console.error('Login failed:', error);
+        logger.error('Login failed:', error);
         return false;
       }
     },

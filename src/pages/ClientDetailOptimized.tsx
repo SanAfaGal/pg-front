@@ -4,13 +4,15 @@ import { Button } from '../components/ui/Button';
 import { PageLayout } from '../components/ui/PageLayout';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useToast } from '../shared';
-import { ClientFormModal } from '../components/clients/ClientFormModal';
-import { BiometricCaptureModal } from '../components/clients/BiometricCaptureModal';
+import { ClientFormModal } from '../features/clients/components/ClientFormModal';
+import { BiometricCaptureModal } from '../features/clients/components/BiometricCaptureModal';
 import { useClient, useClientDashboard, clientHelpers } from '../features/clients';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
-import { ClientInfoTab } from '../components/clients/ClientInfoTab';
-import { SubscriptionsTab } from '../components/clients/SubscriptionsTabNew';
-import { AttendanceTab } from '../components/clients/AttendanceTab';
+import { ClientInfoTab } from '../features/clients/components/ClientInfoTab';
+import { SubscriptionsTab } from '../features/subscriptions/components/SubscriptionsTab';
+import { AttendanceTab } from '../features/clients';
+import { useActivePlans } from '../features/plans';
+import { Plan } from '../features/subscriptions/api/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ClientDetailProps {
@@ -26,8 +28,28 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
 
   const { data: client, isLoading: clientLoading } = useClient(clientId);
   const { data: dashboard, isLoading: dashboardLoading, isError } = useClientDashboard(clientId);
+  const { data: activePlansData, isLoading: plansLoading } = useActivePlans();
 
   const isLoading = clientLoading || dashboardLoading;
+
+  // Convert plans from plans module format to subscriptions module format
+  const plans: Plan[] = useMemo(() => {
+    if (!activePlansData) return [];
+    
+    return activePlansData.map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      description: plan.description,
+      price: plan.price,
+      duration_days: plan.duration_unit === 'day' ? plan.duration_count :
+                    plan.duration_unit === 'week' ? plan.duration_count * 7 :
+                    plan.duration_unit === 'month' ? plan.duration_count * 30 :
+                    plan.duration_unit === 'year' ? plan.duration_count * 365 : 30,
+      is_active: plan.is_active,
+      created_at: plan.created_at,
+      updated_at: plan.updated_at,
+    }));
+  }, [activePlansData]);
 
   // Memoized full name
   const fullName = useMemo(() => {
@@ -184,11 +206,18 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
                       exit={{ opacity: 0, y: -20 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <SubscriptionsTab
-                        dashboard={dashboard}
-                        clientId={clientId}
-                        clientName={fullName}
-                      />
+                      {plansLoading ? (
+                        <div className="flex flex-col items-center justify-center p-12">
+                          <LoadingSpinner size="lg" />
+                          <p className="text-gray-600 mt-4">Cargando planes disponibles...</p>
+                        </div>
+                      ) : (
+                        <SubscriptionsTab
+                          clientId={clientId}
+                          clientName={fullName}
+                          plans={plans}
+                        />
+                      )}
                     </motion.div>
                   </TabsContent>
                 )}

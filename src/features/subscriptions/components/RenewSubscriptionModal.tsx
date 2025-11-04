@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { Badge } from '../../../components/ui/Badge';
 import { formatDate } from '../utils/subscriptionHelpers';
+import { logger } from '../../../shared';
 import { AlertTriangle, RefreshCw, Gift, CheckCircle2, XCircle, Info, Target } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
 import { RewardSelector } from '../../../features/rewards/components/RewardSelector';
@@ -305,7 +306,7 @@ export const RenewSubscriptionModal: React.FC<RenewSubscriptionModalProps> = ({
           });
         } catch (rewardError) {
           const errorMessage = rewardError instanceof Error ? rewardError.message : 'Error desconocido';
-          console.error('Error applying reward:', errorMessage);
+          logger.error('Error applying reward:', errorMessage);
           // Show a warning but don't fail the renewal
           setError('La suscripción se renovó pero hubo un problema al marcar la recompensa como aplicada');
         }

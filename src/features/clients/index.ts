@@ -28,6 +28,9 @@ export {
 // Utils
 export { clientHelpers } from './utils/clientHelpers';
 export { formatPhoneNumber, unformatPhoneNumber } from './utils/phoneFormatter';
+export { extractCountryCode, removeCountryCode } from './utils/phoneParser';
+export { mapClientToApi, mapClientFromApi } from './utils/clientMapper';
+export type { ClientApiPayload } from './utils/clientMapper';
 
 // Constants
 export * from './constants/clientConstants';
@@ -35,7 +38,11 @@ export * from './constants/clientConstants';
 // Query Keys
 export { clientKeys } from './hooks/useClients';
 
-// Components (to be added later)
-// export { ClientList } from './components/ClientList';
-// export { ClientForm } from './components/ClientForm';
-// export { ClientDetail } from './components/ClientDetail';
+// Components
+export { ClientList } from './components/ClientList';
+export { ClientForm } from './components/ClientForm';
+export { ClientFormModal } from './components/ClientFormModal';
+export { ClientInfoTab } from './components/ClientInfoTab';
+export { BiometricCapture } from './components/BiometricCapture';
+export { BiometricCaptureModal } from './components/BiometricCaptureModal';
+export { AttendanceTab } from './components/AttendanceTab/AttendanceTab';
