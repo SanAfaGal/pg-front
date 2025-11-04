@@ -3,19 +3,19 @@ import { Subscription, Payment, PaymentStats } from '../api/types';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
+import { Tooltip } from '../../../components/ui/Tooltip';
 import { SubscriptionStatusBadge } from './SubscriptionList';
 import { PaymentProgressIndicator } from './PaymentProgressIndicator';
 import { 
   formatDate, 
   getDaysRemaining,
-  getSubscriptionProgress
 } from '../utils/subscriptionHelpers';
 import { 
   formatCurrency, 
   formatPaymentDate, 
   getPaymentMethodInfo,
 } from '../utils/paymentHelpers';
-import { Calendar, Clock, DollarSign, CreditCard, RefreshCw, X, Plus } from 'lucide-react';
+import { Calendar, Clock, DollarSign, RefreshCw, X, Plus } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 
 interface ActiveSubscriptionCardProps {
@@ -33,14 +33,10 @@ export const ActiveSubscriptionCard: React.FC<ActiveSubscriptionCardProps> = mem
   payments = [],
   paymentStats,
   onRenew,
-  onCancel,
   onAddPayment,
   isLoadingPayments = false,
 }) => {
-  const { daysRemaining, progress } = useMemo(() => ({
-    daysRemaining: getDaysRemaining(subscription),
-    progress: getSubscriptionProgress(subscription),
-  }), [subscription]);
+  const daysRemaining = useMemo(() => getDaysRemaining(subscription), [subscription]);
 
   const canRenew = subscription.status === 'active' || subscription.status === 'expired';
   const canCancel = ['active', 'pending_payment', 'scheduled'].includes(subscription.status);
@@ -81,15 +77,23 @@ export const ActiveSubscriptionCard: React.FC<ActiveSubscriptionCardProps> = mem
                 Renovar
               </Button>
             )}
-            {canCancel && onCancel && (
-              <Button
-                variant="destructive"
-                onClick={() => onCancel(subscription)}
-                leftIcon={<X className="w-4 h-4" />}
-                size="sm"
+            {canCancel && (
+              <Tooltip
+                content="Deshabilitado"
+                position="top"
               >
-                Cancelar
-              </Button>
+                <span className="inline-block">
+                  <Button
+                    variant="outline"
+                    disabled={true}
+                    leftIcon={<X className="w-4 h-4" />}
+                    size="sm"
+                    className="cursor-not-allowed pointer-events-none"
+                  >
+                    Cancelar
+                  </Button>
+                </span>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -178,7 +182,7 @@ export const ActiveSubscriptionCard: React.FC<ActiveSubscriptionCardProps> = mem
                             </p>
                           </div>
                         </div>
-                        <Badge variant="secondary" className="font-medium">
+                        <Badge variant="default" className="font-medium">
                           {methodInfo.label}
                         </Badge>
                       </div>

@@ -5,3 +5,7 @@ export * from './hooks/useRewards';
 export * from './utils/rewardHelpers';
 export * from './constants/rewardConstants';
 
+// Component exports
+export { RewardBadge } from './components/RewardBadge';
+export { RewardSelector } from './components/RewardSelector';
+

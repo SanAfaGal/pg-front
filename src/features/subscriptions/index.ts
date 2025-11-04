@@ -20,6 +20,8 @@ export { ActiveSubscriptionCard } from './components/ActiveSubscriptionCard';
 export { SubscriptionHistoryTable } from './components/SubscriptionHistoryTable';
 export { SubscriptionDetailModal } from './components/SubscriptionDetailModal';
 export { RenewSubscriptionModal } from './components/RenewSubscriptionModal';
+export { CalculateRewardButton } from './components/CalculateRewardButton';
+export { FloatingRewardButton } from './components/FloatingRewardButton';
 
 // Utility exports
 export * from './utils/subscriptionHelpers';

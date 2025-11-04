@@ -25,6 +25,7 @@ export const REWARD_RULES = {
   EXPIRATION_DAYS: 7, // Days until reward expires
   MIN_DISCOUNT: 0.01, // Minimum discount percentage
   MAX_DISCOUNT: 100.0, // Maximum discount percentage
+  EXPIRING_SOON_THRESHOLD: 3, // Days before expiration to consider "expiring soon"
 } as const;
 
 // Plan Eligibility

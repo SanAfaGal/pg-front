@@ -205,14 +205,41 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       return;
     }
 
+    // Ensure amount is a clean numeric string (remove any formatting)
+    // data.amount should already be numeric-only from handleAmountInput, but ensure it's clean
+    const cleanAmount = data.amount.replace(/\D/g, '');
+    if (!cleanAmount || cleanAmount === '0') {
+      setAmountError('El monto debe ser mayor a 0');
+      return;
+    }
+
+    // Convert to number and validate it's an integer
+    const numericAmount = parseInt(cleanAmount, 10);
+    if (isNaN(numericAmount) || numericAmount <= 0 || !Number.isInteger(numericAmount)) {
+      setAmountError('El monto debe ser un número entero mayor a 0');
+      return;
+    }
+
+    // Prepare payment data with clean numeric string
+    const paymentData = {
+      amount: numericAmount.toString(), // Send as clean numeric string
+      payment_method: data.payment_method,
+    };
+
+    // Log for debugging (remove in production if needed)
+    console.log('Sending payment data:', {
+      subscriptionId: subscription.id,
+      clientId: clientId || subscription.client_id,
+      paymentData,
+      amountType: typeof paymentData.amount,
+      amountValue: paymentData.amount,
+    });
+
     try {
       await createPaymentMutation.mutateAsync({
         subscriptionId: subscription.id,
         clientId: clientId || subscription.client_id,
-        data: {
-          amount: data.amount,
-          payment_method: data.payment_method,
-        },
+        data: paymentData,
       });
       
       reset();
@@ -355,7 +382,6 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               id="payment-amount"
               type="text"
               inputMode="numeric"
-              pattern="[0-9]*"
               value={displayAmount}
               placeholder={paymentType === 'partial' ? '0' : formatCurrencyInput(Math.floor(currentRemainingDebt || 0).toString())}
               disabled={paymentType === 'full'}

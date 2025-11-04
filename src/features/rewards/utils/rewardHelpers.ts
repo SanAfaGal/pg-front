@@ -3,6 +3,14 @@ import { REWARD_RULES, ELIGIBLE_PLAN_UNITS } from '../constants/rewardConstants'
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+interface SubscriptionInfo {
+  start_date: string;
+  end_date: string;
+  plan?: {
+    duration_unit?: string;
+  };
+}
+
 /**
  * Verifies if a reward is expired
  */
@@ -212,5 +220,144 @@ export function getSubscriptionPrice(
   }
   
   return planPrice ?? 0;
+}
+
+/**
+ * Checks if a reward can be calculated for renewal (subscription active but has 20+ attendances)
+ * This allows calculating rewards even if the subscription hasn't ended yet
+ * 
+ * @param subscription - Subscription information
+ * @param attendanceCount - Number of attendances in the current cycle
+ * @returns True if can calculate reward for renewal
+ */
+export function canCalculateRewardForRenewal(
+  subscription: SubscriptionInfo | null | undefined,
+  attendanceCount: number
+): boolean {
+  if (!subscription) return false;
+  
+  // Check if plan is eligible for rewards
+  const isEligiblePlan = subscription.plan?.duration_unit 
+    ? isPlanEligibleForRewards(subscription.plan.duration_unit)
+    : false;
+  
+  // Can calculate if:
+  // 1. Plan is monthly (eligible)
+  // 2. Has 20+ attendances in current cycle
+  // 3. Subscription is active (not necessarily ended)
+  return isEligiblePlan && attendanceCount >= REWARD_RULES.ATTENDANCE_THRESHOLD;
+}
+
+/**
+ * Checks if a reward is expiring soon (within threshold days)
+ * 
+ * @param reward - Reward to check
+ * @param thresholdDays - Days threshold (default from constants)
+ * @returns True if reward expires within threshold
+ */
+export function isRewardExpiringSoon(
+  reward: Reward,
+  thresholdDays: number = REWARD_RULES.EXPIRING_SOON_THRESHOLD
+): boolean {
+  if (!reward.expires_at || isRewardExpired(reward)) {
+    return false;
+  }
+  
+  const daysLeft = getDaysUntilExpiration(reward.expires_at);
+  return daysLeft > 0 && daysLeft <= thresholdDays;
+}
+
+/**
+ * Filters rewards that are expiring soon from a list
+ * 
+ * @param rewards - List of rewards to filter
+ * @param thresholdDays - Days threshold (default from constants)
+ * @returns Array of rewards expiring soon
+ */
+export function getRewardsExpiringSoon(
+  rewards: Reward[],
+  thresholdDays: number = REWARD_RULES.EXPIRING_SOON_THRESHOLD
+): Reward[] {
+  return rewards.filter(reward => isRewardExpiringSoon(reward, thresholdDays));
+}
+
+/**
+ * Sorts rewards by priority: expiring soon first, then by expiration date
+ * 
+ * @param rewards - List of rewards to sort
+ * @returns Sorted array of rewards
+ */
+export function sortRewardsByPriority(rewards: Reward[]): Reward[] {
+  return [...rewards].sort((a, b) => {
+    const aExpiringSoon = isRewardExpiringSoon(a);
+    const bExpiringSoon = isRewardExpiringSoon(b);
+    
+    // Expiring soon rewards first
+    if (aExpiringSoon && !bExpiringSoon) return -1;
+    if (!aExpiringSoon && bExpiringSoon) return 1;
+    
+    // Then sort by expiration date (earlier first)
+    if (a.expires_at && b.expires_at) {
+      return new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime();
+    }
+    
+    return 0;
+  });
+}
+
+/**
+ * Calculates the number of attendances within a subscription cycle
+ * 
+ * @param attendances - Array of attendance records
+ * @param startDate - Subscription start date (ISO string)
+ * @param endDate - Subscription end date (ISO string)
+ * @returns Number of attendances in the cycle
+ */
+export function calculateCycleAttendances(
+  attendances: Array<{ check_in: string }>,
+  startDate: string,
+  endDate: string
+): number {
+  if (!attendances || attendances.length === 0) return 0;
+  
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  return attendances.filter((att) => {
+    const checkIn = new Date(att.check_in);
+    return checkIn >= start && checkIn <= end;
+  }).length;
+}
+
+/**
+ * Validates reward application input data
+ * 
+ * @param rewardId - Reward ID to validate
+ * @param data - Reward apply input data
+ * @throws Error if validation fails
+ */
+export function validateRewardApplyInput(
+  rewardId: string,
+  data: { subscription_id?: string; discount_percentage?: number }
+): void {
+  if (!rewardId || typeof rewardId !== 'string' || rewardId.trim() === '') {
+    throw new Error('ID de recompensa es requerido');
+  }
+
+  if (!data || typeof data !== 'object') {
+    throw new Error('Datos de recompensa son requeridos');
+  }
+
+  if (!data.subscription_id || typeof data.subscription_id !== 'string' || data.subscription_id.trim() === '') {
+    throw new Error('ID de suscripción es requerido');
+  }
+
+  if (typeof data.discount_percentage !== 'number' || isNaN(data.discount_percentage)) {
+    throw new Error('Porcentaje de descuento debe ser un número válido');
+  }
+
+  if (data.discount_percentage < 0 || data.discount_percentage > 100) {
+    throw new Error('Porcentaje de descuento debe estar entre 0 y 100');
+  }
 }
 

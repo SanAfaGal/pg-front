@@ -5,6 +5,8 @@ import {
   isRewardAvailable,
   formatDiscount,
   getDaysUntilExpiration,
+  isRewardExpiringSoon,
+  formatDaysUntilExpiration,
 } from '../utils/rewardHelpers';
 
 interface RewardBadgeProps {
@@ -26,19 +28,19 @@ export const RewardBadge: React.FC<RewardBadgeProps> = ({
   // If there's an available reward, show it
   if (reward && isRewardAvailable(reward)) {
     const daysLeft = getDaysUntilExpiration(reward.expires_at);
-    const isExpiringSoon = daysLeft <= 3 && daysLeft > 0;
+    const expiringSoon = isRewardExpiringSoon(reward);
 
     return (
       <Badge
-        variant={isExpiringSoon ? 'warning' : 'success'}
+        variant={expiringSoon ? 'warning' : 'success'}
         className="flex items-center gap-1.5"
         animated
       >
         <Gift className="w-4 h-4" />
         <span>Recompensa disponible ({formatDiscount(reward.discount_percentage)} OFF)</span>
-        {showExpirationWarning && isExpiringSoon && (
+        {showExpirationWarning && expiringSoon && (
           <span className="text-xs ml-1">
-            (Expira en {daysLeft} {daysLeft === 1 ? 'día' : 'días'})
+            ({formatDaysUntilExpiration(reward.expires_at)})
           </span>
         )}
       </Badge>

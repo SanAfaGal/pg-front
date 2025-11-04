@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo, useState, useCallback } from 'react';
 import { Subscription } from '../api/types';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -6,11 +6,9 @@ import { Badge } from '../../../components/ui/Badge';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { SubscriptionStatusBadge } from './SubscriptionList';
 import { SubscriptionDetailModal } from './SubscriptionDetailModal';
-import { formatDate, sortSubscriptionsByStatus, canRenewSubscription } from '../utils/subscriptionHelpers';
-import { Eye, Calendar, Clock, RefreshCw } from 'lucide-react';
-import { useRewardsBySubscription } from '../../../features/rewards/hooks/useRewards';
-import { RewardBadge } from '../../../features/rewards/components/RewardBadge';
-import { filterAvailableRewards } from '../../../features/rewards/utils/rewardHelpers';
+import { formatDate, sortSubscriptionsByStatus, isSubscriptionExpired, getLastExpiredSubscription } from '../utils/subscriptionHelpers';
+import { Eye, Calendar, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface SubscriptionHistoryTableProps {
   subscriptions: Subscription[];
@@ -20,7 +18,10 @@ interface SubscriptionHistoryTableProps {
   className?: string;
 }
 
-// Separate component for subscription row to use hooks properly
+/**
+ * Compact Subscription Row Component
+ * Modern, minimal design with essential information
+ */
 const SubscriptionRow: React.FC<{
   subscription: Subscription;
   startDate: Date;
@@ -28,64 +29,61 @@ const SubscriptionRow: React.FC<{
   duration: number;
   onViewDetails: (subscription: Subscription) => void;
   onRenew?: (subscription: Subscription) => void;
-}> = ({ subscription, startDate, endDate, duration, onViewDetails, onRenew }) => {
-  const { data: rewards } = useRewardsBySubscription(subscription.id);
-  const availableRewards = rewards ? filterAvailableRewards(rewards) : [];
-  const canRenew = canRenewSubscription(subscription);
+  isLastExpired: boolean;
+  index: number;
+}> = ({ subscription, startDate, endDate, duration, onViewDetails, onRenew, isLastExpired, index }) => {
+  const isExpired = isSubscriptionExpired(subscription);
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
-      <td className="py-4 px-4">
-        <p className="text-sm font-mono text-gray-900">
-          {subscription.id.slice(0, 8)}
-        </p>
-      </td>
-      <td className="py-4 px-4">
-        <div className="space-y-1">
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15, delay: index * 0.03 }}
+      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border-b border-gray-100 last:border-0"
+    >
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        {/* Status Badge */}
+        <div className="flex-shrink-0">
           <SubscriptionStatusBadge status={subscription.status} />
-          {availableRewards.length > 0 && (
-            <RewardBadge reward={availableRewards[0]} />
-          )}
         </div>
-      </td>
-      <td className="py-4 px-4">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-gray-400" />
-          <p className="text-sm text-gray-900">{formatDate(subscription.start_date)}</p>
+
+        {/* Subscription Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-sm font-mono text-gray-600">{subscription.id.slice(0, 8)}</span>
+            <span className="text-xs text-gray-400">•</span>
+            <span className="text-sm text-gray-700">{formatDate(subscription.start_date)}</span>
+            <span className="text-xs text-gray-400">→</span>
+            <span className="text-sm text-gray-700">{formatDate(subscription.end_date)}</span>
+            <span className="text-xs text-gray-400">•</span>
+            <span className="text-sm text-gray-600">{duration} día{duration !== 1 ? 's' : ''}</span>
+          </div>
         </div>
-      </td>
-      <td className="py-4 px-4">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-gray-400" />
-          <p className="text-sm text-gray-900">{formatDate(subscription.end_date)}</p>
-        </div>
-      </td>
-      <td className="py-4 px-4">
-        <p className="text-sm text-gray-900">{duration} día{duration !== 1 ? 's' : ''}</p>
-      </td>
-      <td className="py-4 px-4 text-right">
-        <div className="flex items-center justify-end gap-2">
-          {canRenew && onRenew && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => onRenew(subscription)}
-              leftIcon={<RefreshCw className="w-4 h-4" />}
-            >
-              Renovar
-            </Button>
-          )}
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {isLastExpired && isExpired && onRenew && (
           <Button
-            variant="ghost"
+            variant="primary"
             size="sm"
-            onClick={() => onViewDetails(subscription)}
-            leftIcon={<Eye className="w-4 h-4" />}
+            onClick={() => onRenew(subscription)}
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+            className="font-medium"
           >
-            Ver Detalle
+            Renovar
           </Button>
-        </div>
-      </td>
-    </tr>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onViewDetails(subscription)}
+          leftIcon={<Eye className="w-3.5 h-3.5" />}
+        >
+          Ver
+        </Button>
+      </div>
+    </motion.div>
   );
 };
 
@@ -99,25 +97,28 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Filter out active subscription and sort
-  const historySubscriptions = useMemo(() => {
-    return sortSubscriptionsByStatus(
-      subscriptions.filter(sub => sub.status !== 'active')
-    );
+  // Filter out active subscription and get last expired
+  const { historySubscriptions, lastExpiredSubscription } = useMemo(() => {
+    const filtered = subscriptions.filter(sub => sub.status !== 'active');
+    const lastExpired = getLastExpiredSubscription(subscriptions);
+    return {
+      historySubscriptions: filtered,
+      lastExpiredSubscription: lastExpired,
+    };
   }, [subscriptions]);
 
-  const handleViewDetails = (subscription: Subscription) => {
+  const handleViewDetails = useCallback((subscription: Subscription) => {
     setSelectedSubscription(subscription);
     setIsModalOpen(true);
     onViewDetails?.(subscription);
-  };
+  }, [onViewDetails]);
 
   if (isLoading) {
     return (
-      <Card className={`p-12 ${className}`}>
-        <div className="flex flex-col items-center justify-center">
-          <LoadingSpinner size="lg" />
-          <p className="text-gray-600 mt-4">Cargando historial de suscripciones...</p>
+      <Card className={`p-8 ${className}`}>
+        <div className="flex flex-col items-center justify-center py-8">
+          <LoadingSpinner size="md" />
+          <p className="text-sm text-gray-500 mt-3">Cargando historial...</p>
         </div>
       </Card>
     );
@@ -125,15 +126,9 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
 
   if (historySubscriptions.length === 0) {
     return (
-      <Card className={`p-12 text-center ${className}`}>
-        <div className="flex flex-col items-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <Calendar className="w-8 h-8 text-gray-400" />
-          </div>
-          <p className="font-semibold text-gray-900 mb-2">No hay historial de suscripciones</p>
-          <p className="text-gray-600 text-sm max-w-md">
-            El historial aparecerá aquí cuando haya más suscripciones.
-          </p>
+      <Card className={`p-8 ${className}`}>
+        <div className="flex flex-col items-center py-8">
+          <p className="text-sm text-gray-500">No hay historial de suscripciones</p>
         </div>
       </Card>
     );
@@ -141,49 +136,28 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
 
   return (
     <>
-      <Card className={`p-6 shadow-sm ${className}`}>
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-gray-600" />
-            Historial de Suscripciones
-          </h3>
-          <Badge variant="secondary" className="font-medium">
-            {historySubscriptions.length} {historySubscriptions.length === 1 ? 'suscripción' : 'suscripciones'}
-          </Badge>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">ID</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Estado</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Fecha Inicio</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Fecha Fin</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Duración</th>
-                <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {historySubscriptions.map((subscription) => {
-                const startDate = new Date(subscription.start_date);
-                const endDate = new Date(subscription.end_date);
-                const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-
-                return (
-                  <SubscriptionRow 
-                    key={subscription.id}
-                    subscription={subscription}
-                    startDate={startDate}
-                    endDate={endDate}
-                    duration={duration}
-                    onViewDetails={handleViewDetails}
-                    onRenew={onRenew}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
+      <Card className={`p-4 ${className}`}>
+        <div className="space-y-1">
+          {historySubscriptions.map((subscription, index) => {
+            const startDate = new Date(subscription.start_date);
+            const endDate = new Date(subscription.end_date);
+            const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            const isLastExpired = lastExpiredSubscription?.id === subscription.id;
+            
+            return (
+              <SubscriptionRow
+                key={subscription.id}
+                subscription={subscription}
+                startDate={startDate}
+                endDate={endDate}
+                duration={duration}
+                onViewDetails={handleViewDetails}
+                onRenew={onRenew}
+                isLastExpired={isLastExpired}
+                index={index}
+              />
+            );
+          })}
         </div>
       </Card>
 

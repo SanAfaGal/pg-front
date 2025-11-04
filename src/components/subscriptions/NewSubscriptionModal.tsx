@@ -191,19 +191,54 @@ export function NewSubscriptionModal({
       });
       
       // If reward was selected, apply it to mark it as used
-      if (selectedReward && newSubscription) {
+      if (selectedReward && newSubscription && discountPercentageForAPI !== undefined) {
         try {
-          await applyRewardMutation.mutateAsync({
+          // Validate discount percentage before sending
+          if (typeof discountPercentageForAPI !== 'number' || isNaN(discountPercentageForAPI)) {
+            console.error('Invalid discount percentage:', discountPercentageForAPI);
+            throw new Error('Porcentaje de descuento inválido');
+          }
+
+          // Validate reward ID
+          if (!selectedReward.id || typeof selectedReward.id !== 'string') {
+            console.error('Invalid reward ID:', selectedReward.id);
+            throw new Error('ID de recompensa inválido');
+          }
+
+          // Validate subscription ID
+          if (!newSubscription.id || typeof newSubscription.id !== 'string') {
+            console.error('Invalid subscription ID:', newSubscription.id);
+            throw new Error('ID de suscripción inválido');
+          }
+
+          console.log('Applying reward:', {
+            rewardId: selectedReward.id,
+            subscriptionId: newSubscription.id,
+            discountPercentage: discountPercentageForAPI,
+          });
+
+          const appliedReward = await applyRewardMutation.mutateAsync({
             rewardId: selectedReward.id,
             data: {
               subscription_id: newSubscription.id,
-              discount_percentage: discountPercentageForAPI!,
+              discount_percentage: discountPercentageForAPI,
             },
           });
+
+          console.log('Reward applied successfully:', appliedReward);
         } catch (rewardError) {
           // If applying reward fails, log but don't fail the whole operation
           // The discount was already applied in the subscription creation
-          console.error('Error applying reward:', rewardError);
+          const errorMessage = rewardError instanceof Error ? rewardError.message : 'Error desconocido';
+          console.error('Error applying reward:', {
+            error: rewardError,
+            message: errorMessage,
+            rewardId: selectedReward.id,
+            subscriptionId: newSubscription.id,
+            discountPercentage: discountPercentageForAPI,
+          });
+          // Show a warning toast to inform the user
+          showToast('La suscripción se creó pero hubo un problema al marcar la recompensa como aplicada', 'warning');
         }
       }
       

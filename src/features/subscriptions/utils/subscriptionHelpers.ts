@@ -189,3 +189,16 @@ export const getExpiredSubscriptions = (subscriptions: Subscription[]): Subscrip
 export const getSubscriptionsRequiringPayment = (subscriptions: Subscription[]): Subscription[] => {
   return filterSubscriptionsByStatus(subscriptions, SubscriptionStatus.PENDING_PAYMENT);
 };
+
+/**
+ * Get the last expired subscription (most recent end date)
+ */
+export const getLastExpiredSubscription = (subscriptions: Subscription[]): Subscription | null => {
+  const expiredSubscriptions = getExpiredSubscriptions(subscriptions);
+  if (expiredSubscriptions.length === 0) return null;
+  
+  // Sort by end_date descending (most recent first)
+  return expiredSubscriptions.sort((a, b) => 
+    new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
+  )[0];
+};

@@ -25,6 +25,7 @@ import { PlanAndDateSelector } from '../../plans/components/PlanAndDateSelector'
 import { Plan as PlanType } from '../../plans/api/types';
 import { CancelSubscriptionModal } from './CancelSubscriptionModal';
 import { RenewSubscriptionModal } from './RenewSubscriptionModal';
+import { FloatingRewardButton } from './FloatingRewardButton';
 import { NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
 import { useApplyReward, useAvailableRewards } from '../../../features/rewards';
 
@@ -103,14 +104,14 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
           start_date: startDate,
         },
       });
-      showToast(NOTIFICATION_MESSAGES.subscription.created, 'success');
+      showToast({ title: 'Suscripción', message: NOTIFICATION_MESSAGES.subscription.created, type: 'success' });
       setIsPlanSelectorOpen(false);
       // Refetch to show new subscription
       refetchSubscriptions();
       refetchActiveSubscription();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.detail || error?.message || NOTIFICATION_MESSAGES.error.generic;
-      showToast(errorMessage, 'error');
+      showToast({ title: 'Error', message: errorMessage, type: 'error' });
       console.error('Error creating subscription:', error);
     }
   }, [clientId, createSubscriptionMutation, showToast, refetchSubscriptions, refetchActiveSubscription]);
@@ -130,7 +131,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
         data: discountPercentage ? { discount_percentage: discountPercentage } : undefined,
       });
       
-      showToast(NOTIFICATION_MESSAGES.subscription.renewed, 'success');
+      showToast({ title: 'Suscripción', message: NOTIFICATION_MESSAGES.subscription.renewed, type: 'success' });
       setIsRenewModalOpen(false);
       setSubscriptionToRenew(null);
       
@@ -162,7 +163,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
         subscriptionId: subscriptionToCancel.id,
         data: { cancellation_reason: reason || undefined },
       });
-      showToast(NOTIFICATION_MESSAGES.subscription.canceled, 'success');
+      showToast({ title: 'Suscripción', message: NOTIFICATION_MESSAGES.subscription.canceled, type: 'success' });
       setIsCancelModalOpen(false);
       setSubscriptionToCancel(null);
       
@@ -182,7 +183,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
   }, []);
 
   const handlePaymentCreated = useCallback(() => {
-    showToast(NOTIFICATION_MESSAGES.payment.created, 'success');
+      showToast({ title: 'Pago', message: NOTIFICATION_MESSAGES.payment.created, type: 'success' });
     setIsPaymentModalOpen(false);
     // React Query will automatically refetch due to invalidations
     // But we can also manually refetch for immediate update
@@ -195,8 +196,25 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
   // Memoized subscription count
   const subscriptionCount = useMemo(() => subscriptions?.length || 0, [subscriptions]);
 
+  // Get the first expired subscription that can be renewed for floating button
+  const expiredSubscriptionToRenew = useMemo(() => {
+    if (!subscriptions) return null;
+    const expired = subscriptions
+      .filter(sub => sub.status === 'expired' || (sub.status !== 'active' && new Date(sub.end_date) < new Date()))
+      .sort((a, b) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime());
+    return expired.length > 0 ? expired[0] : null;
+  }, [subscriptions]);
+
+  const handleFloatingRewardClick = useCallback(() => {
+    if (expiredSubscriptionToRenew) {
+      handleOpenRenewModal(expiredSubscriptionToRenew);
+    } else if (activeSubscription) {
+      handleOpenRenewModal(activeSubscription);
+    }
+  }, [expiredSubscriptionToRenew, activeSubscription, handleOpenRenewModal]);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
 
       {/* Error Banner */}
       {subscriptionsError && (
@@ -320,6 +338,12 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
         onConfirm={handleConfirmRenew}
         subscription={subscriptionToRenew}
         isLoading={renewSubscriptionMutation.isPending}
+      />
+
+      {/* Floating Reward Button */}
+      <FloatingRewardButton
+        clientId={clientId}
+        onOpenRenew={handleFloatingRewardClick}
       />
     </div>
   );

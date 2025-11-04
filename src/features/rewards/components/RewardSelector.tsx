@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Gift, AlertCircle } from 'lucide-react';
-import { useAvailableRewards, useApplyReward } from '../hooks/useRewards';
+import { useState, useEffect, useMemo } from 'react';
+import { Gift, AlertCircle, Clock } from 'lucide-react';
+import { useAvailableRewards } from '../hooks/useRewards';
 import {
-  isRewardAvailable,
   formatDiscount,
   formatExpirationDate,
   getDaysUntilExpiration,
   filterAvailableRewards,
+  isRewardExpiringSoon,
+  sortRewardsByPriority,
+  formatDaysUntilExpiration,
 } from '../utils/rewardHelpers';
 import { Reward } from '../types';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
@@ -64,13 +66,26 @@ export const RewardSelector: React.FC<RewardSelectorProps> = ({
     );
   }
 
-  const available = availableRewards ? filterAvailableRewards(availableRewards) : [];
+  const available = useMemo(() => {
+    return availableRewards ? filterAvailableRewards(availableRewards) : [];
+  }, [availableRewards]);
+  
+  // Sort rewards by priority: expiring soon first
+  const sortedRewards = useMemo(() => {
+    return sortRewardsByPriority(available);
+  }, [available]);
+
+  const selectedReward = useMemo(() => {
+    return available.find((r) => r.id === localSelectedId);
+  }, [available, localSelectedId]);
+
+  const expiringSoonRewards = useMemo(() => {
+    return available.filter(reward => isRewardExpiringSoon(reward));
+  }, [available]);
 
   if (available.length === 0) {
     return null;
   }
-
-  const selectedReward = available.find((r) => r.id === localSelectedId);
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -79,48 +94,71 @@ export const RewardSelector: React.FC<RewardSelectorProps> = ({
         Aplicar recompensa (opcional)
       </label>
 
+      {/* Warning for expiring rewards */}
+      {expiringSoonRewards.length > 0 && (
+        <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center gap-1.5 text-xs text-amber-700">
+            <Clock className="w-3.5 h-3.5" />
+            <span>
+              {expiringSoonRewards.length === 1 
+                ? '1 recompensa por expirar'
+                : `${expiringSoonRewards.length} recompensas por expirar`
+              }
+            </span>
+          </div>
+        </div>
+      )}
+
       <select
         value={localSelectedId}
         onChange={(e) => handleChange(e.target.value)}
         className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all bg-white"
       >
         <option value="">Sin recompensa</option>
-        {available.map((reward) => {
+        {sortedRewards.map((reward) => {
           const daysLeft = getDaysUntilExpiration(reward.expires_at);
-          const isExpiringSoon = daysLeft <= 3 && daysLeft > 0;
+          const expiringSoon = isRewardExpiringSoon(reward);
 
           return (
             <option key={reward.id} value={reward.id}>
               {formatDiscount(reward.discount_percentage)} OFF - {reward.attendance_count} asistencias
-              {isExpiringSoon && ` (Expira en ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'})`}
+              {expiringSoon && ` ⚠️ ${formatDaysUntilExpiration(reward.expires_at)}`}
             </option>
           );
         })}
       </select>
 
       {selectedReward && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+        <div className={`p-3 rounded-lg border ${
+          isRewardExpiringSoon(selectedReward) 
+            ? 'bg-amber-50 border-amber-200' 
+            : 'bg-green-50 border-green-200'
+        }`}>
           <div className="flex items-start gap-2">
-            <Gift className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <Badge variant="success" size="sm">
+            <Gift className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+              isRewardExpiringSoon(selectedReward) ? 'text-amber-600' : 'text-green-600'
+            }`} />
+            <div className="flex-1 space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant={isRewardExpiringSoon(selectedReward) ? 'warning' : 'success'} size="sm">
                   {formatDiscount(selectedReward.discount_percentage)} de descuento
                 </Badge>
                 <span className="text-xs text-gray-600">
                   Por {selectedReward.attendance_count} asistencias
                 </span>
               </div>
-              <p className="text-xs text-gray-600">
-                Elegible: {formatExpirationDate(selectedReward.eligible_date)}
-              </p>
-              <p className="text-xs text-gray-600">
-                Expira: {formatExpirationDate(selectedReward.expires_at)}
-              </p>
-              {getDaysUntilExpiration(selectedReward.expires_at) <= 3 && (
-                <div className="flex items-center gap-1 text-xs text-amber-700">
-                  <AlertCircle className="w-3 h-3" />
-                  <span>Esta recompensa expira pronto</span>
+              <div className="space-y-0.5 text-xs text-gray-600">
+                <p>
+                  <span className="font-medium">Elegible:</span> {formatExpirationDate(selectedReward.eligible_date)}
+                </p>
+                <p>
+                  <span className="font-medium">Expira:</span> {formatExpirationDate(selectedReward.expires_at)}
+                </p>
+              </div>
+              {isRewardExpiringSoon(selectedReward) && (
+                <div className="flex items-center gap-1.5 text-xs text-amber-700 font-medium pt-0.5">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>{formatDaysUntilExpiration(selectedReward.expires_at)}</span>
                 </div>
               )}
             </div>

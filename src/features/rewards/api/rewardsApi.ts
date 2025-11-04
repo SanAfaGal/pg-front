@@ -5,7 +5,9 @@ import {
   RewardApplyInput,
 } from '../types';
 
-// API Endpoints
+/**
+ * API endpoints for rewards feature
+ */
 const REWARDS_ENDPOINTS = {
   calculateEligibility: (subscriptionId: string) => `/subscriptions/${subscriptionId}/rewards/calculate`,
   getAvailableRewards: (clientId: string) => `/clients/${clientId}/rewards/available`,
@@ -13,6 +15,10 @@ const REWARDS_ENDPOINTS = {
   applyReward: (rewardId: string) => `/rewards/${rewardId}/apply`,
 } as const;
 
+/**
+ * Rewards API client
+ * Provides methods to interact with rewards endpoints
+ */
 export const rewardsApi = {
   /**
    * Calculate eligibility for a subscription
