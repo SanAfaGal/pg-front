@@ -1,7 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, productKeys } from '../hooks/useProducts';
 import { useAddStock, useRemoveStock } from '../hooks/useStock';
-import { useMovements } from '../hooks/useMovements';
+import { useMovements, movementKeys } from '../hooks/useMovements';
+import { reportKeys } from '../hooks/useReports';
 import { ProductList } from '../components/lists/ProductList';
 import { ProductForm } from '../components/ProductForm';
 import { StockManagement } from '../components/StockManagement';
@@ -24,6 +26,7 @@ export const InventoryPage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [movementPage, setMovementPage] = useState(0);
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   // Hooks
   const { data: productsResponse, isLoading: productsLoading, error: productsError, isRefetching: isProductsRefetching, refetch: refetchProducts } = useProducts();
@@ -36,19 +39,84 @@ export const InventoryPage: React.FC = () => {
 
   const products = productsResponse?.items || [];
   const movements = movementsResponse?.items || [];
-  
-  const isRefetching = isProductsRefetching || isMovementsRefetching;
+
+  // Helper function to get query keys to refresh based on active tab
+  const getRefreshQueriesForTab = useCallback((tab: string) => {
+    switch (tab) {
+      case 'reports':
+        // Invalidate all report-related queries (all is an array constant, not a function)
+        return [
+          reportKeys.all,
+        ];
+      case 'movements':
+        // Invalidate all movement-related queries (all is an array constant, not a function)
+        return [
+          movementKeys.all,
+        ];
+      case 'products':
+      default:
+        // Default: refresh products (all is an array constant, not a function)
+        return [
+          productKeys.all,
+        ];
+    }
+  }, []);
+
+  // Calculate isRefetching based on active tab queries
+  const isRefetching = useMemo(() => {
+    const queriesToCheck = getRefreshQueriesForTab(activeTab);
+    const isFetchingQueries = queriesToCheck.some(queryKey => 
+      queryClient.isFetching({ queryKey })
+    );
+    
+    // Only include specific refetching states for their respective tabs
+    if (activeTab === 'products') {
+      return isFetchingQueries || isProductsRefetching;
+    } else if (activeTab === 'movements') {
+      return isFetchingQueries || isMovementsRefetching;
+    } else {
+      // For reports tab, only check query fetching
+      return isFetchingQueries;
+    }
+  }, [activeTab, queryClient, getRefreshQueriesForTab, isProductsRefetching, isMovementsRefetching]);
 
   const handleRefresh = useCallback(async () => {
     try {
-      await Promise.all([
-        refetchProducts(),
-        refetchMovements(),
-      ]);
+      const queriesToInvalidate = getRefreshQueriesForTab(activeTab);
+      
+      // Invalidate all queries for the active tab
+      await Promise.all(
+        queriesToInvalidate.map(queryKey => 
+          queryClient.invalidateQueries({ queryKey })
+        )
+      );
+
+      // For 'products' and 'movements' tabs, also explicitly refetch to maintain current behavior
+      if (activeTab === 'products') {
+        await refetchProducts();
+      } else if (activeTab === 'movements') {
+        await refetchMovements();
+      }
+
+      const tabMessages: Record<string, { title: string; message: string }> = {
+        reports: {
+          title: 'Actualizado',
+          message: 'Los reportes de inventario se han actualizado correctamente',
+        },
+        movements: {
+          title: 'Actualizado',
+          message: 'Los movimientos se han actualizado correctamente',
+        },
+        products: {
+          title: 'Actualizado',
+          message: 'Los productos se han actualizado correctamente',
+        },
+      };
+
+      const message = tabMessages[activeTab] || tabMessages.products;
       showToast({
         type: 'success',
-        title: 'Actualizado',
-        message: 'Los datos del inventario se han actualizado correctamente',
+        ...message,
       });
     } catch {
       showToast({
@@ -57,7 +125,7 @@ export const InventoryPage: React.FC = () => {
         message: 'No se pudo actualizar los datos del inventario',
       });
     }
-  }, [refetchProducts, refetchMovements, showToast]);
+  }, [activeTab, queryClient, getRefreshQueriesForTab, refetchProducts, refetchMovements, showToast]);
 
   // Handlers
   const handleCreateProduct = () => {

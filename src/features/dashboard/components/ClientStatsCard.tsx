@@ -1,78 +1,55 @@
-import { Card } from '../../../components/ui/Card';
-import { Users, UserPlus, CheckCircle2, XCircle } from 'lucide-react';
+import { Users, UserPlus, XCircle } from 'lucide-react';
 import { ClientStats, PeriodType } from '../types';
 import { formatNumber } from '../utils/dashboardHelpers';
-import { PERIOD_TYPES } from '../constants/dashboardConstants';
+import { BaseStatsCard } from './BaseStatsCard';
 
 interface ClientStatsCardProps {
   stats: ClientStats;
   period: PeriodType;
 }
 
-const getPeriodLabel = (period: PeriodType): string => {
-  const labels: Record<PeriodType, string> = {
-    today: 'Hoy',
-    week: 'Esta Semana',
-    month: 'Este Mes',
-    year: 'Este Año',
-  };
-  return labels[period] || 'Período';
-};
-
-export const ClientStatsCard = ({ stats, period }: ClientStatsCardProps) => {
-  const periodLabel = getPeriodLabel(period);
+export const ClientStatsCard = ({ stats }: ClientStatsCardProps) => {
+  // Calcular métricas relevantes
+  const activeRate = stats.total > 0 ? ((stats.active / stats.total) * 100).toFixed(1) : '0';
+  const subscriptionRate = stats.total > 0 ? ((stats.with_active_subscription / stats.total) * 100).toFixed(1) : '0';
 
   return (
-    <Card padding="md" className="sm:p-6 lg:p-8">
-      <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-        <div className="p-2 sm:p-3 bg-blue-100 rounded-lg sm:rounded-xl">
-          <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+    <BaseStatsCard title="Clientes" icon={Users} iconColor="blue">
+      {/* Métricas Principales - Compactas */}
+      <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-gray-100">
+        <div className="text-center">
+          <p className="text-xs text-gray-500 mb-0.5">Total</p>
+          <p className="text-xl font-bold text-powergym-charcoal">{formatNumber(stats.total)}</p>
         </div>
-        <h3 className="text-lg sm:text-xl font-bold text-powergym-charcoal">Clientes</h3>
+        <div className="text-center">
+          <p className="text-xs text-gray-500 mb-0.5">Activos</p>
+          <p className="text-xl font-bold text-green-600">{formatNumber(stats.active)}</p>
+          <p className="text-[10px] text-gray-400">{activeRate}%</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xs text-gray-500 mb-0.5">Suscripciones</p>
+          <p className="text-xl font-bold text-blue-600">{formatNumber(stats.with_active_subscription)}</p>
+          <p className="text-[10px] text-gray-400">{subscriptionRate}%</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total</p>
-          <p className="text-xl sm:text-2xl font-bold text-powergym-charcoal">{formatNumber(stats.total)}</p>
+      {/* Métricas Secundarias - Compactas */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="flex items-center gap-2 p-2 bg-blue-50/50 rounded-lg border border-blue-100">
+          <UserPlus className="w-4 h-4 text-blue-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-600">Nuevos</p>
+            <p className="text-base font-bold text-blue-600">{formatNumber(stats.new_in_period)}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Activos</p>
-          <p className="text-xl sm:text-2xl font-bold text-green-600">{formatNumber(stats.active)}</p>
-        </div>
-        <div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Inactivos</p>
-          <p className="text-xl sm:text-2xl font-bold text-gray-500">{formatNumber(stats.inactive)}</p>
-        </div>
-        <div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center gap-1">
-            <UserPlus className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Nuevos en Período</span>
-            <span className="sm:hidden">Nuevos</span>
-          </p>
-          <p className="text-lg sm:text-xl font-semibold text-blue-600">{formatNumber(stats.new_in_period)}</p>
-        </div>
-        <div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Con Suscripción Activa</span>
-            <span className="sm:hidden">Activos</span>
-          </p>
-          <p className="text-lg sm:text-xl font-semibold text-green-600">
-            {formatNumber(stats.with_active_subscription)}
-          </p>
-        </div>
-        <div>
-          <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center gap-1">
-            <XCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Con Pago Pendiente</span>
-            <span className="sm:hidden">Pendiente</span>
-          </p>
-          <p className="text-lg sm:text-xl font-semibold text-amber-600">
-            {formatNumber(stats.with_pending_payment)}
-          </p>
+        <div className="flex items-center gap-2 p-2 bg-amber-50/50 rounded-lg border border-amber-100">
+          <XCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-gray-600">Pendientes</p>
+            <p className="text-base font-bold text-amber-600">{formatNumber(stats.with_pending_payment)}</p>
+          </div>
         </div>
       </div>
-    </Card>
+    </BaseStatsCard>
   );
 };

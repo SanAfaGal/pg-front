@@ -72,6 +72,25 @@ persistQueryClient({
   queryClient,
   persister: localStoragePersister,
   maxAge: CACHE_TIME,
+  dehydrateOptions: {
+    shouldDehydrateQuery: (query) => {
+      // Don't dehydrate queries that are:
+      // 1. In pending status (not yet resolved)
+      // 2. Have errors
+      // 3. Are currently fetching (fetchStatus === 'fetching')
+      // 4. Are paused (fetchStatus === 'paused')
+      // This prevents "A query that was dehydrated as pending ended up rejecting" errors
+      const { status, fetchStatus, error } = query.state;
+      
+      // Only dehydrate queries that are successfully resolved and not currently fetching
+      return (
+        status === 'success' &&
+        fetchStatus !== 'fetching' &&
+        fetchStatus !== 'paused' &&
+        !error
+      );
+    },
+  },
 });
 
 if (import.meta.env.DEV) {

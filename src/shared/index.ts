@@ -39,6 +39,7 @@ export { useMediaQuery } from './hooks/useMediaQuery';
 
 // Utils
 export { logger, logApiCall, logApiResponse } from './utils/logger';
+export { exportToCSV } from './utils/exportUtils';
 
 // Components (to be added later)
 // export { Button } from './components/Button';

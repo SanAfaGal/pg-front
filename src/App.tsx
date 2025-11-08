@@ -11,7 +11,12 @@ const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ defau
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_relativeSplatPath: true,
+        v7_startTransition: true,
+      }}
+    >
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />

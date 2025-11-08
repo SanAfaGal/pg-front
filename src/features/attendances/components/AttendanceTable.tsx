@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, memo } from 'react';
-import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
+import { useMediaQuery } from '../../../shared';
 import { AttendanceWithClient } from '../types';
 import { formatAttendanceDateTime } from '../utils/dateUtils';
 import { 
@@ -26,6 +26,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
   onExport,
   className = '',
 }) => {
+  const { isDesktop } = useMediaQuery();
   const [sortField, setSortField] = useState<SortableField>('check_in');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -59,54 +60,54 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
   // Loading State
   if (isLoading) {
     return (
-      <Card className={`p-6 ${className}`}>
+      <div className={`${className}`}>
         <div className="animate-pulse space-y-4">
           <div className="flex items-center justify-between">
-            <div className="h-6 bg-gray-200 rounded w-48"></div>
-            <div className="h-10 bg-gray-200 rounded w-32"></div>
+            <div className="h-6 bg-gray-200 rounded w-32 sm:w-48"></div>
+            <div className="h-9 sm:h-10 bg-gray-200 rounded w-24 sm:w-32"></div>
           </div>
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-16 bg-gray-100 rounded-lg"></div>
+              <div key={i} className="h-14 sm:h-16 bg-gray-100 rounded-lg"></div>
             ))}
           </div>
         </div>
-      </Card>
+      </div>
     );
   }
 
   // Empty State
   if (!attendances || attendances.length === 0) {
     return (
-      <Card className={`p-6 ${className}`}>
-        <div className="text-center py-16">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-10 h-10 text-gray-400" />
+      <div className={`${className}`}>
+        <div className="text-center py-12 sm:py-16">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+            <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
             No se encontraron asistencias
           </h3>
-          <p className="text-sm text-gray-500 max-w-sm mx-auto">
+          <p className="text-xs sm:text-sm text-gray-500 max-w-sm mx-auto px-4">
             Intenta ajustar tus filtros o revisa más tarde para ver los registros de asistencia.
           </p>
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className={`p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-200 ${className}`}>
+    <div className={`${className}`}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
             <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <div>
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-base font-semibold text-gray-900 truncate">
               Registros de Asistencia
             </h3>
-            <p className="text-xs sm:text-sm text-gray-500">
+            <p className="text-xs text-gray-500">
               {attendances.length} {attendances.length === 1 ? 'registro' : 'registros'}
             </p>
           </div>
@@ -126,7 +127,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6">
+      <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead>
             <tr className="bg-gray-50/50">
@@ -222,7 +223,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   );
 });
 

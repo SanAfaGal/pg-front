@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { AttendanceFilterOptions } from '../types';
 import { 
@@ -135,16 +134,16 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = memo(({
   }, []);
 
   return (
-    <Card className={`p-4 bg-white border border-gray-200 shadow-sm ${className}`}>
+    <div className={`p-3 sm:p-4 bg-white border border-gray-200 rounded-lg shadow-sm ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
             <Filter className="w-4 h-4 text-white" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-sm font-semibold text-gray-900">Filtros de fecha</h3>
-            <p className="text-xs text-gray-500">Filtra asistencias por rango de fechas</p>
+            <p className="text-xs text-gray-500 hidden sm:block">Filtra asistencias por rango de fechas</p>
           </div>
         </div>
         {hasActive && (
@@ -153,7 +152,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = memo(({
             size="xs"
             onClick={handleClearFilters}
             leftIcon={<X className="w-3 h-3" />}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 px-2 text-xs font-medium"
+            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 px-2 text-xs font-medium self-start sm:self-auto"
           >
             Limpiar todo
           </Button>
@@ -161,7 +160,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = memo(({
       </div>
 
       {/* Date Range Inputs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 sm:mb-4">
         <div className="relative">
           <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
           <Input
@@ -185,7 +184,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = memo(({
       </div>
 
       {/* Quick Date Presets */}
-      <div className="mb-4">
+      <div className="mb-3 sm:mb-4">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs font-medium text-gray-700">Rangos rápidos:</span>
         </div>
@@ -215,12 +214,12 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = memo(({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-2 pt-3 border-t border-gray-200">
+      <div className="flex flex-col sm:flex-row justify-end gap-2 pt-3 border-t border-gray-200">
         <Button
           variant="ghost"
           onClick={handleCancel}
           size="xs"
-          className="h-8 px-4 text-xs font-medium"
+          className="h-8 px-4 text-xs font-medium order-2 sm:order-1"
           disabled={!hasActive}
         >
           Cancelar
@@ -228,7 +227,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = memo(({
         <Button
           onClick={handleApplyFilters}
           size="xs"
-          className="h-8 px-4 text-xs font-medium"
+          className="h-8 px-4 text-xs font-medium order-1 sm:order-2"
           disabled={
             localDateFilters.start_date === filters.start_date &&
             localDateFilters.end_date === filters.end_date
@@ -240,7 +239,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = memo(({
 
       {/* Active Filters Display */}
       {hasActive && (
-        <div className="mt-4 pt-3 border-t border-gray-200">
+        <div className="mt-3 sm:mt-4 pt-3 border-t border-gray-200">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-medium text-gray-600">Filtros activos:</span>
             {filters.start_date && (
@@ -282,7 +281,7 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = memo(({
           </div>
         </div>
       )}
-    </Card>
+    </div>
   );
 });
 

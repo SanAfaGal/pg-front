@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { Card } from '../../../components/ui/Card';
 import { CameraCapture } from './CameraCapture';
 import { CheckInResult } from './CheckInResult';
 import { CheckInProcessingStatus } from './CheckInProcessingStatus';
@@ -179,60 +178,49 @@ export const CheckInFacial: React.FC = () => {
     : 'uploading';
 
   return (
-    <div className="w-full">
-      {/* Single Column Flow */}
-      <div className="space-y-6 w-full">
-        {/* Camera Section - Only show when idle */}
-        {showCamera && (
-          <Card className="p-3 sm:p-4 md:p-6 lg:p-8 shadow-lg border-2 border-blue-200 bg-white w-full">
-            <div className="space-y-4 sm:space-y-6">
-              
-              <CameraCapture
-                onImageCaptured={handleImageCaptured}
-                onError={handleError}
-                isProcessing={false}
-              />
-            </div>
-          </Card>
-        )}
-
-        {/* Processing Status - Show during processing */}
-        {showProcessing && (
-          <CheckInProcessingStatus 
-            stage={processingStageForStatus}
+    <div className="w-full space-y-4 sm:space-y-6">
+      {/* Camera Section - Only show when idle */}
+      {showCamera && (
+        <div className="w-full">
+          <CameraCapture
+            onImageCaptured={handleImageCaptured}
+            onError={handleError}
+            isProcessing={false}
           />
-        )}
+        </div>
+      )}
 
-        {/* Result Section - Show after completion */}
-        {showResult && checkInResult && (
-          <Card className="p-3 sm:p-4 md:p-6 lg:p-8 shadow-lg border-2 w-full">
-            <div className="space-y-3 sm:space-y-4">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6 text-center">
-                Resultado del Check-in
-              </h2>
-              <CheckInResult
-                result={checkInResult}
-                onRetry={handleRetry}
-              />
-            </div>
-          </Card>
-        )}
+      {/* Processing Status - Show during processing */}
+      {showProcessing && (
+        <CheckInProcessingStatus 
+          stage={processingStageForStatus}
+        />
+      )}
 
-        {/* Empty State - Only show if nothing else is displayed */}
-        {!showCamera && !showProcessing && !showResult && (
-          <Card className="p-6 sm:p-8 lg:p-12 text-center">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-                <Camera className="w-10 h-10 text-gray-400" />
-              </div>
-              <div>
-                <p className="text-lg font-medium text-gray-700 mb-1">Listo para Check-in</p>
-                <p className="text-sm text-gray-500">Captura tu foto para comenzar el proceso</p>
-              </div>
+      {/* Result Section - Show after completion */}
+      {showResult && checkInResult && (
+        <div className="w-full">
+          <CheckInResult
+            result={checkInResult}
+            onRetry={handleRetry}
+          />
+        </div>
+      )}
+
+      {/* Empty State - Only show if nothing else is displayed */}
+      {!showCamera && !showProcessing && !showResult && (
+        <div className="w-full py-8 sm:py-12 text-center">
+          <div className="flex flex-col items-center space-y-3 sm:space-y-4">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center">
+              <Camera className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
             </div>
-          </Card>
-        )}
-      </div>
+            <div>
+              <p className="text-base sm:text-lg font-medium text-gray-700 mb-1">Listo para Check-in</p>
+              <p className="text-xs sm:text-sm text-gray-500">Captura tu foto para comenzar el proceso</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

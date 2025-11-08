@@ -1,18 +1,20 @@
 import { useState, useMemo, useCallback } from 'react';
 import { ArrowLeft, Calendar, CreditCard, Activity, RefreshCw } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../components/ui/Button';
 import { PageLayout } from '../components/ui/PageLayout';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useToast } from '../shared';
 import { ClientFormModal } from '../features/clients/components/ClientFormModal';
 import { BiometricCaptureModal } from '../features/clients/components/BiometricCaptureModal';
-import { useClient, useClientDashboard, clientHelpers } from '../features/clients';
+import { useClient, useClientDashboard, clientHelpers, clientKeys } from '../features/clients';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import { ClientInfoTab } from '../features/clients/components/ClientInfoTab';
 import { SubscriptionsTab } from '../features/subscriptions/components/SubscriptionsTab';
 import { AttendanceTab } from '../features/clients';
 import { useActivePlans } from '../features/plans';
-import { Plan } from '../features/subscriptions/api/types';
+import { Plan, subscriptionKeys } from '../features/subscriptions/api/types';
+import { attendanceKeys } from '../features/attendances';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ClientDetailProps {
@@ -25,33 +27,96 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
   const [isBiometricModalOpen, setIsBiometricModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: client, isLoading: clientLoading, isRefetching: isClientRefetching, refetch: refetchClient } = useClient(clientId);
   const { data: dashboard, isLoading: dashboardLoading, isError, isRefetching: isDashboardRefetching, refetch: refetchDashboard } = useClientDashboard(clientId);
   const { data: activePlansData, isLoading: plansLoading } = useActivePlans();
 
   const isLoading = clientLoading || dashboardLoading;
-  const isRefetching = isClientRefetching || isDashboardRefetching;
+
+  // Helper function to get query keys to refresh based on active tab
+  const getRefreshQueriesForTab = useCallback((tab: string) => {
+    switch (tab) {
+      case 'subscriptions':
+        // Invalidate all subscription-related queries for this client
+        // Using subscriptionKeys.all() invalidates all subscription queries
+        // and invalidating ['payments'] and ['paymentStats'] covers payment-related queries
+        return [
+          subscriptionKeys.all(),
+          ['payments'],
+          ['paymentStats'],
+        ];
+      case 'attendance':
+        // Invalidate attendance queries for this client
+        return [
+          attendanceKeys.client(clientId),
+        ];
+      case 'info':
+      default:
+        // Default: refresh client and dashboard
+        return [
+          clientKeys.detail(clientId),
+          clientKeys.dashboard(clientId),
+        ];
+    }
+  }, [clientId]);
+
+  // Calculate isRefetching based on active tab queries
+  const isRefetching = useMemo(() => {
+    const queriesToCheck = getRefreshQueriesForTab(activeTab);
+    return queriesToCheck.some(queryKey => 
+      queryClient.isFetching({ queryKey })
+    ) || isClientRefetching || isDashboardRefetching;
+  }, [activeTab, queryClient, getRefreshQueriesForTab, isClientRefetching, isDashboardRefetching]);
 
   const handleRefresh = useCallback(async () => {
     try {
+      const queriesToInvalidate = getRefreshQueriesForTab(activeTab);
+      
+      // Invalidate all queries for the active tab
+      await Promise.all(
+        queriesToInvalidate.map(queryKey => 
+          queryClient.invalidateQueries({ queryKey })
+        )
+      );
+
+      // For 'info' tab, also explicitly refetch to maintain current behavior
+      if (activeTab === 'info') {
       await Promise.all([
         refetchClient(),
         refetchDashboard(),
       ]);
+      }
+
+      const tabMessages: Record<string, { title: string; message: string }> = {
+        subscriptions: {
+          title: 'Actualizado',
+          message: 'Las suscripciones se han actualizado correctamente',
+        },
+        attendance: {
+          title: 'Actualizado',
+          message: 'Los datos de asistencia se han actualizado correctamente',
+        },
+        info: {
+          title: 'Actualizado',
+          message: 'Los datos del cliente se han actualizado correctamente',
+        },
+      };
+
+      const message = tabMessages[activeTab] || tabMessages.info;
       showToast({
         type: 'success',
-        title: 'Actualizado',
-        message: 'Los datos del cliente se han actualizado correctamente',
+        ...message,
       });
     } catch {
       showToast({
         type: 'error',
         title: 'Error',
-        message: 'No se pudo actualizar los datos del cliente',
+        message: 'No se pudo actualizar los datos',
       });
     }
-  }, [refetchClient, refetchDashboard, showToast]);
+  }, [activeTab, queryClient, getRefreshQueriesForTab, refetchClient, refetchDashboard, showToast]);
 
   // Convert plans from plans module format to subscriptions module format
   const plans: Plan[] = useMemo(() => {

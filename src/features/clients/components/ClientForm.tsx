@@ -23,16 +23,13 @@ import {
   VALIDATION_RULES,
   DOCUMENT_VALIDATION,
   NOTIFICATION_MESSAGES,
-  VALIDATION_DEBOUNCE_MS,
 } from '@/features/clients/constants/clientConstants';
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { useCreateClient, useUpdateClient } from '../..';
-import { logger } from '@/shared';
 import { useToast } from '@/shared';
-import { useDebounce } from '@/shared';
 import { formatPhoneNumber, unformatPhoneNumber } from '@/features/clients/utils/phoneFormatter';
 import { extractCountryCode } from '@/features/clients/utils/phoneParser';
 
@@ -68,7 +65,6 @@ export const ClientForm = memo(({
   onSuccess, 
   onCancel 
 }: ClientFormProps) => {
-  const [documentError, setDocumentError] = useState('');
   const [calculatedAge, setCalculatedAge] = useState<number | null>(null);
   
   // Extract phone codes from initial data if available
@@ -159,33 +155,6 @@ export const ClientForm = memo(({
     }
   }, [birthDate]);
 
-  // Debounced document validation
-  const debouncedDocumentNumber = useDebounce(documentNumber?.trim() || '', VALIDATION_DEBOUNCE_MS);
-
-  useEffect(() => {
-    const checkDocument = async () => {
-      if (debouncedDocumentNumber && debouncedDocumentNumber.length >= DOCUMENT_VALIDATION.minLength) {
-        try {
-          const exists = await clientsApi.checkDocumentExists(
-            debouncedDocumentNumber,
-            clientId
-          );
-          if (exists) {
-            setDocumentError(NOTIFICATION_MESSAGES.documentExists);
-          } else {
-            setDocumentError('');
-          }
-        } catch (error) {
-          logger.error('Error checking document:', error);
-        }
-      } else {
-        setDocumentError('');
-      }
-    };
-
-    checkDocument();
-  }, [debouncedDocumentNumber, clientId]);
-
   // Format phone number with country code for API
   const formatPhone = useCallback((phone: string, countryCode: string) => {
     if (!phone) return '';
@@ -197,10 +166,6 @@ export const ClientForm = memo(({
    * Handles form submission
    */
   const onSubmit = useCallback(async (data: FormInternalData) => {
-    if (documentError) {
-      return;
-    }
-
     const apiData: ClientFormData = {
       dni_type: data.document_type,
       dni_number: data.document_number,
@@ -243,15 +208,14 @@ export const ClientForm = memo(({
         message: errorMessage,
       });
     }
-  }, [documentError, formatPhone, phoneCode, phoneCodeSecondary, clientId, updateClientMutation, createClientMutation, showToast, onSuccess]);
+  }, [formatPhone, phoneCode, phoneCodeSecondary, clientId, updateClientMutation, createClientMutation, showToast, onSuccess]);
 
   // Memoized validation states
   const isDocumentValid = useMemo(() => 
     documentNumber && 
     documentNumber.length >= DOCUMENT_VALIDATION.minLength && 
-    !errors.document_number && 
-    !documentError,
-    [documentNumber, errors.document_number, documentError]
+    !errors.document_number,
+    [documentNumber, errors.document_number]
   );
 
   const watchedPhonePrimary = watch('phone_primary');
@@ -262,7 +226,7 @@ export const ClientForm = memo(({
   }, [watchedPhonePrimary, errors.phone_primary]);
 
   const isSubmitting = createClientMutation.isPending || updateClientMutation.isPending;
-  const hasErrors = Object.keys(errors).length > 0 || !!documentError;
+  const hasErrors = Object.keys(errors).length > 0;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -352,7 +316,7 @@ export const ClientForm = memo(({
                   },
                 })}
                 placeholder="Ej: 1234567890"
-                error={(errors.document_number?.message as string) || documentError}
+                error={errors.document_number?.message as string}
               />
               <AnimatePresence>
                 {isDocumentValid && (
@@ -777,12 +741,6 @@ export const ClientForm = memo(({
                       <span>{(error as { message?: string })?.message || String(error)}</span>
                     </li>
                   ))}
-                  {documentError && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-red-600 mt-0.5">•</span>
-                      <span>{documentError}</span>
-                    </li>
-                  )}
                 </ul>
               </div>
             </div>

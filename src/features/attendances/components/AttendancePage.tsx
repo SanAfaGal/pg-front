@@ -51,46 +51,41 @@ export const AttendancePage: React.FC = () => {
           {isRefreshing ? 'Actualizando...' : 'Actualizar'}
         </Button>
       }
-      noBackground
     >
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200">
-        <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
-          <TabsList className="w-full border-b border-gray-200 px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
-            <TabsTrigger 
-              value="checkin" 
-              activeValue={activeTab} 
-              onChange={setActiveTab}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-sm sm:text-base">Check-in</span>
-              </div>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="history" 
-              activeValue={activeTab} 
-              onChange={setActiveTab}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-sm sm:text-base">Historial</span>
-              </div>
-            </TabsTrigger>
-          </TabsList>
+      <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
+        <TabsList className="w-full border-b border-gray-200">
+          <TabsTrigger 
+            value="checkin" 
+            activeValue={activeTab} 
+            onChange={setActiveTab}
+          >
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+              <Camera className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <span className="text-xs sm:text-sm">Check-in</span>
+            </div>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="history" 
+            activeValue={activeTab} 
+            onChange={setActiveTab}
+          >
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              <span className="text-xs sm:text-sm">Historial</span>
+            </div>
+          </TabsTrigger>
+        </TabsList>
 
-          <div className={activeTab === 'checkin' ? 'p-0' : 'p-3 sm:p-4 lg:p-6'}>
-            <TabsContent value="checkin" activeValue={activeTab}>
-              <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
-                <CheckInFacial />
-              </div>
-            </TabsContent>
+        <div className="p-3 sm:p-4 lg:p-6">
+          <TabsContent value="checkin" activeValue={activeTab}>
+            <CheckInFacial />
+          </TabsContent>
 
-            <TabsContent value="history" activeValue={activeTab}>
-              <AttendanceHistory />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
+          <TabsContent value="history" activeValue={activeTab}>
+            <AttendanceHistory />
+          </TabsContent>
+        </div>
+      </Tabs>
     </PageLayout>
   );
 };

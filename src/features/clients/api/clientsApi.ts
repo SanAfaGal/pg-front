@@ -32,26 +32,6 @@ export const clientsApi = {
     return apiClient.put<Client>(API_ENDPOINTS.clients.detail(id), { is_active: isActive });
   },
 
-  async checkDocumentExists(documentNumber: string, excludeId?: string): Promise<boolean> {
-    try {
-      const params = new URLSearchParams({
-        document_number: documentNumber,
-      });
-
-      if (excludeId) {
-        params.append('exclude_id', excludeId);
-      }
-
-      const result = await apiClient.get<{ exists: boolean }>(
-        `${API_ENDPOINTS.clients.list}/check-document?${params.toString()}`
-      );
-
-      return result.exists;
-    } catch {
-      return false;
-    }
-  },
-
   async uploadBiometric(id: string, photo: File): Promise<Client> {
     const formData = new FormData();
     formData.append('photo', photo);

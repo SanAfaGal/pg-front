@@ -1,7 +1,7 @@
-import { Card } from '../../../components/ui/Card';
 import { Activity, Clock, Users, TrendingUp } from 'lucide-react';
 import { AttendanceStats, PeriodType } from '../types';
 import { formatNumber, formatPercentage } from '../utils/dashboardHelpers';
+import { BaseStatsCard } from './BaseStatsCard';
 
 interface AttendanceStatsCardProps {
   stats: AttendanceStats;
@@ -9,68 +9,58 @@ interface AttendanceStatsCardProps {
 }
 
 export const AttendanceStatsCard = ({ stats, period }: AttendanceStatsCardProps) => {
+  // Calcular métricas relevantes
+  const avgPerVisitor = stats.unique_visitors > 0 
+    ? (stats.total_attendances / stats.unique_visitors).toFixed(1)
+    : '0';
+
   return (
-    <Card padding="md" className="sm:p-6 lg:p-8">
-      <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-        <div className="p-2 sm:p-3 bg-red-100 rounded-lg sm:rounded-xl">
-          <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+    <BaseStatsCard title="Asistencias" icon={Activity} iconColor="red">
+      {/* Métricas Principales - Compactas */}
+      <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-gray-100">
+        <div className="text-center p-2 bg-red-50/50 rounded-lg border border-red-100">
+          <p className="text-xs text-gray-600 mb-0.5">Total</p>
+          <p className="text-xl font-bold text-powergym-charcoal">{formatNumber(stats.total_attendances)}</p>
         </div>
-        <h3 className="text-lg sm:text-xl font-bold text-powergym-charcoal">Asistencias</h3>
+        <div className="text-center p-2 bg-blue-50/50 rounded-lg border border-blue-100">
+          <p className="text-xs text-gray-600 mb-0.5">Únicos</p>
+          <p className="text-xl font-bold text-blue-600">{formatNumber(stats.unique_visitors)}</p>
+        </div>
       </div>
 
-      <div className="space-y-3 sm:space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div>
-            <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center gap-1">
-              <Activity className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Total Asistencias</span>
-              <span className="sm:hidden">Total</span>
-            </p>
-            <p className="text-xl sm:text-2xl font-bold text-powergym-charcoal">
-              {formatNumber(stats.total_attendances)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center gap-1">
-              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Visitantes Únicos</span>
-              <span className="sm:hidden">Únicos</span>
-            </p>
-            <p className="text-xl sm:text-2xl font-bold text-powergym-charcoal">
-              {formatNumber(stats.unique_visitors)}
-            </p>
-          </div>
-        </div>
-
-        <div className="pt-3 sm:pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div>
-            <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center gap-1">
-              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-              Hora Pico
-            </p>
-            <p className="text-base sm:text-lg font-semibold text-powergym-charcoal">{stats.peak_hour}</p>
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm text-gray-600 mb-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Promedio Diario</span>
-              <span className="sm:hidden">Promedio</span>
-            </p>
-            <p className="text-base sm:text-lg font-semibold text-powergym-charcoal">
-              {formatNumber(stats.average_daily)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs sm:text-sm text-gray-600 mb-1">
-              <span className="hidden sm:inline">Tasa de Asistencia</span>
-              <span className="sm:hidden">Tasa</span>
-            </p>
-            <p className="text-base sm:text-lg font-semibold text-green-600">
-              {formatPercentage(stats.attendance_rate)}
-            </p>
+      {/* Tasa de Asistencia - Destacada */}
+      <div className="mb-3 pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-200">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-green-600" />
+            <div>
+              <p className="text-[10px] text-gray-600">Tasa de Asistencia</p>
+              <p className="text-lg font-bold text-green-600">
+                {formatPercentage(stats.attendance_rate)}
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </Card>
+
+      {/* Métricas Secundarias - Compactas */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="text-center">
+          <Clock className="w-3 h-3 text-gray-500 mx-auto mb-1" />
+          <p className="text-[10px] text-gray-500">Hora Pico</p>
+          <p className="text-sm font-semibold text-powergym-charcoal">{stats.peak_hour}</p>
+        </div>
+        <div className="text-center">
+          <Activity className="w-3 h-3 text-gray-500 mx-auto mb-1" />
+          <p className="text-[10px] text-gray-500">Promedio</p>
+          <p className="text-sm font-semibold text-powergym-charcoal">{formatNumber(stats.average_daily)}</p>
+        </div>
+        <div className="text-center">
+          <Users className="w-3 h-3 text-gray-500 mx-auto mb-1" />
+          <p className="text-[10px] text-gray-500">Prom/Visitante</p>
+          <p className="text-sm font-semibold text-powergym-charcoal">{avgPerVisitor}</p>
+        </div>
+      </div>
+    </BaseStatsCard>
   );
 };

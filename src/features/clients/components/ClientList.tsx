@@ -131,17 +131,20 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={handleRefresh}
             disabled={isRefetching}
-            className="p-2 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1"
-            title="Actualizar lista"
-            aria-label="Actualizar lista"
+            leftIcon={
+              <RefreshCw
+                className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
+              />
+            }
+            className="whitespace-nowrap"
           >
-            <RefreshCw
-              className={`w-5 h-5 ${isRefetching ? 'animate-spin' : ''}`}
-            />
-          </button>
+            {isRefetching ? 'Actualizando...' : 'Actualizar'}
+          </Button>
           <Button
             onClick={() => setIsModalOpen(true)}
             size="sm"

@@ -3,7 +3,9 @@ import { AttendanceFilters } from './AttendanceFilters';
 import { AttendanceTable } from './AttendanceTable';
 import { useAttendanceHistory } from '../hooks/useAttendances';
 import { Button } from '../../../components/ui/Button';
+import { exportToCSV } from '../../../shared';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { AttendanceWithClient } from '../types';
 
 export const AttendanceHistory: React.FC = () => {
   const {
@@ -17,29 +19,18 @@ export const AttendanceHistory: React.FC = () => {
   } = useAttendanceHistory();
 
   const handleExport = useCallback(() => {
-    // Create CSV content
-    const headers = ['ID', 'Nombre del Cliente', 'DNI', 'Fecha de Check-in', 'Hora de Check-in'];
-    const csvContent = [
-      headers.join(','),
-      ...attendances.map(attendance => [
+    exportToCSV<AttendanceWithClient>(
+      attendances,
+      ['ID', 'Nombre del Cliente', 'DNI', 'Fecha de Check-in', 'Hora de Check-in'],
+      (attendance) => [
         attendance.id,
-        `"${attendance.client_first_name} ${attendance.client_last_name}"`,
+        `${attendance.client_first_name} ${attendance.client_last_name}`,
         attendance.client_dni_number,
-        new Date(attendance.check_in).toLocaleDateString(),
-        new Date(attendance.check_in).toLocaleTimeString(),
-      ].join(','))
-    ].join('\n');
-
-    // Create and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `attendances-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+        new Date(attendance.check_in).toLocaleDateString('es-CO'),
+        new Date(attendance.check_in).toLocaleTimeString('es-CO'),
+      ],
+      'asistencias'
+    );
   }, [attendances]);
 
   const handlePreviousPage = useCallback(() => {
@@ -74,8 +65,8 @@ export const AttendanceHistory: React.FC = () => {
 
       {/* Pagination */}
       {attendances.length > 0 && (
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-          <div className="text-sm text-gray-600">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 pt-4 border-t border-gray-200">
+          <div className="text-xs sm:text-sm text-gray-600">
             Mostrando <span className="font-semibold text-gray-900">{startItem}</span> a{' '}
             <span className="font-semibold text-gray-900">{endItem}</span> de{' '}
             <span className="font-semibold text-gray-900">{totalItems}</span> resultados
@@ -88,7 +79,8 @@ export const AttendanceHistory: React.FC = () => {
               disabled={!canGoPrevious}
               leftIcon={<ChevronLeft className="w-4 h-4" />}
             >
-              Anterior
+              <span className="hidden sm:inline">Anterior</span>
+              <span className="sm:hidden">Ant.</span>
             </Button>
             <Button
               variant="outline"
@@ -97,7 +89,8 @@ export const AttendanceHistory: React.FC = () => {
               disabled={!canGoNext}
               rightIcon={<ChevronRight className="w-4 h-4" />}
             >
-              Siguiente
+              <span className="hidden sm:inline">Siguiente</span>
+              <span className="sm:hidden">Sig.</span>
             </Button>
           </div>
         </div>
