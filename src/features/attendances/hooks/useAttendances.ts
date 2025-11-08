@@ -42,6 +42,7 @@ export const useAttendances = (
   const {
     data: attendances = [],
     isLoading,
+    isRefetching,
     error,
     refetch,
   } = useQuery({
@@ -62,6 +63,7 @@ export const useAttendances = (
   return {
     attendances,
     isLoading,
+    isRefetching,
     error,
     refetch,
     invalidateAttendances,
@@ -97,7 +99,7 @@ export const useAttendance = (id: string) => {
 
 /**
  * Hook for attendance metrics (dashboard data)
- * Auto-refetches every 30 seconds for real-time updates
+ * Manual refresh only - no automatic polling to reduce server load
  */
 export const useAttendanceMetrics = () => {
   const {
@@ -112,7 +114,7 @@ export const useAttendanceMetrics = () => {
     gcTime: QUERY_CACHE_TIMES.metrics,
     retry: RETRY_CONFIG.retries,
     retryDelay: RETRY_CONFIG.retryDelay,
-    refetchInterval: 30 * 1000, // Refetch every 30 seconds for real-time metrics
+    // Removed refetchInterval - manual refresh only via refresh button
   });
 
   return {
@@ -223,7 +225,7 @@ export const useAttendanceHistory = () => {
   const [filters, setFilters] = useState<AttendanceFilterOptions>({});
   const [pagination, setPagination] = useState<AttendancePagination>(PAGINATION_DEFAULTS);
 
-  const { attendances, isLoading, error, invalidateAttendances } = useAttendances(
+  const { attendances, isLoading, error, refetch, isRefetching, invalidateAttendances } = useAttendances(
     filters,
     pagination
   );
@@ -259,6 +261,8 @@ export const useAttendanceHistory = () => {
     updateFilters,
     updatePagination,
     clearFilters,
+    refetch,
+    isRefetching,
     invalidateAttendances,
   };
 };

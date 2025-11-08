@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '../hooks/useProducts';
 import { useAddStock, useRemoveStock } from '../hooks/useStock';
 import { useMovements } from '../hooks/useMovements';
@@ -11,8 +11,8 @@ import { ProductHistoryModal } from '../components/ProductHistoryModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui/Tabs';
 import { PageLayout } from '../../../components/ui/PageLayout';
 import { Product, ProductFormData, StockAddRequest, StockRemoveRequest } from '../types';
-import { logger } from '../../../shared';
-import { Package, BarChart3, TrendingUp } from 'lucide-react';
+import { logger, useToast } from '../../../shared';
+import { Package, BarChart3, TrendingUp, RefreshCw } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 
 export const InventoryPage: React.FC = () => {
@@ -23,18 +23,41 @@ export const InventoryPage: React.FC = () => {
   const [showProductHistory, setShowProductHistory] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [movementPage, setMovementPage] = useState(0);
+  const { showToast } = useToast();
 
   // Hooks
-  const { data: productsResponse, isLoading: productsLoading, error: productsError } = useProducts();
+  const { data: productsResponse, isLoading: productsLoading, error: productsError, isRefetching: isProductsRefetching, refetch: refetchProducts } = useProducts();
+  const { data: movementsResponse, isLoading: movementsLoading, error: movementsError, isRefetching: isMovementsRefetching, refetch: refetchMovements } = useMovements({ skip: movementPage * 10, limit: 10 });
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
   const addStockMutation = useAddStock();
   const removeStockMutation = useRemoveStock();
-  const { data: movementsResponse, isLoading: movementsLoading, error: movementsError } = useMovements({ skip: movementPage * 10, limit: 10 });
 
   const products = productsResponse?.items || [];
   const movements = movementsResponse?.items || [];
+  
+  const isRefetching = isProductsRefetching || isMovementsRefetching;
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      await Promise.all([
+        refetchProducts(),
+        refetchMovements(),
+      ]);
+      showToast({
+        type: 'success',
+        title: 'Actualizado',
+        message: 'Los datos del inventario se han actualizado correctamente',
+      });
+    } catch {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo actualizar los datos del inventario',
+      });
+    }
+  }, [refetchProducts, refetchMovements, showToast]);
 
   // Handlers
   const handleCreateProduct = () => {
@@ -123,7 +146,26 @@ export const InventoryPage: React.FC = () => {
   };
 
   return (
-    <PageLayout title="Inventario" subtitle="Gestión de productos y stock">
+    <PageLayout 
+      title="Inventario" 
+      subtitle="Gestión de productos y stock"
+      actions={
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={handleRefresh}
+          disabled={isRefetching}
+          leftIcon={
+            <RefreshCw
+              className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
+            />
+          }
+          className="whitespace-nowrap"
+        >
+          {isRefetching ? 'Actualizando...' : 'Actualizar'}
+        </Button>
+      }
+    >
       <div className="space-y-6">
         <Tabs value={activeTab} onChange={setActiveTab}>
           <TabsList>

@@ -13,19 +13,10 @@ export const useAuth = () => {
   const queryClient = useQueryClient();
 
   // Update hasToken when tokens change
+  // Removed aggressive setInterval - only check on mount and when explicitly needed
   useEffect(() => {
-    const checkToken = () => {
-      const token = !!tokenManager.getAccessToken();
-      setHasToken(token);
-    };
-    
-    // Check immediately
-    checkToken();
-    
-    // Set up an interval to check for token changes
-    const interval = setInterval(checkToken, 1000);
-    
-    return () => clearInterval(interval);
+    const token = !!tokenManager.getAccessToken();
+    setHasToken(token);
   }, []);
 
   // Get current user query

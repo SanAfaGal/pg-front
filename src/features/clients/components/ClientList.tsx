@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, memo } from 'react';
-import { Search, Plus, Edit2, Eye, Trash2, UserCircle2, Phone, Mail, Calendar, Filter } from 'lucide-react';
+import { Search, Plus, Edit2, Eye, Trash2, UserCircle2, Phone, Mail, Calendar, Filter, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -25,7 +25,7 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const { showToast } = useToast();
 
-  const { data: clients = [], isLoading: loading, isError } = useClients();
+  const { data: clients = [], isLoading: loading, isError, isRefetching, refetch } = useClients();
   const deleteClientMutation = useDeleteClient();
 
   const handleSearch = useCallback(() => {
@@ -60,6 +60,23 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
   const handleClientSaved = () => {
     handleModalClose();
   };
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      await refetch();
+      showToast({
+        type: 'success',
+        title: 'Actualizado',
+        message: 'La lista de clientes se ha actualizado correctamente',
+      });
+    } catch {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo actualizar la lista de clientes',
+      });
+    }
+  }, [refetch, showToast]);
 
   const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-CO', {
@@ -103,13 +120,29 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
             Gestiona la información de tus clientes
           </p>
         </div>
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-powergym-red hover:bg-[#c50202] shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <Plus className="w-5 h-5 sm:mr-2" />
-          <span className="hidden sm:inline">Nuevo Cliente</span>
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={handleRefresh}
+            disabled={isRefetching}
+            leftIcon={
+              <RefreshCw
+                className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
+              />
+            }
+            className="whitespace-nowrap"
+          >
+            {isRefetching ? 'Actualizando...' : 'Actualizar'}
+          </Button>
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-powergym-red hover:bg-[#c50202] shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            <Plus className="w-5 h-5 sm:mr-2" />
+            <span className="hidden sm:inline">Nuevo Cliente</span>
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">

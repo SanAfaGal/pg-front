@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { ArrowLeft, Calendar, CreditCard, Activity } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { ArrowLeft, Calendar, CreditCard, Activity, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { PageLayout } from '../components/ui/PageLayout';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
@@ -26,11 +26,32 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
   const [activeTab, setActiveTab] = useState('info');
   const { showToast } = useToast();
 
-  const { data: client, isLoading: clientLoading } = useClient(clientId);
-  const { data: dashboard, isLoading: dashboardLoading, isError } = useClientDashboard(clientId);
+  const { data: client, isLoading: clientLoading, isRefetching: isClientRefetching, refetch: refetchClient } = useClient(clientId);
+  const { data: dashboard, isLoading: dashboardLoading, isError, isRefetching: isDashboardRefetching, refetch: refetchDashboard } = useClientDashboard(clientId);
   const { data: activePlansData, isLoading: plansLoading } = useActivePlans();
 
   const isLoading = clientLoading || dashboardLoading;
+  const isRefetching = isClientRefetching || isDashboardRefetching;
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      await Promise.all([
+        refetchClient(),
+        refetchDashboard(),
+      ]);
+      showToast({
+        type: 'success',
+        title: 'Actualizado',
+        message: 'Los datos del cliente se han actualizado correctamente',
+      });
+    } catch {
+      showToast({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo actualizar los datos del cliente',
+      });
+    }
+  }, [refetchClient, refetchDashboard, showToast]);
 
   // Convert plans from plans module format to subscriptions module format
   const plans: Plan[] = useMemo(() => {
@@ -139,13 +160,29 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
       title={fullName}
       subtitle={`${age} años • Cliente desde ${new Date(client.created_at).toLocaleDateString('es-CO')}`}
       actions={
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          leftIcon={<ArrowLeft className="w-4 h-4" />}
-        >
-          Volver
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={handleRefresh}
+            disabled={isRefetching}
+            leftIcon={
+              <RefreshCw
+                className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
+              />
+            }
+            className="whitespace-nowrap"
+          >
+            {isRefetching ? 'Actualizando...' : 'Actualizar'}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            leftIcon={<ArrowLeft className="w-4 h-4" />}
+          >
+            Volver
+          </Button>
+        </div>
       }
     >
       <motion.div
