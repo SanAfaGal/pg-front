@@ -85,7 +85,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div>
-                      <p className="text-sm font-mono font-semibold text-gray-900">
+                      <p className="text-sm font-semibold text-gray-900">
                         {formatQuantity(product.available_quantity)} / {formatQuantity(product.min_stock)} / {formatQuantity(product.max_stock)}
                       </p>
                       <p className="text-xs text-gray-500">Actual / Mín / Máx</p>

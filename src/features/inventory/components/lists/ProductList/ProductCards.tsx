@@ -56,7 +56,7 @@ export const ProductCards: React.FC<ProductCardsProps> = ({
 
               {/* Stock info */}
               <div className="mb-3 flex items-center gap-2">
-                <p className="text-sm font-mono font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-gray-900">
                   Stock: <span className="text-powergym-blue-medium">{formatQuantity(product.available_quantity)}</span>
                   {' / '}
                   <span className="text-gray-500">{formatQuantity(product.min_stock)}</span>

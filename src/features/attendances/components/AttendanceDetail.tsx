@@ -53,7 +53,7 @@ export const AttendanceDetail: React.FC<AttendanceDetailProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Attendance ID
               </label>
-              <p className="text-sm text-gray-900 font-mono bg-gray-100 p-2 rounded">
+              <p className="text-sm text-gray-900 bg-gray-100 p-2 rounded">
                 {attendance.id}
               </p>
             </div>

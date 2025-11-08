@@ -95,18 +95,18 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
   }
 
   return (
-    <Card className={`p-6 shadow-sm border border-gray-200 ${className}`}>
+    <Card className={`p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-200 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-            <Calendar className="w-5 h-5 text-white" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
               Registros de Asistencia
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500">
               {attendances.length} {attendances.length === 1 ? 'registro' : 'registros'}
             </p>
           </div>
@@ -116,48 +116,50 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
             variant="outline"
             size="sm"
             onClick={onExport}
-            leftIcon={<Download className="w-4 h-4" />}
+            leftIcon={<Download className="w-3 h-3 sm:w-4 sm:h-4" />}
+            className="w-full sm:w-auto"
           >
-            Exportar
+            <span className="hidden sm:inline">Exportar</span>
+            <span className="sm:hidden">Exportar CSV</span>
           </Button>
         )}
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto -mx-6 px-6">
+      <div className="overflow-x-auto -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6">
         <table className="min-w-full divide-y divide-gray-200">
           <thead>
             <tr className="bg-gray-50/50">
               <th
-                className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors rounded-l-lg"
+                className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors rounded-l-lg min-w-[200px]"
                 onClick={() => handleSort('client_first_name')}
               >
-                <div className="flex items-center gap-2">
-                  <User className="w-3.5 h-3.5 text-gray-500" />
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" />
                   <span>Cliente</span>
                   {renderSortIcon('client_first_name')}
                 </div>
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors hidden sm:table-cell"
                 onClick={() => handleSort('client_dni_number')}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2">
                   <span>DNI</span>
                   {renderSortIcon('client_dni_number')}
                 </div>
               </th>
               <th
-                className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort('check_in')}
               >
-                <div className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-gray-500" />
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" />
                   <span>Check-in</span>
                   {renderSortIcon('check_in')}
                 </div>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider rounded-r-lg">
+              <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider rounded-r-lg">
                 Estado
               </th>
             </tr>
@@ -173,16 +175,19 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
                   className="hover:bg-blue-50/50 transition-colors group"
                 >
                   {/* Client Info */}
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+                  <td className="px-2 sm:px-4 py-3 sm:py-4">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-xs sm:text-sm shadow-sm flex-shrink-0">
                         {getAttendanceInitials(attendance.client_first_name, attendance.client_last_name)}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-semibold text-gray-900 truncate">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
                           {attendance.client_first_name} {attendance.client_last_name}
                         </div>
-                        <div className="text-xs text-gray-500 font-mono">
+                        <div className="text-xs text-gray-500 sm:hidden">
+                          {attendance.client_dni_number}
+                        </div>
+                        <div className="text-xs text-gray-500 hidden sm:block">
                           {attendance.id.slice(0, 8)}...
                         </div>
                       </div>
@@ -190,15 +195,15 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
                   </td>
 
                   {/* DNI */}
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 font-mono">
+                  <td className="px-2 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
+                    <div className="text-xs sm:text-sm font-medium text-gray-900">
                       {attendance.client_dni_number}
                     </div>
                   </td>
 
                   {/* Check-in DateTime */}
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{date}</div>
+                  <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap">
+                    <div className="text-xs sm:text-sm font-medium text-gray-900">{date}</div>
                     <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                       <Clock className="w-3 h-3" />
                       {time}
@@ -206,7 +211,7 @@ export const AttendanceTable: React.FC<AttendanceTableProps> = memo(({
                   </td>
 
                   {/* Status */}
-                  <td className="px-4 py-4 whitespace-nowrap">
+                  <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap">
                     <Badge variant={status.variant} size="sm">
                       {status.label}
                     </Badge>

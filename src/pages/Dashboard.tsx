@@ -172,9 +172,9 @@ export const Dashboard = () => {
       };
 
       return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Header with Period Selector and Refresh Button */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <Filter className="w-4 h-4 text-gray-500" />
@@ -220,12 +220,12 @@ export const Dashboard = () => {
 
 
           {/* Detailed Stats Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <ClientStatsCard stats={dashboardData.client_stats} period={period} />
             <AttendanceStatsCard stats={dashboardData.attendance_stats} period={period} />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <InventoryStatsCard stats={dashboardData.inventory_stats} />
             <FinancialStatsCard stats={dashboardData.financial_stats} period={period} />
           </div>
@@ -254,7 +254,33 @@ export const Dashboard = () => {
       />
 
       <div className="flex-1 flex flex-col min-w-0 lg:ml-72">
-        <main className="flex-1 p-6 lg:p-8 overflow-auto">
+        {/* Mobile Header with Hamburger */}
+        <header className="lg:hidden sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between px-4 py-3">
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Abrir menú"
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 flex items-center justify-center">
+                <img 
+                  src="/logo.svg" 
+                  alt="PowerGym AG" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <h2 className="text-lg font-bold text-powergym-charcoal">PowerGym AG</h2>
+            </div>
+            <div className="w-10" /> {/* Spacer for centering */}
+          </div>
+        </header>
+
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 xl:p-8 overflow-auto">
           <div className="max-w-7xl mx-auto">
             {renderContent()}
           </div>

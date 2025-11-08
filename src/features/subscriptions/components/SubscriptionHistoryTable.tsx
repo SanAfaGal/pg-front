@@ -50,7 +50,7 @@ const SubscriptionRow: React.FC<{
         {/* Subscription Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-mono text-gray-600">{subscription.id.slice(0, 8)}</span>
+            <span className="text-sm text-gray-600">{subscription.id.slice(0, 8)}</span>
             <span className="text-xs text-gray-400">•</span>
             <span className="text-sm text-gray-700">{formatDate(subscription.start_date)}</span>
             <span className="text-xs text-gray-400">→</span>

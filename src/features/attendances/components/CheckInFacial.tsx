@@ -184,8 +184,8 @@ export const CheckInFacial: React.FC = () => {
       <div className="space-y-6 w-full">
         {/* Camera Section - Only show when idle */}
         {showCamera && (
-          <Card className="p-6 md:p-8 shadow-lg border-2 border-blue-200 bg-white w-full">
-            <div className="space-y-6">
+          <Card className="p-3 sm:p-4 md:p-6 lg:p-8 shadow-lg border-2 border-blue-200 bg-white w-full">
+            <div className="space-y-4 sm:space-y-6">
               
               <CameraCapture
                 onImageCaptured={handleImageCaptured}
@@ -205,9 +205,9 @@ export const CheckInFacial: React.FC = () => {
 
         {/* Result Section - Show after completion */}
         {showResult && checkInResult && (
-          <Card className="p-6 md:p-8 shadow-lg border-2 w-full">
-            <div className="space-y-4">
-              <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6 text-center">
+          <Card className="p-3 sm:p-4 md:p-6 lg:p-8 shadow-lg border-2 w-full">
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6 text-center">
                 Resultado del Check-in
               </h2>
               <CheckInResult
@@ -220,7 +220,7 @@ export const CheckInFacial: React.FC = () => {
 
         {/* Empty State - Only show if nothing else is displayed */}
         {!showCamera && !showProcessing && !showResult && (
-          <Card className="p-12 text-center">
+          <Card className="p-6 sm:p-8 lg:p-12 text-center">
             <div className="flex flex-col items-center space-y-4">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
                 <Camera className="w-10 h-10 text-gray-400" />

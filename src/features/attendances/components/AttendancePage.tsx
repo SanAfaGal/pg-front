@@ -51,18 +51,19 @@ export const AttendancePage: React.FC = () => {
           {isRefreshing ? 'Actualizando...' : 'Actualizar'}
         </Button>
       }
+      noBackground
     >
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200">
         <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
-          <TabsList className="w-full border-b border-gray-200 px-6 pt-4">
+          <TabsList className="w-full border-b border-gray-200 px-3 sm:px-4 lg:px-6 pt-3 sm:pt-4">
             <TabsTrigger 
               value="checkin" 
               activeValue={activeTab} 
               onChange={setActiveTab}
             >
               <div className="flex items-center justify-center gap-2">
-                <Camera className="w-5 h-5" />
-                <span>Check-in</span>
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Check-in</span>
               </div>
             </TabsTrigger>
             <TabsTrigger 
@@ -71,15 +72,15 @@ export const AttendancePage: React.FC = () => {
               onChange={setActiveTab}
             >
               <div className="flex items-center justify-center gap-2">
-                <Clock className="w-5 h-5" />
-                <span>Historial</span>
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-sm sm:text-base">Historial</span>
               </div>
             </TabsTrigger>
           </TabsList>
 
-          <div className={activeTab === 'checkin' ? 'p-0' : 'p-6'}>
+          <div className={activeTab === 'checkin' ? 'p-0' : 'p-3 sm:p-4 lg:p-6'}>
             <TabsContent value="checkin" activeValue={activeTab}>
-              <div className="px-4 sm:px-6 lg:px-8 py-6">
+              <div className="px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
                 <CheckInFacial />
               </div>
             </TabsContent>

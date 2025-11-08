@@ -1,5 +1,4 @@
 import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -7,6 +6,7 @@ interface PageLayoutProps {
   subtitle?: string;
   actions?: ReactNode;
   className?: string;
+  noBackground?: boolean;
 }
 
 export function PageLayout({ 
@@ -14,47 +14,39 @@ export function PageLayout({
   title, 
   subtitle, 
   actions, 
-  className = '' 
+  className = '',
+  noBackground = false,
 }: PageLayoutProps) {
   return (
-    <div className={`min-h-screen bg-gray-50 ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className={`min-h-screen ${noBackground ? '' : 'bg-gray-50'} ${className}`}>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
         {(title || subtitle || actions) && (
-          <motion.div 
-            className="mb-8"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
+          <div className="mb-3 sm:mb-4 lg:mb-5">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3">
+              <div className="flex-1 min-w-0">
                 {title && (
-                  <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-2">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
                     {title}
                   </h1>
                 )}
                 {subtitle && (
-                  <p className="text-lg text-neutral-600">
+                  <p className="text-sm sm:text-base text-gray-600 mt-1">
                     {subtitle}
                   </p>
                 )}
               </div>
               {actions && (
-                <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {actions}
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
         
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
+        <div>
           {children}
-        </motion.div>
+        </div>
       </div>
     </div>
   );

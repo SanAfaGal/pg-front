@@ -28,7 +28,7 @@ interface TabsContentProps {
 export function Tabs({ value, onChange, children, className = '' }: TabsProps) {
   return (
     <div className={className} data-active-tab={value}>
-      {typeof children === 'function' ? children({ value, onChange }) : children}
+      {children}
     </div>
   );
 }
@@ -48,8 +48,8 @@ export function TabsTrigger({ value, children, activeValue, onChange }: TabsTrig
     <button
       onClick={() => onChange(value)}
       className={`
-        relative px-4 py-3 font-medium text-sm transition-all duration-200
-        flex items-center justify-center
+        relative flex-1 px-2 sm:px-4 py-2.5 sm:py-3 font-medium text-sm transition-all duration-200
+        flex items-center justify-center min-w-0
         ${isActive
           ? 'text-[#f60310]'
           : 'text-[#A0A0A0] hover:text-gray-700'

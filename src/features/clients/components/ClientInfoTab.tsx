@@ -1,7 +1,6 @@
 import React, { memo } from 'react';
-import { User, Phone, MessageCircle, MapPin, Mail, Edit } from 'lucide-react';
+import { User, Phone, MessageCircle, MapPin, Mail, Edit, Fingerprint } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
-import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
 import { BiometricStatus } from '../../../components/biometrics/BiometricStatus';
@@ -30,211 +29,205 @@ export const ClientInfoTab: React.FC<ClientInfoTabProps> = memo(({
                    `${client.first_name} ${client.last_name}`;
 
   return (
-    <div className="flex flex-col xl:flex-row gap-6">
-      {/* Sidebar con información del cliente */}
-      <div className="w-full xl:w-80 space-y-6 flex-shrink-0">
-        <Card className="p-6" variant="elevated">
-          <div className="flex flex-col items-center text-center space-y-6">
-            {/* Avatar y nombre */}
-            <div className="relative w-full">
-              <div className="flex justify-center mb-4">
-                <Avatar
-                  name={fullName}
-                  src={dashboard?.biometric?.thumbnail || client?.meta_info?.photo_url}
-                  size="2xl"
-                  className="ring-4 ring-white shadow-xl"
-                />
-              </div>
-              <div className="flex justify-center mb-4">
-                <Badge 
-                  variant={dashboard?.client.is_active ? 'success' : 'error'} 
-                  size="sm"
-                  animated
-                >
-                  {dashboard?.client.is_active ? 'Activo' : 'Inactivo'}
-                </Badge>
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-1">{fullName}</h2>
-              <p className="text-sm text-gray-600">
-                {age} años • Cliente desde {new Date(client.created_at).toLocaleDateString('es-CO')}
-              </p>
-            </div>
-
-            {/* Botones de acción */}
-            <div className="w-full space-y-3 pt-4 border-t border-gray-200">
-              <Button
-                onClick={onEdit}
-                fullWidth
-                leftIcon={<Edit className="w-4 h-4" />}
+    <div className="space-y-4 sm:space-y-5">
+      {/* Header del Cliente */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 pb-4 border-b border-gray-200">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Avatar
+            name={fullName}
+            src={dashboard?.biometric?.thumbnail || client?.meta_info?.photo_url}
+            size="md"
+            className="flex-shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{fullName}</h2>
+              <Badge 
+                variant={dashboard?.client.is_active ? 'success' : 'error'} 
+                size="sm"
               >
-                Editar Información
-              </Button>
-
-              <Button
-                onClick={onBiometric}
-                variant="secondary"
-                fullWidth
-                leftIcon={<Edit className="w-4 h-4" />}
-              >
-                Gestionar Biometría
-              </Button>
+                {dashboard?.client.is_active ? 'Activo' : 'Inactivo'}
+              </Badge>
             </div>
-
-            {/* Estado de autenticación */}
-            <div className="w-full pt-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-center gap-2">
-                Autenticación
-              </h3>
-              <BiometricStatus 
-                biometric={dashboard?.biometric ? {
-                  id: dashboard.biometric.id || '',
-                  type: 'face',
-                  data: '',
-                  thumbnail: dashboard.biometric.thumbnail,
-                  has_face_biometric: true,
-                  created_at: dashboard.biometric.created_at || new Date().toISOString(),
-                  updated_at: dashboard.biometric.updated_at || new Date().toISOString(),
-                } : undefined} 
-              />
-            </div>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              {age} años • Cliente desde {new Date(client.created_at).toLocaleDateString('es-CO')}
+            </p>
           </div>
-        </Card>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button
+            onClick={onEdit}
+            size="sm"
+            variant="secondary"
+            leftIcon={<Edit className="w-4 h-4" />}
+            className="flex-1 sm:flex-none"
+          >
+            <span className="hidden sm:inline">Editar</span>
+            <span className="sm:hidden">Editar</span>
+          </Button>
+          <Button
+            onClick={onBiometric}
+            size="sm"
+            variant="outline"
+            leftIcon={<Fingerprint className="w-4 h-4" />}
+            className="flex-1 sm:flex-none"
+          >
+            <span className="hidden sm:inline">Biometría</span>
+            <span className="sm:hidden">Bio</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Contenido principal */}
-      <div className="flex-1 space-y-6">
-        {/* Datos Personales */}
-      <Card className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-600" />
+      {/* Datos Personales */}
+      <div className="space-y-3 sm:space-y-4">
+        <h3 className="text-sm sm:text-base font-semibold text-gray-900 flex items-center gap-2">
+          <User className="w-4 h-4 text-blue-600" />
           Datos Personales
         </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Tipo de Documento</p>
-              <p className="text-lg font-semibold text-gray-900">{client.dni_type}</p>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 mb-1">Tipo de Documento</span>
+            <span className="text-sm font-medium text-gray-900">{client.dni_type}</span>
           </div>
-
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Número de Documento</p>
-              <p className="text-lg font-semibold text-gray-900 font-mono">{client.dni_number}</p>
+          
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 mb-1">Número de Documento</span>
+            <span className="text-sm font-medium text-gray-900">{client.dni_number}</span>
           </div>
-
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Fecha de Nacimiento</p>
-              <p className="text-lg font-semibold text-gray-900">
+          
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 mb-1">Fecha de Nacimiento</span>
+            <span className="text-sm font-medium text-gray-900">
               {new Date(client.birth_date).toLocaleDateString('es-CO', {
                 year: 'numeric',
-                month: 'long',
+                month: 'short',
                 day: 'numeric'
               })}
-            </p>
+            </span>
           </div>
-
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Edad</p>
-              <p className="text-lg font-semibold text-gray-900">{age} años</p>
+          
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 mb-1">Edad</span>
+            <span className="text-sm font-medium text-gray-900">{age} años</span>
           </div>
-
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Género</p>
-              <p className="text-lg font-semibold text-gray-900 capitalize">
+          
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 mb-1">Género</span>
+            <span className="text-sm font-medium text-gray-900 capitalize">
               {client.gender === 'male' ? 'Masculino' : client.gender === 'female' ? 'Femenino' : 'Otro'}
-            </p>
+            </span>
           </div>
-
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Fecha de Registro</p>
-              <p className="text-lg font-semibold text-gray-900">
+          
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 mb-1">Fecha de Registro</span>
+            <span className="text-sm font-medium text-gray-900">
               {new Date(client.created_at).toLocaleDateString('es-CO')}
-            </p>
+            </span>
           </div>
-
-          {client.updated_at && (
-              <div className="md:col-span-2 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <p className="text-sm font-medium text-blue-600 uppercase tracking-wide mb-2">Última Actualización</p>
-                <p className="text-base font-semibold text-blue-900">
-                  {new Date(client.updated_at).toLocaleString('es-CO', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-              </p>
-            </div>
-          )}
         </div>
-      </Card>
 
-        {/* Información de Contacto */}
-      <Card className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Phone className="w-5 h-5 text-green-600" />
+        {client.updated_at && (
+          <div className="pt-3 border-t border-gray-100">
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-500 mb-1">Última Actualización</span>
+              <span className="text-sm font-medium text-gray-900">
+                {new Date(client.updated_at).toLocaleString('es-CO', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Información de Contacto */}
+      <div className="space-y-3 sm:space-y-4 pt-3 sm:pt-4 border-t border-gray-200">
+        <h3 className="text-sm sm:text-base font-semibold text-gray-900 flex items-center gap-2">
+          <Phone className="w-4 h-4 text-green-600" />
           Información de Contacto
         </h3>
 
-        <div className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <div className="flex items-start justify-between mb-3">
-            <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Teléfono Principal</p>
-                  <p className="text-xl font-bold text-gray-900">{client.phone}</p>
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 bg-gray-50 rounded-lg">
+            <div className="flex-1 min-w-0">
+              <span className="text-xs text-gray-500 block mb-1">Teléfono Principal</span>
+              <span className="text-sm font-medium text-gray-900">{client.phone}</span>
             </div>
-                <div className="flex gap-2 ml-4">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button
                 onClick={onCall}
                 variant="secondary"
                 size="sm"
-                    leftIcon={<Phone className="w-4 h-4" />}
+                leftIcon={<Phone className="w-4 h-4" />}
+                className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0"
               >
-                Llamar
+                <span className="hidden sm:inline">Llamar</span>
+                <span className="sm:hidden">Llamar</span>
               </Button>
               <Button
                 onClick={onWhatsApp}
                 variant="secondary"
                 size="sm"
-                    leftIcon={<MessageCircle className="w-4 h-4" />}
+                leftIcon={<MessageCircle className="w-4 h-4" />}
+                className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0"
               >
-                WhatsApp
+                <span className="hidden sm:inline">WhatsApp</span>
+                <span className="sm:hidden">WA</span>
               </Button>
             </div>
           </div>
-            </div>
 
-            {client.alternative_phone && (
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Teléfono Alternativo</p>
-                <p className="text-lg font-semibold text-gray-900">{client.alternative_phone}</p>
+          {client.alternative_phone && (
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <span className="text-xs text-gray-500 block mb-1">Teléfono Alternativo</span>
+              <span className="text-sm font-medium text-gray-900">{client.alternative_phone}</span>
             </div>
           )}
 
           {client.address && (
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Dirección</p>
-                    <p className="text-base font-semibold text-gray-900">{client.address}</p>
-                  </div>
-                </div>
+            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-gray-500 block mb-1">Dirección</span>
+                <span className="text-sm font-medium text-gray-900">{client.address}</span>
+              </div>
             </div>
           )}
 
           {client.meta_info?.email && (
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-start gap-3">
-              <Mail className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Email</p>
-                    <p className="text-base font-semibold text-gray-900">{client.meta_info.email}</p>
-                  </div>
-                </div>
+            <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+              <Mail className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-gray-500 block mb-1">Email</span>
+                <span className="text-sm font-medium text-gray-900 break-all">{client.meta_info.email}</span>
+              </div>
             </div>
           )}
         </div>
-      </Card>
+      </div>
+
+      {/* Estado de Biometría */}
+      <div className="pt-3 sm:pt-4 border-t border-gray-200">
+        <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+          <Fingerprint className="w-4 h-4 text-purple-600" />
+          Autenticación Biométrica
+        </h3>
+        <BiometricStatus 
+          biometric={dashboard?.biometric ? {
+            id: dashboard.biometric.id || '',
+            type: 'face',
+            data: '',
+            thumbnail: dashboard.biometric.thumbnail,
+            has_face_biometric: true,
+            created_at: dashboard.biometric.created_at || new Date().toISOString(),
+            updated_at: dashboard.biometric.updated_at || new Date().toISOString(),
+          } : undefined} 
+        />
       </div>
     </div>
   );

@@ -169,7 +169,7 @@ export const CheckInResult: React.FC<CheckInResultProps> = memo(({
                       {result.client_info.first_name} {result.client_info.last_name}
                     </p>
                     <p className="text-sm text-gray-600">
-                      DNI: <span className="font-mono font-medium">{result.client_info.dni_number}</span>
+                      DNI: <span className="font-medium">{result.client_info.dni_number}</span>
                     </p>
                   </div>
                 </div>
@@ -201,7 +201,7 @@ export const CheckInResult: React.FC<CheckInResultProps> = memo(({
                     <div className="pt-2 border-t border-gray-200 mt-2">
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-500">ID de Registro:</span>
-                        <span className="text-xs font-mono text-gray-700">{result.attendance.id.slice(0, 8)}...</span>
+                        <span className="text-xs text-gray-700">{result.attendance.id.slice(0, 8)}...</span>
                       </div>
                     </div>
                   </div>

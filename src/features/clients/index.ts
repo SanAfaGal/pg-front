@@ -40,6 +40,8 @@ export { clientKeys } from './hooks/useClients';
 
 // Components
 export { ClientList } from './components/ClientList';
+export { ClientCard } from './components/ClientCard';
+export { ClientCards } from './components/ClientCards';
 export { ClientForm } from './components/ClientForm';
 export { ClientFormModal } from './components/ClientFormModal';
 export { ClientInfoTab } from './components/ClientInfoTab';

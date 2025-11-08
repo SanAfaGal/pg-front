@@ -35,6 +35,7 @@ export type {
 export { useToast, type Toast } from './hooks/useToast';
 export { useCache } from './hooks/useCache';
 export { useDebounce } from './hooks/useDebounce';
+export { useMediaQuery } from './hooks/useMediaQuery';
 
 // Utils
 export { logger, logApiCall, logApiResponse } from './utils/logger';

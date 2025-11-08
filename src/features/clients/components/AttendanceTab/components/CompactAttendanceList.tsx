@@ -129,7 +129,7 @@ export const CompactAttendanceList = ({
               )}
             </div>
             <div className="col-span-2 text-right">
-              <span className="text-xs text-gray-400 font-mono">
+              <span className="text-xs text-gray-400">
                 {attendance.id.slice(0, 6)}...
               </span>
             </div>
