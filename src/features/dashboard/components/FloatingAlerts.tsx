@@ -55,7 +55,7 @@ export const FloatingAlerts = ({ alerts }: FloatingAlertsProps) => {
           const config = ALERT_SEVERITY_CONFIG[alert.severity];
           
           return (
-            <motion.button
+            <motion.div
               key={key}
               initial={{ opacity: 0, x: 100, scale: 0.8 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -96,7 +96,7 @@ export const FloatingAlerts = ({ alerts }: FloatingAlertsProps) => {
               >
                 <X className="w-4 h-4" />
               </button>
-            </motion.button>
+            </motion.div>
           );
         })}
       </AnimatePresence>
