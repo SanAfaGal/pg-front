@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { Card } from '../../../components/ui/Card';
-import { Activity, UserPlus, Calendar, DollarSign, Clock } from 'lucide-react';
+import { Activity, UserPlus, Calendar, DollarSign, Clock, HeartPulse, ArrowRight } from 'lucide-react';
 import { RecentActivity } from '../types';
-import { formatRelativeTime, formatCurrency, formatDateTime } from '../utils/dashboardHelpers';
+import { formatRelativeTime, formatDateTime } from '../utils/dashboardHelpers';
 
 interface RecentActivitiesListProps {
   activities: RecentActivity[];
@@ -10,7 +10,7 @@ interface RecentActivitiesListProps {
 }
 
 const getActivityIconComponent = (type: RecentActivity['type']) => {
-  const iconProps = { className: 'w-4 h-4', strokeWidth: 2.5 };
+  const iconProps = { className: 'w-4 h-4', strokeWidth: 2 };
   
   switch (type) {
     case 'client_registration':
@@ -35,41 +35,41 @@ const getActivityColorScheme = (type: RecentActivity['type']) => {
     badge: string;
   }> = {
     client_registration: {
-      bg: 'bg-blue-50/50',
-      border: 'border-blue-200',
+      bg: 'bg-blue-50',
+      border: 'border-blue-100',
       iconBg: 'bg-blue-500',
       iconColor: 'text-white',
-      badge: 'bg-blue-100 text-blue-700 border-blue-200',
+      badge: 'bg-blue-50 text-blue-700 border-blue-200',
     },
     subscription_created: {
-      bg: 'bg-green-50/50',
-      border: 'border-green-200',
+      bg: 'bg-green-50',
+      border: 'border-green-100',
       iconBg: 'bg-green-500',
       iconColor: 'text-white',
-      badge: 'bg-green-100 text-green-700 border-green-200',
+      badge: 'bg-green-50 text-green-700 border-green-200',
     },
     payment_received: {
-      bg: 'bg-emerald-50/50',
-      border: 'border-emerald-200',
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-100',
       iconBg: 'bg-emerald-500',
       iconColor: 'text-white',
-      badge: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+      badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     },
     check_in: {
-      bg: 'bg-indigo-50/50',
-      border: 'border-indigo-200',
+      bg: 'bg-indigo-50',
+      border: 'border-indigo-100',
       iconBg: 'bg-indigo-500',
       iconColor: 'text-white',
-      badge: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      badge: 'bg-indigo-50 text-indigo-700 border-indigo-200',
     },
   };
   
   return schemes[type] || {
-    bg: 'bg-gray-50/50',
-    border: 'border-gray-200',
+    bg: 'bg-gray-50',
+    border: 'border-gray-100',
     iconBg: 'bg-gray-500',
     iconColor: 'text-white',
-    badge: 'bg-gray-100 text-gray-700 border-gray-200',
+    badge: 'bg-gray-50 text-gray-700 border-gray-200',
   };
 };
 
@@ -95,72 +95,88 @@ const getActivityTypeLabel = (type: RecentActivity['type']): string => {
 };
 
 export const RecentActivitiesList = ({ activities, isLoading = false }: RecentActivitiesListProps) => {
+  const maxDisplayed = 4;
+
+  // Estado de carga
   if (isLoading) {
     return (
-      <Card padding="sm" className="bg-white border border-gray-200 shadow-lg h-full flex flex-col">
-        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100 flex-shrink-0">
-          <div className="p-1.5 bg-gradient-to-br from-powergym-charcoal to-slate-700 rounded-lg shadow-md flex-shrink-0">
-            <Activity className="w-4 h-4 text-white" strokeWidth={2.5} />
+      <Card 
+        padding="md" 
+        className="w-full bg-white border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col min-h-[320px] h-full rounded-2xl"
+      >
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+          <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+            <HeartPulse className="w-5 h-5 text-gray-400" strokeWidth={2} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm sm:text-base font-bold text-powergym-charcoal truncate">Actividad Reciente</h3>
-            <p className="text-xs text-gray-500">Cargando...</p>
+            <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
+            <p className="text-sm text-gray-500 font-light">Cargando...</p>
           </div>
         </div>
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <div className="w-8 h-8 border-4 border-powergym-red border-t-transparent rounded-full animate-spin" />
+        <div className="flex items-center justify-center flex-1">
+          <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
         </div>
       </Card>
     );
   }
 
+  // Estado vacío
   if (activities.length === 0) {
     return (
-      <Card padding="sm" className="bg-white border border-gray-200 shadow-lg h-full flex flex-col">
-        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100 flex-shrink-0">
-          <div className="p-1.5 bg-gradient-to-br from-powergym-charcoal to-slate-700 rounded-lg shadow-md flex-shrink-0">
-            <Activity className="w-4 h-4 text-white" strokeWidth={2.5} />
+      <Card 
+        padding="md" 
+        className="w-full bg-white border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col min-h-[320px] h-full rounded-2xl"
+      >
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+          <div className="p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+            <HeartPulse className="w-5 h-5 text-gray-400" strokeWidth={2} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm sm:text-base font-bold text-powergym-charcoal truncate">Actividad Reciente</h3>
-            <p className="text-xs text-gray-500">Sin eventos</p>
+            <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
+            <p className="text-sm text-gray-500 font-light">Sin eventos</p>
           </div>
         </div>
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <div className="text-center">
-            <Activity className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">No hay actividades</p>
+        <div className="flex flex-col items-center justify-center flex-1">
+          <div className="p-4 bg-gray-50 rounded-2xl mb-4">
+            <Activity className="w-8 h-8 text-gray-300" strokeWidth={2} />
           </div>
+          <p className="text-sm text-gray-500 font-light">No hay actividades</p>
         </div>
       </Card>
     );
   }
 
-  // Limitar a 5 actividades para mantener compacto
-  const displayedActivities = activities.slice(0, 5);
+  // Lista de actividades - Máximo 4 eventos sin scroll
+  const displayedActivities = activities.slice(0, maxDisplayed);
+  const hasMore = activities.length > maxDisplayed;
 
   return (
-    <Card padding="sm" className="bg-white border border-gray-200 shadow-lg h-full flex flex-col">
-      {/* Header - Consistente con BaseStatsCard */}
-      <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-gray-100 flex-shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1.5 bg-gradient-to-br from-powergym-charcoal to-slate-700 rounded-lg shadow-md flex-shrink-0">
-            <Activity className="w-4 h-4 text-white" strokeWidth={2.5} />
+    <Card 
+      padding="md" 
+      className="w-full bg-white border border-gray-200 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col min-h-[320px] h-full rounded-2xl"
+    >
+      {/* Header Moderno */}
+      <div className="flex items-center justify-between gap-3 mb-4 pb-4 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="p-2.5 bg-indigo-50 rounded-xl border border-indigo-100">
+            <HeartPulse className="w-5 h-5 text-indigo-600" strokeWidth={2} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm sm:text-base font-bold text-powergym-charcoal truncate">Actividad Reciente</h3>
-            <p className="text-xs text-gray-500 hidden sm:block">Últimos eventos</p>
+            <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
+            <p className="text-sm text-gray-500 font-light hidden sm:block">Últimos eventos</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 rounded-lg border border-gray-200 flex-shrink-0">
-          <Clock className="w-3 h-3 text-gray-500" />
-          <span className="text-xs font-semibold text-gray-700">{activities.length}</span>
-        </div>
+        {activities.length > 0 && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 rounded-lg border border-gray-200 flex-shrink-0">
+            <Clock className="w-3.5 h-3.5 text-gray-500" strokeWidth={2} />
+            <span className="text-xs font-medium text-gray-700">{activities.length}</span>
+          </div>
+        )}
       </div>
       
-      {/* Timeline Compacto - Altura Limitada con Scroll Interno */}
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
-        <div className="space-y-2 pb-2">
+      {/* Lista de Actividades - Sin Scroll */}
+      <div className="flex-1 flex flex-col">
+        <div className="space-y-3 flex-1">
           {displayedActivities.map((activity, index) => {
             const { date } = formatDateTime(activity.timestamp);
             const isPayment = activity.type === 'payment_received' && activity.metadata.amount;
@@ -170,63 +186,74 @@ export const RecentActivitiesList = ({ activities, isLoading = false }: RecentAc
             return (
               <motion.div
                 key={activity.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.02 }}
-                className={`flex gap-2 group`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.2 }}
+                className="flex gap-3 group"
               >
-                {/* Punto del Timeline */}
-                <div className="flex-shrink-0 pt-1">
-                  <div className={`w-8 h-8 ${colorScheme.iconBg} rounded-lg flex items-center justify-center shadow-md ${colorScheme.iconColor}`}>
+                {/* Ícono del timeline */}
+                <div className="flex-shrink-0 pt-0.5">
+                  <div className={`w-10 h-10 ${colorScheme.iconBg} rounded-xl flex items-center justify-center shadow-sm ${colorScheme.iconColor}`}>
                     {getActivityIconComponent(activity.type)}
                   </div>
                 </div>
                 
-                {/* Contenido Compacto */}
-                <div className={`flex-1 min-w-0 ${colorScheme.bg} rounded-xl border ${colorScheme.border} p-2.5 shadow-sm transition-all duration-200`}>
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${colorScheme.badge} truncate`}>
-                          {getActivityTypeLabel(activity.type)}
-                        </span>
-                        <span className="text-[10px] text-gray-500 whitespace-nowrap">{relativeTime}</span>
+                {/* Contenido de la actividad */}
+                <div className={`flex-1 min-w-0 ${colorScheme.bg} rounded-xl border ${colorScheme.border} p-3 transition-all duration-200 hover:shadow-sm`}>
+                  <div className="space-y-2">
+                    {/* Badge y tiempo relativo */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${colorScheme.badge}`}>
+                        {getActivityTypeLabel(activity.type)}
+                      </span>
+                      <span className="text-xs text-gray-500 font-light">{relativeTime}</span>
+                    </div>
+                    
+                    {/* Descripción */}
+                    <p className="text-sm text-gray-900 font-normal leading-relaxed line-clamp-2">
+                      {activity.description}
+                    </p>
+                    
+                    {/* Metadata footer */}
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200/60">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-light">
+                        <Clock className="w-3.5 h-3.5" strokeWidth={2} />
+                        <span>{date}</span>
                       </div>
-                      <p className="text-xs sm:text-sm font-semibold text-gray-900 leading-tight line-clamp-2">
-                        {activity.description}
-                      </p>
-                      {isPayment && activity.metadata.amount && (
-                        <div className="mt-1">
-                          <div className="inline-block px-2 py-0.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-bold text-xs shadow-md">
-                            {formatCurrency(activity.metadata.amount)}
-                          </div>
-                        </div>
+                      {isPayment && activity.metadata.method && (
+                        <span className="px-2 py-0.5 bg-white rounded-md border border-gray-200 text-xs font-normal text-gray-600">
+                          {getPaymentMethodLabel(activity.metadata.method)}
+                        </span>
+                      )}
+                      {activity.metadata.plan_name && (
+                        <span className="px-2 py-0.5 bg-white rounded-md border border-gray-200 text-xs font-normal text-gray-600">
+                          {activity.metadata.plan_name}
+                        </span>
                       )}
                     </div>
-                  </div>
-                  
-                  {/* Metadata Footer Compacto */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-gray-200/50">
-                    <div className="flex items-center gap-1 text-[10px] text-gray-600">
-                      <Clock className="w-3 h-3" />
-                      <span className="font-medium truncate">{date}</span>
-                    </div>
-                    {isPayment && activity.metadata.method && (
-                      <div className="px-1.5 py-0.5 bg-white rounded border border-gray-200 text-[10px] font-medium text-gray-700 truncate">
-                        {getPaymentMethodLabel(activity.metadata.method)}
-                      </div>
-                    )}
-                    {activity.metadata.plan_name && (
-                      <div className="px-1.5 py-0.5 bg-white rounded border border-gray-200 text-[10px] font-medium text-gray-700 truncate">
-                        {activity.metadata.plan_name}
-                      </div>
-                    )}
                   </div>
                 </div>
               </motion.div>
             );
           })}
         </div>
+
+        {/* Botón "Ver más" */}
+        {hasMore && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => {
+                // Navegar a una página de actividades o mostrar más
+                // Por ahora, simplemente hacemos scroll o mostramos más
+                window.location.hash = '#activities';
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+            >
+              <span>Ver más actividades</span>
+              <ArrowRight className="w-4 h-4" strokeWidth={2} />
+            </button>
+          </div>
+        )}
       </div>
     </Card>
   );

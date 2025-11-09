@@ -60,23 +60,26 @@ export const BaseStatsCard = ({
 
   return (
     <Card 
-      padding="sm" 
+      padding="md" 
       className={`
-        bg-white border border-gray-200 h-full
-        shadow-lg flex flex-col
+        bg-white border border-gray-200
+        shadow-md hover:shadow-lg transition-shadow duration-300
+        flex flex-col
+        min-h-[320px] h-full
+        rounded-2xl
         ${className}
       `}
     >
-      {/* Header Ultra Compacto */}
-      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100 flex-shrink-0">
-        <div className={`p-1.5 ${colorStyles.bg} rounded-lg shadow-md ${colorStyles.shadow} flex-shrink-0`}>
-          <Icon className={`w-4 h-4 ${colorStyles.icon}`} strokeWidth={2.5} />
+      {/* Header Moderno y Minimalista */}
+      <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-100 flex-shrink-0">
+        <div className={`p-2.5 ${colorStyles.bg} rounded-xl shadow-sm ${colorStyles.shadow} flex-shrink-0`}>
+          <Icon className={`w-5 h-5 ${colorStyles.icon}`} strokeWidth={2} />
         </div>
-        <h3 className="text-sm sm:text-base font-bold text-powergym-charcoal truncate">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-900 truncate">{title}</h3>
       </div>
 
-      {/* Content - Flexible y Compacto */}
-      <div className="flex-1 min-h-0 overflow-auto">
+      {/* Content - Flexible y Espacioso */}
+      <div className="flex-1 min-h-0">
         {children}
       </div>
     </Card>

@@ -125,9 +125,9 @@ export const Dashboard = () => {
 
       return (
         <>
-          <div className="h-full flex flex-col gap-2">
+          <div className="min-h-screen flex flex-col">
             {/* Header Compacto */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 mb-6 sm:mb-8">
               <DashboardHeader
                 period={period}
                 date={date}
@@ -140,24 +140,31 @@ export const Dashboard = () => {
               />
             </div>
 
-            {/* Contenido Principal - Grid con Alturas Uniformes */}
-            <div className="flex-1 min-h-0 grid grid-cols-12 gap-2 items-stretch overflow-y-auto overflow-x-hidden">
-              {/* Columna Izquierda - Stats Cards */}
-              <div className="col-span-12 xl:col-span-8 grid grid-cols-1 lg:grid-cols-2 gap-2 auto-rows-fr">
-                <ClientStatsCard stats={dashboardData.client_stats} period={period} />
-                <AttendanceStatsCard stats={dashboardData.attendance_stats} period={period} />
-                <InventoryStatsCard stats={dashboardData.inventory_stats} />
-                <FinancialStatsCard stats={dashboardData.financial_stats} period={period} />
-              </div>
+            {/* Contenido Principal - Grid con Actividades a la Derecha */}
+            <div className="flex-1">
+              <div className="grid grid-cols-12 gap-6">
+                {/* Columna Izquierda - Stats Cards de 2 en 2 */}
+                <div className="col-span-12 lg:col-span-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <ClientStatsCard stats={dashboardData.client_stats} period={period} />
+                    <AttendanceStatsCard stats={dashboardData.attendance_stats} period={period} />
+                    <InventoryStatsCard stats={dashboardData.inventory_stats} />
+                    <FinancialStatsCard stats={dashboardData.financial_stats} period={period} />
+                  </div>
+                </div>
 
-              {/* Columna Derecha - Actividades Recientes - Misma Altura */}
-              <div className="col-span-12 xl:col-span-4 flex items-stretch">
-                <RecentActivitiesList 
-                  activities={recentActivities}
-                  isLoading={isActivitiesLoading}
-                />
+                {/* Columna Derecha - Actividades Recientes */}
+                <div className="col-span-12 lg:col-span-4">
+                  <RecentActivitiesList 
+                    activities={recentActivities}
+                    isLoading={isActivitiesLoading}
+                  />
+                </div>
               </div>
             </div>
+
+            {/* Margin bottom para evitar que el contenido quede pegado */}
+            <div className="h-8 sm:h-12" />
           </div>
 
           {/* Alertas Flotantes */}
@@ -210,8 +217,8 @@ export const Dashboard = () => {
         </header>
 
         {/* Main Content Area - Con Scroll cuando sea necesario */}
-        <main className="flex-1 min-h-0 overflow-hidden">
-          <div className="h-full max-w-[1920px] mx-auto px-2 sm:px-3 lg:px-4 py-2 sm:py-3">
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <div className="min-h-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
             {renderContent()}
           </div>
         </main>
