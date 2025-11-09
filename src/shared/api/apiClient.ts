@@ -167,6 +167,8 @@ interface RequestConfig {
 
 // Real API Client Implementation
 class RealApiClient implements ApiClient {
+  private refreshPromise: Promise<string | null> | null = null;
+
   private isNetworkError(error: Error): boolean {
     // Check for common network error patterns
     return (
@@ -289,13 +291,76 @@ class RealApiClient implements ApiClient {
     }
   }
 
+  /**
+   * Intenta refrescar el access token usando el refresh token
+   * Reutiliza authApi.refreshToken para evitar duplicación de código
+   * Usa Promise cache para evitar múltiples refreshes simultáneos
+   */
+  private async refreshAccessToken(): Promise<string | null> {
+    // Si ya hay un refresh en progreso, reutilizar esa Promise
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+
+    const refreshToken = tokenManager.getRefreshToken();
+    if (!refreshToken) {
+      return null;
+    }
+
+    // Crear Promise cache para refreshes concurrentes
+    this.refreshPromise = (async () => {
+      try {
+        // Reutilizar authApi.refreshToken existente
+        const { authApi } = await import('../../features/auth/api/authApi');
+        const tokens = await authApi.refreshToken(refreshToken);
+        
+        // Actualizar solo el access_token (el refresh_token no cambia)
+        if (tokens.access_token) {
+          const currentRefreshToken = tokenManager.getRefreshToken();
+          if (currentRefreshToken) {
+            tokenManager.setTokens(tokens.access_token, currentRefreshToken);
+          }
+          return tokens.access_token;
+        }
+        return null;
+      } catch (error) {
+        logger.error('Error refreshing token:', error);
+        // Si el refresh falla, limpiar tokens
+        tokenManager.clearTokens();
+        return null;
+      } finally {
+        // Limpiar Promise cache después de completar
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
+  }
+
   private async handleErrorResponse(response: Response, endpoint: string): Promise<never> {
     const status = response.status;
     
-    // Handle authentication errors (but not for check-in endpoint and logout endpoint)
-    if (status === 401 && !endpoint.includes('/check-in') && !endpoint.includes('/logout')) {
+    // Handle authentication errors con refresh reactivo
+    if (status === 401 && !endpoint.includes('/check-in') && !endpoint.includes('/logout') && !endpoint.includes('/auth/refresh')) {
+      // Intentar refresh reactivo solo si hay refresh_token disponible
+      const refreshToken = tokenManager.getRefreshToken();
+      if (refreshToken) {
+        const newAccessToken = await this.refreshAccessToken();
+        if (newAccessToken) {
+          // Refresh exitoso - lanzar error controlado para que el componente pueda reintentar si es necesario
+          // NO reintentamos automáticamente la petición original
+          const refreshError = new Error('Token refreshed, please retry') as Error & {
+            status: number;
+            response: { data: { refreshed: boolean } };
+          };
+          refreshError.status = 401;
+          refreshError.response = { data: { refreshed: true } };
+          throw refreshError;
+        }
+      }
+      
+      // Si no hay refresh_token o el refresh falló, limpiar tokens
       tokenManager.clearTokens();
-      // Don't force reload, let React handle the state change
       throw new Error('Authentication failed');
     }
 

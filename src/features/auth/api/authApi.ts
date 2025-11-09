@@ -32,8 +32,22 @@ export const authApi = {
   },
 
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
-    return apiClient.post<AuthTokens>(API_ENDPOINTS.auth.refresh, {
-      refresh_token: refreshToken,
+    // Usar fetch directamente para evitar loops de refresh en apiClient
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${API_ENDPOINTS.auth.refresh}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        refresh_token: refreshToken,
+      }),
     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Error al refrescar token');
+    }
+
+    return response.json();
   },
 };
