@@ -15,13 +15,16 @@ import {
   formatPaymentDate, 
   getPaymentMethodInfo,
 } from '../utils/paymentHelpers';
-import { Calendar, Clock, DollarSign, RefreshCw, X, Plus } from 'lucide-react';
+import { canRenewByDaysRemaining } from '../utils/subscriptionFilters';
+import { useSubscriptionPermissions } from '../hooks/useSubscriptionPermissions';
+import { Calendar, Clock, DollarSign, RefreshCw, X, Plus, CalendarCheck } from 'lucide-react';
 import { Badge } from '../../../components/ui/Badge';
 
 interface ActiveSubscriptionCardProps {
   subscription: Subscription;
   payments?: Payment[];
   paymentStats?: PaymentStats;
+  scheduledSubscription?: Subscription | null;
   onRenew?: (subscription: Subscription) => void;
   onCancel?: (subscription: Subscription) => void;
   onAddPayment?: (subscription: Subscription) => void;
@@ -32,14 +35,28 @@ export const ActiveSubscriptionCard: React.FC<ActiveSubscriptionCardProps> = mem
   subscription,
   payments = [],
   paymentStats,
+  scheduledSubscription,
   onRenew,
+  onCancel,
   onAddPayment,
   isLoadingPayments = false,
 }) => {
   const daysRemaining = useMemo(() => getDaysRemaining(subscription), [subscription]);
-
-  const canRenew = subscription.status === 'active' || subscription.status === 'expired';
-  const canCancel = ['active', 'pending_payment', 'scheduled'].includes(subscription.status);
+  const { canCancel: userCanCancel } = useSubscriptionPermissions();
+  
+  // Check renewal permissions based on days remaining
+  const renewalCheck = useMemo(() => {
+    if (subscription.status === 'expired') {
+      return { canRenew: true, daysRemaining: 0, message: undefined };
+    }
+    if (subscription.status === 'active') {
+      return canRenewByDaysRemaining(subscription);
+    }
+    return { canRenew: false, daysRemaining, message: undefined };
+  }, [subscription, daysRemaining]);
+  
+  const canRenew = renewalCheck.canRenew;
+  const canCancel = userCanCancel && ['active', 'pending_payment', 'scheduled'].includes(subscription.status);
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -68,20 +85,49 @@ export const ActiveSubscriptionCard: React.FC<ActiveSubscriptionCardProps> = mem
                 Agregar Pago
               </Button>
             )}
-            {canRenew && onRenew && (
+            {onRenew && (
+              renewalCheck.canRenew ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => onRenew(subscription)}
+                  leftIcon={<RefreshCw className="w-4 h-4" />}
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
+                  Renovar
+                </Button>
+              ) : renewalCheck.message ? (
+                <Tooltip
+                  content={renewalCheck.message}
+                  position="top"
+                >
+                  <span className="inline-block w-full sm:w-auto">
+                    <Button
+                      variant="secondary"
+                      disabled={true}
+                      leftIcon={<RefreshCw className="w-4 h-4" />}
+                      size="sm"
+                      className="cursor-not-allowed pointer-events-none w-full sm:w-auto"
+                    >
+                      Renovar
+                    </Button>
+                  </span>
+                </Tooltip>
+              ) : null
+            )}
+            {canCancel && onCancel ? (
               <Button
-                variant="secondary"
-                onClick={() => onRenew(subscription)}
-                leftIcon={<RefreshCw className="w-4 h-4" />}
+                variant="outline"
+                onClick={() => onCancel(subscription)}
+                leftIcon={<X className="w-4 h-4" />}
                 size="sm"
                 className="w-full sm:w-auto"
               >
-                Renovar
+                Cancelar
               </Button>
-            )}
-            {canCancel && (
+            ) : !userCanCancel && ['active', 'pending_payment', 'scheduled'].includes(subscription.status) ? (
               <Tooltip
-                content="Deshabilitado"
+                content="Solo los administradores pueden cancelar suscripciones"
                 position="top"
               >
                 <span className="inline-block w-full sm:w-auto">
@@ -96,7 +142,7 @@ export const ActiveSubscriptionCard: React.FC<ActiveSubscriptionCardProps> = mem
                   </Button>
                 </span>
               </Tooltip>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -138,6 +184,27 @@ export const ActiveSubscriptionCard: React.FC<ActiveSubscriptionCardProps> = mem
             </div>
           </div>
         </div>
+        
+        {/* Scheduled Renewal Info */}
+        {scheduledSubscription && (
+          <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm sm:text-base font-semibold text-blue-900 mb-1">
+                  Suscripción Agendada
+                </p>
+                <p className="text-xs sm:text-sm text-blue-700">
+                  Hay una suscripción programada que comenzará el{' '}
+                  <span className="font-medium">{formatDate(scheduledSubscription.start_date)}</span>
+                  {' '}una vez termine la suscripción actual.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Payment Information */}

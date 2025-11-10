@@ -28,8 +28,9 @@ import { RenewSubscriptionModal } from './RenewSubscriptionModal';
 import { FloatingRewardButton } from './FloatingRewardButton';
 import { NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
 import { useApplyReward, useAvailableRewards } from '../../../features/rewards';
+import { getScheduledRenewal } from '../utils/subscriptionFilters';
 
-import { Plus, AlertCircle, CreditCard, Calendar } from 'lucide-react';
+import { Plus, AlertCircle } from 'lucide-react';
 
 interface SubscriptionsTabProps {
   clientId: UUID;
@@ -56,20 +57,17 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
     data: subscriptions, 
     isLoading: subscriptionsLoading, 
     error: subscriptionsError,
-    refetch: refetchSubscriptions 
   } = useSubscriptions(clientId);
   
   const { 
     data: activeSubscription,
     isLoading: activeLoading,
-    refetch: refetchActiveSubscription 
   } = useActiveSubscription(clientId);
   
-  // Active subscription payment data
+  // Active subscription payment data (only fetch if active subscription exists)
   const { 
     data: activeSubscriptionPayments, 
     isLoading: activePaymentsLoading,
-    refetch: refetchActivePayments 
   } = usePayments(
     activeSubscription?.id || '',
     { limit: 50 }
@@ -78,8 +76,13 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
   const { 
     data: activePaymentStats,
     isLoading: activeStatsLoading,
-    refetch: refetchActivePaymentStats 
   } = usePaymentStats(activeSubscription?.id || '');
+  
+  // Get scheduled renewal subscription
+  const scheduledSubscription = useMemo(() => {
+    if (!subscriptions || !activeSubscription) return null;
+    return getScheduledRenewal(subscriptions, activeSubscription);
+  }, [subscriptions, activeSubscription]);
 
   // Mutations
   const createSubscriptionMutation = useCreateSubscription();
@@ -106,9 +109,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       });
       showToast({ title: 'Suscripción', message: NOTIFICATION_MESSAGES.subscription.created, type: 'success' });
       setIsPlanSelectorOpen(false);
-      // Refetch to show new subscription
-      refetchSubscriptions();
-      refetchActiveSubscription();
+      // React Query will automatically invalidate and refetch due to mutation callbacks
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
                             (error as { message?: string })?.message || 
@@ -116,7 +117,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       showToast({ title: 'Error', message: errorMessage, type: 'error' });
       logger.error('Error creating subscription:', error);
     }
-  }, [clientId, createSubscriptionMutation, showToast, refetchSubscriptions, refetchActiveSubscription]);
+  }, [clientId, createSubscriptionMutation, showToast]);
 
   const handleOpenRenewModal = useCallback((subscription: Subscription) => {
     setSubscriptionToRenew(subscription);
@@ -136,12 +137,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       showToast({ title: 'Suscripción', message: NOTIFICATION_MESSAGES.subscription.renewed, type: 'success' });
       setIsRenewModalOpen(false);
       setSubscriptionToRenew(null);
-      
-      // Refetch to get updated active subscription
-      refetchSubscriptions();
-      refetchActiveSubscription();
-      refetchActivePayments();
-      refetchActivePaymentStats();
+      // React Query will automatically invalidate and refetch due to mutation callbacks
       
       // Return the new subscription ID so the modal can apply the reward
       return renewedSubscription.id;
@@ -151,7 +147,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
                             NOTIFICATION_MESSAGES.error.generic;
       throw new Error(errorMessage);
     }
-  }, [clientId, subscriptionToRenew, renewSubscriptionMutation, showToast, refetchSubscriptions, refetchActiveSubscription, refetchActivePayments, refetchActivePaymentStats]);
+  }, [clientId, subscriptionToRenew, renewSubscriptionMutation, showToast]);
 
   const handleOpenCancelModal = useCallback((subscription: Subscription) => {
     setSubscriptionToCancel(subscription);
@@ -170,34 +166,24 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       showToast({ title: 'Suscripción', message: NOTIFICATION_MESSAGES.subscription.canceled, type: 'success' });
       setIsCancelModalOpen(false);
       setSubscriptionToCancel(null);
-      
-      // Refetch subscriptions to get updated active subscription
-      refetchSubscriptions();
-      refetchActiveSubscription();
-      refetchActivePayments();
-      refetchActivePaymentStats();
+      // React Query will automatically invalidate and refetch due to mutation callbacks
     } catch (error: unknown) {
       const errorMessage = (error as { response?: { data?: { detail?: string } }; message?: string })?.response?.data?.detail || 
                             (error as { message?: string })?.message || 
                             NOTIFICATION_MESSAGES.error.generic;
       throw new Error(errorMessage);
     }
-  }, [clientId, subscriptionToCancel, cancelSubscriptionMutation, showToast, refetchSubscriptions, refetchActiveSubscription, refetchActivePayments, refetchActivePaymentStats]);
+  }, [clientId, subscriptionToCancel, cancelSubscriptionMutation, showToast]);
 
   const handleAddPayment = useCallback((subscription: Subscription) => {
     setIsPaymentModalOpen(true);
   }, []);
 
   const handlePaymentCreated = useCallback(() => {
-      showToast({ title: 'Pago', message: NOTIFICATION_MESSAGES.payment.created, type: 'success' });
+    showToast({ title: 'Pago', message: NOTIFICATION_MESSAGES.payment.created, type: 'success' });
     setIsPaymentModalOpen(false);
-    // React Query will automatically refetch due to invalidations
-    // But we can also manually refetch for immediate update
-    refetchActivePayments();
-    refetchActivePaymentStats();
-    refetchSubscriptions();
-    refetchActiveSubscription();
-  }, [showToast, refetchActivePayments, refetchActivePaymentStats, refetchSubscriptions, refetchActiveSubscription]);
+    // React Query will automatically refetch due to invalidations in payment mutations
+  }, [showToast]);
 
   // Memoized subscription count
   const subscriptionCount = useMemo(() => subscriptions?.length || 0, [subscriptions]);
@@ -236,12 +222,12 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
                 {subscriptionsError.message || 'No se pudieron cargar las suscripciones. Por favor, intente de nuevo.'}
               </p>
             <Button
-                variant="outline"
+              variant="outline"
               size="sm"
-                onClick={() => refetchSubscriptions()}
-                className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-900 w-full sm:w-auto"
+              onClick={() => window.location.reload()}
+              className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-900 w-full sm:w-auto"
             >
-                Reintentar
+              Reintentar
             </Button>
             </div>
           </div>
@@ -263,7 +249,8 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
             subscription={activeSubscription}
             payments={activeSubscriptionPayments || []}
             paymentStats={activePaymentStats}
-            onRenew={undefined}
+            scheduledSubscription={scheduledSubscription}
+            onRenew={handleOpenRenewModal}
             onCancel={handleOpenCancelModal}
             onAddPayment={handleAddPayment}
             isLoadingPayments={activePaymentsLoading || activeStatsLoading}

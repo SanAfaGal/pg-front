@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { SubscriptionStatusBadge } from './SubscriptionList';
 import { SubscriptionDetailModal } from './SubscriptionDetailModal';
 import { formatDate, sortSubscriptionsByStatus, isSubscriptionExpired, getLastExpiredSubscription } from '../utils/subscriptionHelpers';
+import { filterHistorySubscriptions } from '../utils/subscriptionFilters';
 import { useMediaQuery } from '../../../shared';
 import { Eye, Calendar, RefreshCw, History } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -182,9 +183,10 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { isMobile } = useMediaQuery();
 
-  // Filter out active subscription and get last expired
+  // Filter history subscriptions (exclude active, pending_payment, scheduled)
+  // and get last expired
   const { historySubscriptions, lastExpiredSubscription } = useMemo(() => {
-    const filtered = subscriptions.filter(sub => sub.status !== 'active');
+    const filtered = filterHistorySubscriptions(subscriptions);
     const lastExpired = getLastExpiredSubscription(subscriptions);
     return {
       historySubscriptions: filtered,

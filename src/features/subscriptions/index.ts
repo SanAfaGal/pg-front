@@ -25,6 +25,10 @@ export { FloatingRewardButton } from './components/FloatingRewardButton';
 // Utility exports
 export * from './utils/subscriptionHelpers';
 export * from './utils/paymentHelpers';
+export * from './utils/subscriptionFilters';
+
+// Hook exports
+export * from './hooks/useSubscriptionPermissions';
 
 // Constants exports
 export * from './constants/subscriptionConstants';

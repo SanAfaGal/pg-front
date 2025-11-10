@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { Badge } from '../../../components/ui/Badge';
 import { formatDate } from '../utils/subscriptionHelpers';
+import { canRenewByDaysRemaining } from '../utils/subscriptionFilters';
 import { logger } from '../../../shared';
 import { AlertTriangle, RefreshCw, Gift, CheckCircle2, XCircle, Info, Target } from 'lucide-react';
 import { Card } from '../../../components/ui/Card';
@@ -258,6 +259,21 @@ export const RenewSubscriptionModal: React.FC<RenewSubscriptionModalProps> = ({
     return available.length > 0 || rewardsBySubscription.some(r => r.status === 'applied');
   }, [rewardsBySubscription]);
 
+  // Check if subscription can be renewed based on days remaining
+  // This must be before any early returns to follow Rules of Hooks
+  const renewalCheck = useMemo(() => {
+    if (!subscription) {
+      return { canRenew: false, daysRemaining: 0, message: undefined };
+    }
+    if (subscription.status === 'expired') {
+      return { canRenew: true, daysRemaining: 0, message: undefined };
+    }
+    if (subscription.status === 'active') {
+      return canRenewByDaysRemaining(subscription);
+    }
+    return { canRenew: false, daysRemaining: 0, message: undefined };
+  }, [subscription]);
+
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen && subscription) {
@@ -337,6 +353,23 @@ export const RenewSubscriptionModal: React.FC<RenewSubscriptionModalProps> = ({
       size="md"
     >
       <div className="space-y-5">
+        {/* Renewal Restriction Message */}
+        {!renewalCheck.canRenew && renewalCheck.message && (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900 mb-1">
+                  No se puede renovar aún
+                </p>
+                <p className="text-sm text-amber-800">
+                  {renewalCheck.message}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Subscription Info */}
         <Card className="p-4 bg-gray-50 border border-gray-200">
           <div className="space-y-2 text-sm">
@@ -402,7 +435,7 @@ export const RenewSubscriptionModal: React.FC<RenewSubscriptionModalProps> = ({
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={isSubmitting || isLoading}
+            disabled={isSubmitting || isLoading || !renewalCheck.canRenew}
             leftIcon={isSubmitting || isLoading ? <LoadingSpinner size="sm" /> : <RefreshCw className="w-4 h-4" />}
           >
             {isSubmitting || isLoading ? 'Renovando...' : 'Confirmar Renovación'}
