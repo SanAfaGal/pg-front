@@ -16,6 +16,7 @@ import { Product, ProductFormData, StockAddRequest, StockRemoveRequest } from '.
 import { logger, useToast } from '../../../shared';
 import { Package, BarChart3, TrendingUp, RefreshCw } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
+import { motion } from 'framer-motion';
 
 export const InventoryPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('products');
@@ -234,76 +235,110 @@ export const InventoryPage: React.FC = () => {
         </Button>
       }
     >
-      <div className="space-y-6">
-        <Tabs value={activeTab} onChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="products" activeValue={activeTab} onChange={setActiveTab}>
-              <Package className="w-4 h-4 mr-2" />
-              Productos
-            </TabsTrigger>
-            <TabsTrigger value="reports" activeValue={activeTab} onChange={setActiveTab}>
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Reportes
-            </TabsTrigger>
-            <TabsTrigger value="movements" activeValue={activeTab} onChange={setActiveTab}>
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Movimientos
-            </TabsTrigger>
-          </TabsList>
+      <div className="w-full space-y-6">
+        <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
+          <div className="flex justify-center w-full">
+            <TabsList className="inline-flex max-w-full">
+              <TabsTrigger 
+                value="products" 
+                activeValue={activeTab} 
+                onChange={setActiveTab}
+              >
+                <Package className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Productos</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="reports" 
+                activeValue={activeTab} 
+                onChange={setActiveTab}
+              >
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Reportes</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="movements" 
+                activeValue={activeTab} 
+                onChange={setActiveTab}
+              >
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Movimientos</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-          <TabsContent value="products" activeValue={activeTab}>
-            <ProductList
-              products={products}
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteProduct}
-              onManageStock={handleManageStock}
-              onViewHistory={handleViewHistory}
-              onCreateNew={handleCreateProduct}
-              isLoading={productsLoading}
-              error={productsError ? String(productsError) : undefined}
-            />
-          </TabsContent>
+          <div className="mt-6">
+            <TabsContent value="products" activeValue={activeTab} className="w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ProductList
+                  products={products}
+                  onEdit={handleEditProduct}
+                  onDelete={handleDeleteProduct}
+                  onManageStock={handleManageStock}
+                  onViewHistory={handleViewHistory}
+                  onCreateNew={handleCreateProduct}
+                  isLoading={productsLoading}
+                  error={productsError ? String(productsError) : undefined}
+                />
+              </motion.div>
+            </TabsContent>
 
-          <TabsContent value="reports" activeValue={activeTab}>
-            <InventoryReports />
-          </TabsContent>
+            <TabsContent value="reports" activeValue={activeTab} className="w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <InventoryReports />
+              </motion.div>
+            </TabsContent>
 
-          <TabsContent value="movements" activeValue={activeTab}>
-            <MovementList 
-              movements={movements} 
-              isLoading={movementsLoading}
-              error={movementsError ? String(movementsError) : undefined}
-              products={products}
-            />
-            {movementsResponse && movementsResponse.total > 0 && (
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 px-1">
-                <div className="text-sm text-gray-600">
-                  Mostrando {movements.length} de {movementsResponse.total} movimientos
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={movementPage === 0}
-                    onClick={() => setMovementPage(prev => Math.max(0, prev - 1))}
-                  >
-                    Anterior
-                  </Button>
-                  <span className="text-sm text-gray-700 font-medium min-w-[80px] text-center">
-                    Página {movementPage + 1}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={!movementsResponse || movements.length < 10 || (movementPage + 1) * 10 >= movementsResponse.total}
-                    onClick={() => setMovementPage(prev => prev + 1)}
-                  >
-                    Siguiente
-                  </Button>
-                </div>
-              </div>
-            )}
-          </TabsContent>
+            <TabsContent value="movements" activeValue={activeTab} className="w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <MovementList 
+                  movements={movements} 
+                  isLoading={movementsLoading}
+                  error={movementsError ? String(movementsError) : undefined}
+                  products={products}
+                />
+                {movementsResponse && movementsResponse.total > 0 && (
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 px-1">
+                    <div className="text-sm text-gray-600">
+                      Mostrando {movements.length} de {movementsResponse.total} movimientos
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={movementPage === 0}
+                        onClick={() => setMovementPage(prev => Math.max(0, prev - 1))}
+                      >
+                        Anterior
+                      </Button>
+                      <span className="text-sm text-gray-700 font-medium min-w-[80px] text-center">
+                        Página {movementPage + 1}
+                      </span>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={!movementsResponse || movements.length < 10 || (movementPage + 1) * 10 >= movementsResponse.total}
+                        onClick={() => setMovementPage(prev => prev + 1)}
+                      >
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </TabsContent>
+          </div>
 
         </Tabs>
 

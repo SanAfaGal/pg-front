@@ -255,88 +255,85 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-200">
+        <div className="w-full space-y-6">
           <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
-            <TabsList className="w-full border-b border-gray-200">
-              <TabsTrigger value="info" activeValue={activeTab} onChange={setActiveTab}>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
-                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm">Información</span>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger value="subscriptions" activeValue={activeTab} onChange={setActiveTab}>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
-                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm">Suscripciones</span>
-                </div>
-              </TabsTrigger>
-              <TabsTrigger value="attendance" activeValue={activeTab} onChange={setActiveTab}>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
-                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm">Asistencias</span>
-                </div>
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex justify-center w-full">
+              <TabsList className="inline-flex max-w-full">
+                <TabsTrigger 
+                  value="info" 
+                  activeValue={activeTab} 
+                  onChange={setActiveTab}
+                >
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>Información</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="subscriptions" 
+                  activeValue={activeTab} 
+                  onChange={setActiveTab}
+                >
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>Suscripciones</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="attendance" 
+                  activeValue={activeTab} 
+                  onChange={setActiveTab}
+                >
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>Asistencias</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <div className="p-3 sm:p-4 lg:p-6">
-              <AnimatePresence mode="wait">
-                {activeTab === "info" && (
-                  <TabsContent key="info" value="info" activeValue={activeTab}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <ClientInfoTab
-                        client={client}
-                        dashboard={dashboard}
-                        onCall={handleCall}
-                        onWhatsApp={handleWhatsApp}
-                        onEdit={() => setIsEditModalOpen(true)}
-                        onBiometric={() => setIsBiometricModalOpen(true)}
-                      />
-                    </motion.div>
-                  </TabsContent>
-                )}
+            <div className="mt-6">
+              <TabsContent value="info" activeValue={activeTab} className="w-full">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <ClientInfoTab
+                    client={client}
+                    dashboard={dashboard}
+                    onCall={handleCall}
+                    onWhatsApp={handleWhatsApp}
+                    onEdit={() => setIsEditModalOpen(true)}
+                    onBiometric={() => setIsBiometricModalOpen(true)}
+                  />
+                </motion.div>
+              </TabsContent>
 
-                {activeTab === "subscriptions" && (
-                  <TabsContent key="subscriptions" value="subscriptions" activeValue={activeTab}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {plansLoading ? (
-                        <div className="flex flex-col items-center justify-center p-12">
-                          <LoadingSpinner size="lg" />
-                          <p className="text-gray-600 mt-4">Cargando planes disponibles...</p>
-                        </div>
-                      ) : (
-                        <SubscriptionsTab
-                          clientId={clientId}
-                          clientName={fullName}
-                          plans={plans}
-                        />
-                      )}
-                    </motion.div>
-                  </TabsContent>
-                )}
+              <TabsContent value="subscriptions" activeValue={activeTab} className="w-full">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {plansLoading ? (
+                    <div className="flex flex-col items-center justify-center p-12">
+                      <LoadingSpinner size="lg" />
+                      <p className="text-gray-600 mt-4">Cargando planes disponibles...</p>
+                    </div>
+                  ) : (
+                    <SubscriptionsTab
+                      clientId={clientId}
+                      clientName={fullName}
+                      plans={plans}
+                    />
+                  )}
+                </motion.div>
+              </TabsContent>
 
-                {activeTab === "attendance" && (
-                  <TabsContent key="attendance" value="attendance" activeValue={activeTab}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <AttendanceTab dashboard={dashboard} />
-                    </motion.div>
-                  </TabsContent>
-                )}
-              </AnimatePresence>
+              <TabsContent value="attendance" activeValue={activeTab} className="w-full">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AttendanceTab dashboard={dashboard} />
+                </motion.div>
+              </TabsContent>
             </div>
           </Tabs>
         </div>
