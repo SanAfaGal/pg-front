@@ -16,6 +16,7 @@ export {
   useClients,
   useClient,
   useClientDashboard,
+  useClientsMap,
   useCreateClient,
   useUpdateClient,
   useDeleteClient,
@@ -48,3 +49,4 @@ export { ClientInfoTab } from './components/ClientInfoTab';
 export { BiometricCapture } from './components/BiometricCapture';
 export { BiometricCaptureModal } from './components/BiometricCaptureModal';
 export { AttendanceTab } from './components/AttendanceTab/AttendanceTab';
+export { SubscriptionsTab } from './components/SubscriptionsTab';

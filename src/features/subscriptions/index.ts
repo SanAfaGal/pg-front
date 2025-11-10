@@ -6,6 +6,7 @@ export * from './api/paymentApi';
 // Hook exports
 export * from './hooks/useSubscriptions';
 export * from './hooks/usePayments';
+export { useAllSubscriptions } from './hooks/useSubscriptions';
 
 // Component exports
 export { SubscriptionList, SubscriptionCard, SubscriptionStatusBadge } from './components/SubscriptionList';
@@ -21,6 +22,8 @@ export { SubscriptionDetailModal } from './components/SubscriptionDetailModal';
 export { RenewSubscriptionModal } from './components/RenewSubscriptionModal';
 export { CalculateRewardButton } from './components/CalculateRewardButton';
 export { FloatingRewardButton } from './components/FloatingRewardButton';
+export { SubscriptionsTable } from './components/SubscriptionsTable';
+// Note: SubscriptionsTab has been moved to features/clients/components/SubscriptionsTab
 
 // Utility exports
 export * from './utils/subscriptionHelpers';

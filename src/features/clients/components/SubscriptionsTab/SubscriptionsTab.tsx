@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { UUID } from '../../../shared/types/common';
-import { Subscription, Plan } from '../api/types';
-import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { useToast, logger } from '../../../shared';
-import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
-import { ActiveSubscriptionCard } from './ActiveSubscriptionCard';
-import { SubscriptionHistoryTable } from './SubscriptionHistoryTable';
+import { UUID } from '../../../../shared/types/common';
+import { Subscription, Plan } from '../../../subscriptions/api/types';
+import { Card } from '../../../../components/ui/Card';
+import { Button } from '../../../../components/ui/Button';
+import { useToast, logger } from '../../../../shared';
+import { LoadingSpinner } from '../../../../components/ui/LoadingSpinner';
+import { ActiveSubscriptionCard } from '../../../subscriptions/components/ActiveSubscriptionCard';
+import { SubscriptionHistoryTable } from '../../../subscriptions/components/SubscriptionHistoryTable';
 
 // Import subscription components
 import {
@@ -18,17 +18,17 @@ import {
   useCreateSubscription,
   useRenewSubscription,
   useCancelSubscription,
-} from '../index';
+} from '../../../subscriptions';
 
 // Import plan selector
-import { PlanAndDateSelector } from '../../plans/components/PlanAndDateSelector';
-import { Plan as PlanType } from '../../plans/api/types';
-import { CancelSubscriptionModal } from './CancelSubscriptionModal';
-import { RenewSubscriptionModal } from './RenewSubscriptionModal';
-import { FloatingRewardButton } from './FloatingRewardButton';
-import { NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
-import { useApplyReward, useAvailableRewards } from '../../../features/rewards';
-import { getScheduledRenewal } from '../utils/subscriptionFilters';
+import { PlanAndDateSelector } from '../../../plans/components/PlanAndDateSelector';
+import { Plan as PlanType } from '../../../plans/api/types';
+import { CancelSubscriptionModal } from '../../../subscriptions/components/CancelSubscriptionModal';
+import { RenewSubscriptionModal } from '../../../subscriptions/components/RenewSubscriptionModal';
+import { FloatingRewardButton } from '../../../subscriptions/components/FloatingRewardButton';
+import { NOTIFICATION_MESSAGES } from '../../../subscriptions/constants/subscriptionConstants';
+import { useApplyReward, useAvailableRewards } from '../../../rewards';
+import { getScheduledRenewal } from '../../../subscriptions/utils/subscriptionFilters';
 
 import { Plus, AlertCircle } from 'lucide-react';
 
@@ -341,3 +341,4 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
     </div>
   );
 };
+

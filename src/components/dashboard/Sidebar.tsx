@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, X, LogOut, Camera, Package } from 'lucide-react';
+import { LayoutDashboard, Users, X, LogOut, Camera, Package, CreditCard } from 'lucide-react';
 
 interface User {
   id: string;
@@ -19,6 +19,7 @@ interface SidebarProps {
 const menuItems = [
   { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'clients', label: 'Clientes', icon: Users },
+  { id: 'subscriptions', label: 'Suscripciones', icon: CreditCard },
   { id: 'attendances', label: 'Asistencias', icon: Camera },
   { id: 'inventory', label: 'Inventario', icon: Package },
 ];

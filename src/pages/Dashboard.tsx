@@ -15,6 +15,7 @@ import { DashboardSkeleton } from '../features/dashboard/components/DashboardSke
 import { Clients } from './Clients';
 import Attendances from './Attendances';
 import { InventoryPage } from '../features/inventory';
+import { SubscriptionsPage } from './SubscriptionsPage';
 import { NOTIFICATION_MESSAGES } from '../features/dashboard/constants/dashboardConstants';
 import { useToast } from '../shared';
 
@@ -103,6 +104,10 @@ export const Dashboard = () => {
 
     if (activeMenuItem === 'inventory') {
       return <InventoryPage />;
+    }
+
+    if (activeMenuItem === 'subscriptions') {
+      return <SubscriptionsPage />;
     }
 
     if (activeMenuItem === 'home') {

@@ -88,11 +88,20 @@ export interface Plan {
   updated_at: string;
 }
 
+// Subscription Filters
+export interface SubscriptionFilters {
+  status?: SubscriptionStatus;
+  client_id?: UUID;
+  limit?: number;
+  offset?: number;
+}
+
 // Query Keys Factory
 export const subscriptionKeys = {
   all: () => ['subscriptions'] as const,
   lists: () => [...subscriptionKeys.all(), 'list'] as const,
   list: (clientId: UUID) => [...subscriptionKeys.lists(), clientId] as const,
+  allSubscriptions: (filters?: SubscriptionFilters) => [...subscriptionKeys.all(), 'all', filters || {}] as const,
   details: () => [...subscriptionKeys.all(), 'detail'] as const,
   detail: (id: UUID) => [...subscriptionKeys.details(), id] as const,
   active: (clientId: UUID) => [...subscriptionKeys.list(clientId), 'active'] as const,

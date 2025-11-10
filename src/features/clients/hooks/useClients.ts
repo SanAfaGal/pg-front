@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { clientsApi } from '../api/clientsApi';
 import { Client, ClientFormData, ClientFilters, ClientDashboardResponse } from '../types';
 import {
@@ -62,6 +63,52 @@ export const useClientDashboard = (id: string) => {
     retry: RETRY_CONFIG.retries,
     retryDelay: RETRY_CONFIG.retryDelay,
   });
+};
+
+/**
+ * Hook to get multiple clients by their IDs and return a Map for quick lookup
+ * Uses useQueries to fetch clients in parallel, leveraging React Query cache
+ * 
+ * @param clientIds - Array of client IDs to fetch
+ * @returns Map<string, Client> - Map of client_id to Client object, and loading state
+ */
+export const useClientsMap = (clientIds: string[]) => {
+  // Get unique client IDs to avoid duplicate queries
+  const uniqueClientIds = useMemo(() => {
+    return Array.from(new Set(clientIds.filter(Boolean)));
+  }, [clientIds]);
+
+  // Use useQueries to fetch all clients in parallel
+  const queries = useQueries({
+    queries: uniqueClientIds.map((clientId) => ({
+      queryKey: clientKeys.detail(clientId),
+      queryFn: () => clientsApi.getClientById(clientId),
+      enabled: !!clientId,
+      staleTime: QUERY_STALE_TIMES.detail,
+      gcTime: QUERY_CACHE_TIMES.detail,
+      retry: RETRY_CONFIG.retries,
+      retryDelay: RETRY_CONFIG.retryDelay,
+    })),
+  });
+
+  // Create a Map for O(1) lookup
+  const clientsMap = useMemo(() => {
+    const map = new Map<string, Client>();
+    queries.forEach((query, index) => {
+      if (query.data && uniqueClientIds[index]) {
+        map.set(uniqueClientIds[index], query.data);
+      }
+    });
+    return map;
+  }, [queries, uniqueClientIds]);
+
+  // Check if any query is still loading
+  const isLoading = queries.some((query) => query.isLoading);
+
+  return {
+    clientsMap,
+    isLoading,
+  };
 };
 
 /**

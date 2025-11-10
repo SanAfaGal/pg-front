@@ -10,7 +10,7 @@ import { BiometricCaptureModal } from '../features/clients/components/BiometricC
 import { useClient, useClientDashboard, clientHelpers, clientKeys } from '../features/clients';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/Tabs';
 import { ClientInfoTab } from '../features/clients/components/ClientInfoTab';
-import { SubscriptionsTab } from '../features/subscriptions/components/SubscriptionsTab';
+import { SubscriptionsTab } from '../features/clients';
 import { AttendanceTab } from '../features/clients';
 import { useActivePlans } from '../features/plans';
 import { Plan, subscriptionKeys } from '../features/subscriptions/api/types';

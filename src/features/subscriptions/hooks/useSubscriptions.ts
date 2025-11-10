@@ -10,6 +10,7 @@ import {
   getSubscriptionById,
   updateSubscription,
   deleteSubscription,
+  getAllSubscriptions,
 } from '../api/subscriptionApi';
 import {
   Subscription,
@@ -17,6 +18,7 @@ import {
   SubscriptionRenewInput,
   SubscriptionCancelInput,
   PaginationParams,
+  SubscriptionFilters,
 } from '../api/types';
 import { QUERY_STALE_TIMES, QUERY_CACHE_TIMES, RETRY_CONFIG, NOTIFICATION_MESSAGES } from '../constants/subscriptionConstants';
 
@@ -262,5 +264,21 @@ export const useDeleteSubscription = () => {
         });
       }
     },
+  });
+};
+
+// Hook to get all subscriptions across all clients
+export const useAllSubscriptions = (
+  filters: SubscriptionFilters = {},
+  enabled: boolean = false
+) => {
+  return useQuery({
+    queryKey: subscriptionKeys.allSubscriptions(filters),
+    queryFn: () => getAllSubscriptions(filters),
+    staleTime: QUERY_STALE_TIMES.subscriptions,
+    gcTime: QUERY_CACHE_TIMES.subscriptions,
+    enabled: enabled,
+    retry: RETRY_CONFIG.retries,
+    retryDelay: RETRY_CONFIG.retryDelay,
   });
 };

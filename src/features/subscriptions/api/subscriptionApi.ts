@@ -5,6 +5,7 @@ import {
   SubscriptionCreateInput,
   SubscriptionRenewInput,
   SubscriptionCancelInput,
+  SubscriptionStatus,
 } from './types';
 
 // Subscription API functions
@@ -91,4 +92,27 @@ export const deleteSubscription = async (
   subscriptionId: UUID
 ): Promise<void> => {
   return apiClient.delete(API_ENDPOINTS.subscriptions.detail(subscriptionId));
+};
+
+/**
+ * Get all subscriptions across all clients with optional filters
+ */
+export const getAllSubscriptions = async (
+  params: {
+    status?: SubscriptionStatus | string;
+    client_id?: UUID;
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<Subscription[]> => {
+  const { status, client_id, limit = 100, offset = 0 } = params;
+  
+  return apiClient.get<Subscription[]>(API_ENDPOINTS.subscriptions.all, {
+    params: {
+      ...(status && { status: String(status) }),
+      ...(client_id && { client_id }),
+      limit,
+      offset,
+    }
+  });
 };

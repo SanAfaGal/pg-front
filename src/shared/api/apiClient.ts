@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
   // Subscriptions
   subscriptions: {
     list: (clientId: string) => `/clients/${clientId}/subscriptions/`,
+    all: '/subscriptions/',
     detail: (id: string) => `/subscriptions/${id}`,
     renew: (clientId: string, id: string) => `/clients/${clientId}/subscriptions/${id}/renew`,
     cancel: (clientId: string, id: string) => `/clients/${clientId}/subscriptions/${id}/cancel`,
