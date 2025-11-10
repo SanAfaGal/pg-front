@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { ArrowLeft, Calendar, CreditCard, Activity } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { RefreshButton } from '../components/ui/RefreshButton';
+import { Button } from '../components/ui/Button';
 import { PageLayout } from '../components/ui/PageLayout';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useToast } from '../shared';
@@ -221,24 +222,44 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
   }
 
   return (
-    <PageLayout
-      title={fullName}
-      subtitle={`${age} años • Cliente desde ${new Date(client.created_at).toLocaleDateString('es-CO')}`}
-      onBack={onBack}
-      backLabel="Volver a Clientes"
-      actions={
-        <RefreshButton
-          onClick={handleRefresh}
-          isRefetching={isRefetching}
-        />
-      }
-    >
+    <PageLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="w-full space-y-6">
+        <div className="space-y-6">
+          {/* Back Button */}
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              leftIcon={<ArrowLeft className="w-4 h-4" />}
+              className="text-gray-600 hover:text-gray-900 -ml-2"
+            >
+              <span className="hidden sm:inline">Volver a Clientes</span>
+              <span className="sm:hidden">Volver</span>
+            </Button>
+          </div>
+
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {fullName}
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
+                {age} años • Cliente desde {new Date(client.created_at).toLocaleDateString('es-CO')}
+              </p>
+            </div>
+            <RefreshButton
+              onClick={handleRefresh}
+              isRefetching={isRefetching}
+              variant="secondary"
+            />
+          </div>
+
           <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
             <div className="flex justify-center w-full">
               <TabsList className="inline-flex max-w-full">

@@ -60,23 +60,23 @@ export function PageLayout({
 
             {/* Title and Actions Row */}
             {(title || subtitle || actions) && (
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 {(title || subtitle) && (
                   <div className="flex-1 min-w-0">
                     {title && (
-                      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight break-words">
+                      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight break-words">
                         {title}
                       </h1>
                     )}
                     {subtitle && (
-                      <p className="text-sm sm:text-base text-gray-600 mt-1 sm:mt-1.5 break-words">
+                      <p className="text-sm sm:text-base text-gray-600 mt-1 break-words">
                         {subtitle}
                       </p>
                     )}
                   </div>
                 )}
                 {actions && (
-                  <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto sm:justify-end">
+                  <div className="flex items-center gap-4 w-full sm:w-auto sm:justify-end">
                     {actions}
                   </div>
                 )}

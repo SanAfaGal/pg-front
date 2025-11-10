@@ -220,17 +220,25 @@ export const InventoryPage: React.FC = () => {
   };
 
   return (
-    <PageLayout 
-      title="Inventario" 
-      subtitle="Gestión de productos y stock"
-      actions={
-        <RefreshButton
-          onClick={handleRefresh}
-          isRefetching={isRefetching}
-        />
-      }
-    >
-      <div className="w-full space-y-6">
+    <PageLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Inventario
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
+              Gestión de productos y stock
+            </p>
+          </div>
+          <RefreshButton
+            onClick={handleRefresh}
+            isRefetching={isRefetching}
+            variant="secondary"
+          />
+        </div>
+
         <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
           <div className="flex justify-center w-full">
             <TabsList className="inline-flex max-w-full">

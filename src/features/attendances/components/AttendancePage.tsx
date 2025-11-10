@@ -33,17 +33,25 @@ export const AttendancePage: React.FC = () => {
   }, [refetch, showToast]);
 
   return (
-    <PageLayout
-      title="Asistencias"
-      subtitle="Gestión de check-in y registros de asistencia"
-      actions={
-        <RefreshButton
-          onClick={handleRefresh}
-          isRefetching={isRefreshing}
-        />
-      }
-    >
-      <div className="w-full space-y-6">
+    <PageLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Asistencias
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
+              Gestión de check-in y registros de asistencia
+            </p>
+          </div>
+          <RefreshButton
+            onClick={handleRefresh}
+            isRefetching={isRefreshing}
+            variant="secondary"
+          />
+        </div>
+
         <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
           <div className="flex justify-center w-full">
             <TabsList className="inline-flex max-w-full">
