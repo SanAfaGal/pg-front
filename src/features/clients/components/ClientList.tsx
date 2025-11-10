@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { IconButton } from '@/components/ui/IconButton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { PageLayout } from '@/components/ui/PageLayout';
 import { ClientFormModal } from './ClientFormModal';
 import { ClientCards } from './ClientCards';
 import { useToast, logger, useMediaQuery } from '@/shared';
@@ -128,24 +129,23 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
 
   if (isError) {
     return (
-      <div className="space-y-6 px-4 py-6 lg:px-6">
+      <PageLayout
+        title="Clientes"
+        subtitle="Gestión de información de clientes"
+      >
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-800 font-medium">Error al cargar clientes</p>
           <p className="text-red-600 text-sm mt-2">Por favor, verifica tu conexión e intenta nuevamente</p>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Clientes</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Gestiona la información de tus clientes
-          </p>
-        </div>
+    <PageLayout
+      title="Clientes"
+      subtitle="Gestión de información de tus clientes"
+      actions={
         <div className="flex items-center gap-2 sm:gap-3">
           <Button
             variant="secondary"
@@ -171,9 +171,10 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
             <span className="sm:hidden">Nuevo</span>
           </Button>
         </div>
-      </div>
-
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 lg:p-6">
+      }
+    >
+      <div className="space-y-4 sm:space-y-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 lg:p-6">
         <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="flex-1 relative">
             <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
@@ -438,30 +439,31 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
             isDeleting={deleteClientMutation.isPending}
           />
         )}
-      </div>
+        </div>
 
-      <ClientFormModal
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
-        client={selectedClient}
-        onSaved={handleClientSaved}
-      />
-
-      {/* Confirm Delete Modal */}
-      {clientToDelete && (
-        <ConfirmDialog
-          isOpen={isDeleteModalOpen}
-          onClose={handleDeleteModalClose}
-          onConfirm={handleDeleteConfirm}
-          title="Inactivar Cliente"
-          message={`¿Está seguro de que desea inactivar al cliente ${clientHelpers.formatFullName(clientToDelete)}?`}
-          confirmText="Inactivar Cliente"
-          cancelText="Cancelar"
-          variant="danger"
-          isLoading={deleteClientMutation.isPending}
+        <ClientFormModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          client={selectedClient}
+          onSaved={handleClientSaved}
         />
-      )}
-    </div>
+
+        {/* Confirm Delete Modal */}
+        {clientToDelete && (
+          <ConfirmDialog
+            isOpen={isDeleteModalOpen}
+            onClose={handleDeleteModalClose}
+            onConfirm={handleDeleteConfirm}
+            title="Inactivar Cliente"
+            message={`¿Está seguro de que desea inactivar al cliente ${clientHelpers.formatFullName(clientToDelete)}?`}
+            confirmText="Inactivar Cliente"
+            cancelText="Cancelar"
+            variant="danger"
+            isLoading={deleteClientMutation.isPending}
+          />
+        )}
+      </div>
+    </PageLayout>
   );
 });
 

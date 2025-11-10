@@ -224,30 +224,23 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
     <PageLayout
       title={fullName}
       subtitle={`${age} años • Cliente desde ${new Date(client.created_at).toLocaleDateString('es-CO')}`}
+      onBack={onBack}
+      backLabel="Volver a Clientes"
       actions={
-        <div className="flex items-center gap-3">
-          <Button
-            variant="secondary"
-            size="md"
-            onClick={handleRefresh}
-            disabled={isRefetching}
-            leftIcon={
-              <RefreshCw
-                className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
-              />
-            }
-            className="whitespace-nowrap"
-          >
-            {isRefetching ? 'Actualizando...' : 'Actualizar'}
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={onBack}
-            leftIcon={<ArrowLeft className="w-4 h-4" />}
-          >
-            Volver
-          </Button>
-        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefetching}
+          leftIcon={
+            <RefreshCw
+              className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
+            />
+          }
+          className="whitespace-nowrap"
+        >
+          {isRefetching ? 'Actualizando...' : 'Actualizar'}
+        </Button>
       }
     >
       <motion.div
