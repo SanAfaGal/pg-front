@@ -101,7 +101,7 @@ const ProductAlertList: React.FC<ProductAlertListProps> = ({
   emptyMessage,
   icon
 }) => {
-  if (isLoading) {
+  if (isLoading && products.length === 0) {
     return (
       <Card className="p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
@@ -220,7 +220,7 @@ export const InventoryReports: React.FC = () => {
   const renderOverviewTab = () => (
     <div className="space-y-4 sm:space-y-6">
       {/* Stats Cards */}
-      {statsLoading ? (
+      {statsLoading && !stats ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="p-4 sm:p-6 animate-pulse">
@@ -348,7 +348,7 @@ export const InventoryReports: React.FC = () => {
       </Card>
 
       {/* Sales Summary */}
-      {dailySalesLoading ? (
+      {dailySalesLoading && !dailySales ? (
         <Card className="p-4 sm:p-6 animate-pulse">
           <div className="h-5 sm:h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -420,7 +420,7 @@ export const InventoryReports: React.FC = () => {
       ) : null}
 
       {/* Sales by Employee */}
-      {salesByEmployeeLoading ? (
+      {salesByEmployeeLoading && !salesByEmployee ? (
         <Card className="p-4 sm:p-6 animate-pulse">
           <div className="h-5 sm:h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="space-y-3">
@@ -540,7 +540,7 @@ export const InventoryReports: React.FC = () => {
       </Card>
 
       {/* Reconciliation Report */}
-      {reconciliationLoading ? (
+      {reconciliationLoading && !reconciliation ? (
         <Card className="p-4 sm:p-6 animate-pulse">
           <div className="h-5 sm:h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="space-y-4">

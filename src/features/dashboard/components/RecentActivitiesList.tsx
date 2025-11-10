@@ -97,8 +97,8 @@ const getActivityTypeLabel = (type: RecentActivity['type']): string => {
 export const RecentActivitiesList = ({ activities, isLoading = false }: RecentActivitiesListProps) => {
   const maxDisplayed = 4;
 
-  // Estado de carga
-  if (isLoading) {
+  // Estado de carga - solo mostrar skeleton si está cargando Y no hay datos
+  if (isLoading && activities.length === 0) {
     return (
       <Card 
         padding="md" 

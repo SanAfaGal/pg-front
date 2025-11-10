@@ -111,7 +111,7 @@ export const Dashboard = () => {
     }
 
     if (activeMenuItem === 'home') {
-      if (isDashboardLoading) {
+      if (isDashboardLoading && !dashboardData) {
         return <DashboardSkeleton />;
       }
 
