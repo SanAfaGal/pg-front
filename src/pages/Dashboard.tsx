@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '../components/dashboard/Sidebar';
-import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useAuth } from '../features/auth';
 import { useDashboardHome } from '../features/dashboard/hooks/useDashboardHome';
 import { ClientStatsCard } from '../features/dashboard/components/ClientStatsCard';
@@ -12,6 +11,7 @@ import { RecentActivitiesList } from '../features/dashboard/components/RecentAct
 import { FloatingAlerts } from '../features/dashboard/components/FloatingAlerts';
 import { DashboardHeader } from '../features/dashboard/components/DashboardHeader';
 import { DashboardErrorState } from '../features/dashboard/components/DashboardErrorState';
+import { DashboardSkeleton } from '../features/dashboard/components/DashboardSkeleton';
 import { Clients } from './Clients';
 import Attendances from './Attendances';
 import { InventoryPage } from '../features/inventory';
@@ -107,11 +107,7 @@ export const Dashboard = () => {
 
     if (activeMenuItem === 'home') {
       if (isDashboardLoading) {
-        return (
-          <div className="flex items-center justify-center h-full">
-            <LoadingSpinner size="xl" text="Cargando datos del dashboard..." />
-          </div>
-        );
+        return <DashboardSkeleton />;
       }
 
       if (dashboardError || !dashboardData) {
@@ -217,7 +213,7 @@ export const Dashboard = () => {
         </header>
 
         {/* Main Content Area - Con Scroll cuando sea necesario */}
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative">
           <div className="min-h-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
             {renderContent()}
           </div>

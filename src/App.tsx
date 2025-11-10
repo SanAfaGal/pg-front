@@ -28,7 +28,11 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Suspense fallback={<LoadingSpinner size="lg" text="Cargando dashboard..." />}>
+              <Suspense fallback={
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50">
+                  <LoadingSpinner size="xl" />
+                </div>
+              }>
                 <Dashboard />
               </Suspense>
             </ProtectedRoute>

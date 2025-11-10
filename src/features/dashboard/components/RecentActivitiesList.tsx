@@ -110,7 +110,6 @@ export const RecentActivitiesList = ({ activities, isLoading = false }: RecentAc
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-gray-900">Actividad Reciente</h3>
-            <p className="text-sm text-gray-500 font-light">Cargando...</p>
           </div>
         </div>
         <div className="flex items-center justify-center flex-1">
