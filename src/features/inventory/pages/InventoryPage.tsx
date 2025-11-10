@@ -221,7 +221,7 @@ export const InventoryPage: React.FC = () => {
       actions={
         <Button
           variant="secondary"
-          size="md"
+          size="sm"
           onClick={handleRefresh}
           disabled={isRefetching}
           leftIcon={
