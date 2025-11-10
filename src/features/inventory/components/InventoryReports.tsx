@@ -11,7 +11,6 @@ import {
   useReconciliationReport
 } from '../hooks/useReports';
 import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
 import { StockBadge } from './common/StockBadge';
 import {
   TrendingDown,
@@ -19,8 +18,6 @@ import {
   TrendingUp,
   Package,
   DollarSign,
-  RefreshCw,
-  Download,
   Calendar,
   User,
   FileText
@@ -333,17 +330,6 @@ export const InventoryReports: React.FC = () => {
               />
             </div>
           </div>
-          <div className="flex items-end">
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<RefreshCw className="w-4 h-4" />}
-              className="w-full sm:w-auto"
-            >
-              <span className="hidden sm:inline">Actualizar</span>
-              <span className="sm:hidden">Actualizar</span>
-            </Button>
-          </div>
         </div>
       </Card>
 
@@ -515,26 +501,6 @@ export const InventoryReports: React.FC = () => {
                 className="pl-9 text-sm"
               />
             </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<RefreshCw className="w-4 h-4" />}
-              className="w-full sm:w-auto"
-            >
-              <span className="hidden sm:inline">Generar</span>
-              <span className="sm:hidden">Generar</span>
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              leftIcon={<Download className="w-4 h-4" />}
-              className="w-full sm:w-auto"
-            >
-              <span className="hidden sm:inline">Exportar</span>
-              <span className="sm:hidden">Exportar</span>
-            </Button>
           </div>
         </div>
       </Card>
