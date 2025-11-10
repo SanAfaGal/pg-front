@@ -219,27 +219,27 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
   }, [expiredSubscriptionToRenew, handleOpenRenewModal]);
 
   return (
-    <div className="space-y-8 relative">
+    <div className="space-y-6 sm:space-y-8 relative">
 
       {/* Error Banner */}
       {subscriptionsError && (
-        <Card className="p-5 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-300 shadow-sm">
-          <div className="flex items-start gap-4">
+        <Card className="p-4 sm:p-5 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-300 shadow-sm">
+          <div className="flex items-start gap-3 sm:gap-4">
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-red-600" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-red-900 mb-1">Error al cargar suscripciones</p>
-              <p className="text-sm text-red-800 mb-3">
+              <p className="text-sm sm:text-base font-semibold text-red-900 mb-1">Error al cargar suscripciones</p>
+              <p className="text-xs sm:text-sm text-red-800 mb-3">
                 {subscriptionsError.message || 'No se pudieron cargar las suscripciones. Por favor, intente de nuevo.'}
               </p>
             <Button
                 variant="outline"
               size="sm"
                 onClick={() => refetchSubscriptions()}
-                className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-900"
+                className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-900 w-full sm:w-auto"
             >
                 Reintentar
             </Button>
@@ -252,10 +252,10 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
       <div>
         
         {activeLoading ? (
-          <Card className="p-12 border-2 border-gray-200">
+          <Card className="p-8 sm:p-12 border-2 border-gray-200">
             <div className="flex flex-col items-center justify-center">
               <LoadingSpinner size="lg" />
-              <p className="text-gray-600 mt-4 font-medium">Cargando suscripción activa...</p>
+              <p className="text-sm sm:text-base text-gray-600 mt-4 font-medium">Cargando suscripción activa...</p>
             </div>
           </Card>
         ) : activeSubscription ? (
@@ -269,20 +269,20 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
             isLoadingPayments={activePaymentsLoading || activeStatsLoading}
           />
         ) : (
-          <Card className="p-12 text-center border-2 border-dashed border-gray-300 bg-gray-50">
+          <Card className="p-6 sm:p-12 text-center border-2 border-dashed border-gray-300 bg-gray-50">
             <div className="flex flex-col items-center">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm ring-4 ring-gray-100">
-                <Plus className="w-10 h-10 text-gray-400" />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center mb-4 sm:mb-6 shadow-sm ring-4 ring-gray-100">
+                <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
               </div>
-              <p className="text-xl font-semibold text-gray-900 mb-2">No hay suscripción activa</p>
-              <p className="text-gray-600 text-sm max-w-md mb-6">
+              <p className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No hay suscripción activa</p>
+              <p className="text-xs sm:text-sm text-gray-600 max-w-md mb-4 sm:mb-6">
                 Este cliente no tiene una suscripción activa. Crea una nueva suscripción para comenzar a gestionar pagos y membresías.
               </p>
               <Button
                 onClick={handleCreateSubscription}
-                leftIcon={<Plus className="w-5 h-5" />}
+                leftIcon={<Plus className="w-4 h-4 sm:w-5 sm:h-5" />}
                 size="lg"
-                className="shadow-md hover:shadow-lg transition-shadow"
+                className="w-full sm:w-auto shadow-md hover:shadow-lg transition-shadow"
               >
                 Crear Suscripción
               </Button>

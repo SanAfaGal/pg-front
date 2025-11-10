@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { SubscriptionStatusBadge } from './SubscriptionList';
 import { SubscriptionDetailModal } from './SubscriptionDetailModal';
 import { formatDate, sortSubscriptionsByStatus, isSubscriptionExpired, getLastExpiredSubscription } from '../utils/subscriptionHelpers';
+import { useMediaQuery } from '../../../shared';
 import { Eye, Calendar, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -19,7 +20,7 @@ interface SubscriptionHistoryTableProps {
 }
 
 /**
- * Compact Subscription Row Component
+ * Compact Subscription Row Component (Desktop)
  * Modern, minimal design with essential information
  */
 const SubscriptionRow: React.FC<{
@@ -87,6 +88,89 @@ const SubscriptionRow: React.FC<{
   );
 };
 
+/**
+ * Subscription History Card Component (Mobile)
+ * Card-based layout optimized for mobile screens
+ */
+const SubscriptionHistoryCard: React.FC<{
+  subscription: Subscription;
+  startDate: Date;
+  endDate: Date;
+  duration: number;
+  onViewDetails: (subscription: Subscription) => void;
+  onRenew?: (subscription: Subscription) => void;
+  isLastExpired: boolean;
+  index: number;
+}> = ({ subscription, startDate, endDate, duration, onViewDetails, onRenew, isLastExpired, index }) => {
+  const isExpired = isSubscriptionExpired(subscription);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15, delay: index * 0.03 }}
+      className="p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all"
+    >
+      {/* Header with Status Badge */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-medium text-gray-500">ID:</span>
+            <span className="text-sm font-semibold text-gray-900">{subscription.id.slice(0, 8)}</span>
+          </div>
+        </div>
+        <SubscriptionStatusBadge status={subscription.status} />
+      </div>
+
+      {/* Date Information */}
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center gap-2 text-sm">
+          <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs text-gray-500">Inicio: </span>
+            <span className="text-sm font-medium text-gray-900">{formatDate(subscription.start_date)}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs text-gray-500">Fin: </span>
+            <span className="text-sm font-medium text-gray-900">{formatDate(subscription.end_date)}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-xs text-gray-500">Duración: </span>
+          <span className="text-sm font-medium text-gray-900">{duration} día{duration !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
+        {isLastExpired && isExpired && onRenew && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => onRenew(subscription)}
+            leftIcon={<RefreshCw className="w-4 h-4" />}
+            className="w-full font-medium"
+          >
+            Renovar
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onViewDetails(subscription)}
+          leftIcon={<Eye className="w-4 h-4" />}
+          className="w-full"
+        >
+          Ver Detalles
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
+
 export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> = memo(({
   subscriptions,
   isLoading = false,
@@ -96,6 +180,7 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
 }) => {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { isMobile } = useMediaQuery();
 
   // Filter out active subscription and get last expired
   const { historySubscriptions, lastExpiredSubscription } = useMemo(() => {
@@ -136,15 +221,27 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
 
   return (
     <>
-      <Card className={`p-4 ${className}`}>
-        <div className="space-y-1">
+      <Card className={`p-4 sm:p-4 ${className}`}>
+        <div className={isMobile ? 'space-y-3' : 'space-y-1'}>
           {historySubscriptions.map((subscription, index) => {
             const startDate = new Date(subscription.start_date);
             const endDate = new Date(subscription.end_date);
             const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             const isLastExpired = lastExpiredSubscription?.id === subscription.id;
             
-            return (
+            return isMobile ? (
+              <SubscriptionHistoryCard
+                key={subscription.id}
+                subscription={subscription}
+                startDate={startDate}
+                endDate={endDate}
+                duration={duration}
+                onViewDetails={handleViewDetails}
+                onRenew={onRenew}
+                isLastExpired={isLastExpired}
+                index={index}
+              />
+            ) : (
               <SubscriptionRow
                 key={subscription.id}
                 subscription={subscription}

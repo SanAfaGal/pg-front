@@ -32,7 +32,7 @@ export const SubscriptionDetailModal: React.FC<SubscriptionDetailModalProps> = (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Detalle de Suscripción #${subscription.id.slice(0, 8)}`}
+      title={`Detalle de Suscripción`}
       size="xl"
     >
       {isLoading ? (

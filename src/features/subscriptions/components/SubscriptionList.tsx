@@ -66,35 +66,37 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
   const canCancel = canCancelSubscription(subscription);
 
   return (
-    <Card className={`p-6 hover:shadow-md transition-all duration-200 ${className}`}>
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+    <Card className={`p-4 sm:p-6 hover:shadow-md transition-all duration-200 ${className}`}>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
             Suscripción #{subscription.id.slice(0, 8)}
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs sm:text-sm text-gray-500">
             Plan ID: {subscription.plan_id.slice(0, 8)}
           </p>
         </div>
-        <SubscriptionStatusBadge status={subscription.status} />
+        <div className="flex-shrink-0">
+          <SubscriptionStatusBadge status={subscription.status} />
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <Calendar className="w-4 h-4 text-blue-600" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Inicio</p>
             <p className="text-sm font-semibold text-gray-900">{formatDate(subscription.start_date)}</p>
           </div>
         </div>
         
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
             <Calendar className="w-4 h-4 text-red-600" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Fin</p>
             <p className="text-sm font-semibold text-gray-900">{formatDate(subscription.end_date)}</p>
           </div>
@@ -102,19 +104,19 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
       </div>
 
       {subscription.status === SubscriptionStatus.ACTIVE && (
-        <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="mb-4 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-gray-700">Progreso</span>
-            <span className="text-sm font-semibold text-gray-900">{progress}%</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">Progreso</span>
+            <span className="text-xs sm:text-sm font-semibold text-gray-900">{progress}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2 overflow-hidden">
+          <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5 mb-2 overflow-hidden">
             <div 
-              className="bg-gradient-to-r from-green-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500 ease-out"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 sm:h-2.5 rounded-full transition-all duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Clock className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             <span className="font-medium">{daysRemaining} día{daysRemaining !== 1 ? 's' : ''} restante{daysRemaining !== 1 ? 's' : ''}</span>
           </div>
         </div>
@@ -122,11 +124,11 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
 
       {subscription.cancellation_date && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800 font-medium">
+          <p className="text-xs sm:text-sm text-red-800 font-medium">
             <strong>Cancelada:</strong> {formatDate(subscription.cancellation_date)}
           </p>
           {subscription.cancellation_reason && (
-            <p className="text-sm text-red-700 mt-1">
+            <p className="text-xs sm:text-sm text-red-700 mt-1">
               <strong>Razón:</strong> {subscription.cancellation_reason}
             </p>
           )}
@@ -134,13 +136,13 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
       )}
 
       {showActions && (
-        <div className="flex gap-2 pt-4 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-200">
           {onViewDetails && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onViewDetails(subscription)}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               Ver Detalles
               <ArrowRight className="w-4 h-4 ml-1" />
@@ -153,7 +155,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
               size="sm"
               onClick={() => onRenew(subscription)}
               leftIcon={<RefreshCw className="w-4 h-4" />}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               Renovar
             </Button>
@@ -165,7 +167,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
               size="sm"
               onClick={() => onCancel(subscription)}
               leftIcon={<X className="w-4 h-4" />}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               Cancelar
             </Button>
