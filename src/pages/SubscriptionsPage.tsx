@@ -6,7 +6,8 @@ import { useAllSubscriptions } from '../features/subscriptions';
 import { Subscription, SubscriptionFilters, SubscriptionStatus } from '../features/subscriptions/api/types';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { RefreshCw, CreditCard } from 'lucide-react';
+import { RefreshButton } from '../components/ui/RefreshButton';
+import { CreditCard } from 'lucide-react';
 import { useToast } from '../shared';
 import { PageLayout } from '../components/ui/PageLayout';
 
@@ -70,14 +71,11 @@ export const SubscriptionsPage: React.FC = () => {
               Gestiona todas las suscripciones de los clientes
             </p>
           </div>
-          <Button
+          <RefreshButton
             onClick={handleRefresh}
-            leftIcon={<RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />}
-            variant="outline"
-            disabled={isRefetching}
-          >
-            Actualizar
-          </Button>
+            isRefetching={isRefetching}
+            variant="secondary"
+          />
         </div>
 
         {/* Error State */}

@@ -14,8 +14,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui
 import { PageLayout } from '../../../components/ui/PageLayout';
 import { Product, ProductFormData, StockAddRequest, StockRemoveRequest } from '../types';
 import { logger, useToast } from '../../../shared';
-import { Package, BarChart3, TrendingUp, RefreshCw } from 'lucide-react';
+import { Package, BarChart3, TrendingUp } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
+import { RefreshButton } from '../../../components/ui/RefreshButton';
 import { motion } from 'framer-motion';
 
 export const InventoryPage: React.FC = () => {
@@ -219,20 +220,10 @@ export const InventoryPage: React.FC = () => {
       title="Inventario" 
       subtitle="Gestión de productos y stock"
       actions={
-        <Button
-          variant="secondary"
-          size="sm"
+        <RefreshButton
           onClick={handleRefresh}
-          disabled={isRefetching}
-          leftIcon={
-            <RefreshCw
-              className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
-            />
-          }
-          className="whitespace-nowrap"
-        >
-          {isRefetching ? 'Actualizando...' : 'Actualizar'}
-        </Button>
+          isRefetching={isRefetching}
+        />
       }
     >
       <div className="w-full space-y-6">

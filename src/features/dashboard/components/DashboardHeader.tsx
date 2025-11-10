@@ -1,5 +1,5 @@
-import { RefreshCw, TrendingUp, Calendar, BarChart3, Filter } from 'lucide-react';
-import { Button } from '../../../components/ui/Button';
+import { TrendingUp, Calendar, BarChart3, Filter } from 'lucide-react';
+import { RefreshButton } from '../../../components/ui/RefreshButton';
 import { PeriodSelector } from './PeriodSelector';
 import { PeriodType } from '../types';
 import { calculateDateRange } from '../utils/dateRangeHelpers';
@@ -75,21 +75,13 @@ export const DashboardHeader = ({
               />
             </div>
 
-            {/* Botón Actualizar - Mejor Contraste */}
-            <Button
-              variant="primary"
-              size="sm"
+            {/* Botón Actualizar */}
+            <RefreshButton
               onClick={onRefresh}
-              disabled={isRefetching}
-              leftIcon={
-                <RefreshCw
-                  className={`w-3.5 h-3.5 ${isRefetching ? 'animate-spin' : ''}`}
-                />
-              }
-              className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 border-0 shadow-md font-semibold text-xs whitespace-nowrap"
-            >
-              {isRefetching ? 'Actualizando...' : 'Actualizar'}
-            </Button>
+              isRefetching={isRefetching}
+              variant="primary"
+              className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 border-0 shadow-md font-semibold text-xs"
+            />
           </div>
         </div>
 

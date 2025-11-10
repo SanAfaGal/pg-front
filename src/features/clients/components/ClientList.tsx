@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, memo } from 'react';
-import { Search, Plus, Edit2, Eye, Trash2, UserCircle2, Phone, Mail, Calendar, Filter, RefreshCw } from 'lucide-react';
+import { Search, Plus, Edit2, Eye, Trash2, UserCircle2, Phone, Mail, Calendar, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/Button';
+import { RefreshButton } from '@/components/ui/RefreshButton';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -147,20 +148,10 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
       subtitle="Gestión de información de tus clientes"
       actions={
         <div className="flex items-center gap-2 sm:gap-3">
-          <Button
-            variant="secondary"
-            size="sm"
+          <RefreshButton
             onClick={handleRefresh}
-            disabled={isRefetching}
-            leftIcon={
-              <RefreshCw
-                className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
-              />
-            }
-            className="whitespace-nowrap"
-          >
-            {isRefetching ? 'Actualizando...' : 'Actualizar'}
-          </Button>
+            isRefetching={isRefetching}
+          />
           <Button
             onClick={() => setIsModalOpen(true)}
             size="sm"

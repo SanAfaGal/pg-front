@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ArrowLeft, Calendar, CreditCard, Activity, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Calendar, CreditCard, Activity } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '../components/ui/Button';
+import { RefreshButton } from '../components/ui/RefreshButton';
 import { PageLayout } from '../components/ui/PageLayout';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { useToast } from '../shared';
@@ -227,20 +227,10 @@ export function ClientDetailOptimized({ clientId, onBack }: ClientDetailProps) {
       onBack={onBack}
       backLabel="Volver a Clientes"
       actions={
-        <Button
-          variant="secondary"
-          size="sm"
+        <RefreshButton
           onClick={handleRefresh}
-          disabled={isRefetching}
-          leftIcon={
-            <RefreshCw
-              className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`}
-            />
-          }
-          className="whitespace-nowrap"
-        >
-          {isRefetching ? 'Actualizando...' : 'Actualizar'}
-        </Button>
+          isRefetching={isRefetching}
+        />
       }
     >
       <motion.div

@@ -3,10 +3,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../../components/ui
 import { CheckInFacial } from './CheckInFacial';
 import { AttendanceHistory } from './AttendanceHistory';
 import { PageLayout } from '../../../components/ui/PageLayout';
-import { Button } from '../../../components/ui/Button';
+import { RefreshButton } from '../../../components/ui/RefreshButton';
 import { useToast } from '../../../shared';
 import { useAttendanceHistory } from '../hooks/useAttendances';
-import { Camera, Clock, RefreshCw } from 'lucide-react';
+import { Camera, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const AttendancePage: React.FC = () => {
@@ -37,20 +37,10 @@ export const AttendancePage: React.FC = () => {
       title="Asistencias"
       subtitle="Gestión de check-in y registros de asistencia"
       actions={
-        <Button
-          variant="secondary"
-          size="sm"
+        <RefreshButton
           onClick={handleRefresh}
-          disabled={isRefreshing}
-          leftIcon={
-            <RefreshCw
-              className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`}
-            />
-          }
-          className="whitespace-nowrap"
-        >
-          {isRefreshing ? 'Actualizando...' : 'Actualizar'}
-        </Button>
+          isRefetching={isRefreshing}
+        />
       }
     >
       <div className="w-full space-y-6">
