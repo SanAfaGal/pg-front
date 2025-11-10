@@ -12,6 +12,7 @@ import { LoadingState } from '../../common/LoadingState';
 import { ProductFilters, type FilterType, type SortType } from './ProductFilters';
 import { ProductTable } from './ProductTable';
 import { ProductCards } from './ProductCards';
+import { useMediaQuery } from '../../../../../shared';
 
 export interface ProductListProps {
   products: Product[];
@@ -49,12 +50,17 @@ export const ProductList: React.FC<ProductListProps> = ({
   error,
   className = '',
 }) => {
+  const { isDesktop } = useMediaQuery();
+  
   // Local state
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [sortType, setSortType] = useState<SortType>('name_asc');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Auto-select view mode based on screen size
+  const effectiveViewMode = isDesktop ? viewMode : 'cards';
 
   /**
    * Filter and sort products based on current settings
@@ -161,51 +167,54 @@ export const ProductList: React.FC<ProductListProps> = ({
   return (
     <div className={className}>
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Productos</h2>
-          <p className="text-sm text-gray-600 mt-1">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-gray-600">
             {filteredAndSortedProducts.length} {filteredAndSortedProducts.length === 1 ? 'producto' : 'productos'}
             {filterType !== 'all' && ` • ${getFilterLabel(filterType)}`}
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
-          {/* View toggle */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('table')}
-              className={`p-2 rounded-md transition-all ${
-                viewMode === 'table' 
-                  ? 'bg-white shadow-sm text-powergym-blue-medium' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              title="Vista tabla"
-              aria-label="Vista tabla"
-            >
-              <List className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('cards')}
-              className={`p-2 rounded-md transition-all ${
-                viewMode === 'cards' 
-                  ? 'bg-white shadow-sm text-powergym-blue-medium' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-              title="Vista tarjetas"
-              aria-label="Vista tarjetas"
-            >
-              <Grid3x3 className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          {/* View toggle - only show on desktop */}
+          {isDesktop && (
+            <div className="flex items-center bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('table')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'table' 
+                    ? 'bg-white shadow-sm text-powergym-blue-medium' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                title="Vista tabla"
+                aria-label="Vista tabla"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`p-2 rounded-md transition-all ${
+                  viewMode === 'cards' 
+                    ? 'bg-white shadow-sm text-powergym-blue-medium' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                title="Vista tarjetas"
+                aria-label="Vista tarjetas"
+              >
+                <Grid3x3 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {onCreateNew && (
             <Button
               onClick={onCreateNew}
-              className="bg-powergym-red hover:bg-[#c50202]"
+              size="sm"
+              className="bg-powergym-red hover:bg-[#c50202] flex-1 sm:flex-none"
               leftIcon={<Plus className="w-4 h-4" />}
             >
-              Nuevo Producto
+              <span className="hidden sm:inline">Nuevo Producto</span>
+              <span className="sm:hidden">Nuevo</span>
             </Button>
           )}
         </div>
@@ -226,9 +235,9 @@ export const ProductList: React.FC<ProductListProps> = ({
 
       {/* Content */}
       {filteredAndSortedProducts.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <Card className="p-8 sm:p-12 text-center">
+          <Package className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-300" />
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
             {searchTerm || filterType !== 'all' 
               ? 'No se encontraron productos' 
               : 'No hay productos registrados'
@@ -243,6 +252,7 @@ export const ProductList: React.FC<ProductListProps> = ({
           {onCreateNew && !searchTerm && filterType === 'all' && (
             <Button
               onClick={onCreateNew}
+              size="sm"
               className="bg-powergym-red hover:bg-[#c50202]"
               leftIcon={<Plus className="w-4 h-4" />}
             >
@@ -250,7 +260,7 @@ export const ProductList: React.FC<ProductListProps> = ({
             </Button>
           )}
         </Card>
-      ) : viewMode === 'table' ? (
+      ) : effectiveViewMode === 'table' ? (
         <ProductTable 
           products={filteredAndSortedProducts}
           onEdit={onEdit}

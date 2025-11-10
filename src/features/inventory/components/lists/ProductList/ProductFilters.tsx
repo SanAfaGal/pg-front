@@ -43,9 +43,9 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 space-y-4">
+    <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 space-y-3 sm:space-y-4">
       {/* Search and quick actions */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
@@ -53,7 +53,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 pr-9"
+            className="pl-9 pr-9 text-sm"
           />
           {searchTerm && (
             <button
@@ -68,7 +68,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
         <button
           onClick={onToggleFilters}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
+          className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg border transition-all text-sm ${
             showFilters 
               ? 'bg-powergym-blue-medium text-white border-powergym-blue-medium' 
               : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -78,7 +78,9 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           <Filter className="w-4 h-4" />
           <span className="hidden sm:inline">Filtros</span>
           {(filterType !== 'all' || sortType !== 'name_asc') && (
-            <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs font-medium">
+            <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+              showFilters ? 'bg-white/20' : 'bg-powergym-blue-medium/10 text-powergym-blue-medium'
+            }`}>
               {filterType !== 'all' ? '1' : ''}
             </span>
           )}
@@ -87,7 +89,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
 
       {/* Expanded filters */}
       {showFilters && (
-        <div className="pt-4 border-t border-gray-200 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="pt-3 sm:pt-4 border-t border-gray-200 space-y-3 sm:space-y-4">
           {/* Quick filters */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-2 uppercase tracking-wide">
@@ -98,7 +100,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
                 <button
                   key={option.value}
                   onClick={() => onFilterChange(option.value as FilterType)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                     filterType === option.value
                       ? 'bg-powergym-blue-medium text-white shadow-sm'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -106,7 +108,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
                   aria-pressed={filterType === option.value}
                 >
                   {option.label}
-                  <span className="ml-1.5 opacity-75">
+                  <span className="ml-1 sm:ml-1.5 opacity-75">
                     ({getStockCount(option.value as FilterType)})
                   </span>
                 </button>
@@ -124,7 +126,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
                 <button
                   key={option.value}
                   onClick={() => onSortChange(option.value as SortType)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                     sortType === option.value
                       ? 'bg-powergym-blue-medium text-white shadow-sm'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
