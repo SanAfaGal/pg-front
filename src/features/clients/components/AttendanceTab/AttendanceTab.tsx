@@ -213,7 +213,7 @@ export function AttendanceTab({ dashboard }: AttendanceTabProps) {
   }, [filters]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {/* Reward Progress (Read-only) */}
       <RewardProgress
         activeSubscription={activeSubscription}
@@ -226,16 +226,17 @@ export function AttendanceTab({ dashboard }: AttendanceTabProps) {
 
       {/* Filters Section */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-gray-600" />
-            <span className="text-sm font-semibold text-gray-900">Historial de Asistencias</span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <BarChart3 className="w-4 h-4 text-gray-600 flex-shrink-0" />
+            <span className="text-sm font-semibold text-gray-900 truncate">Historial de Asistencias</span>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
             leftIcon={<Filter className="w-3.5 h-3.5" />}
+            className="flex-shrink-0"
           >
             {showFilters ? 'Ocultar' : 'Filtros'}
             {hasActiveFilters && (
@@ -255,7 +256,7 @@ export function AttendanceTab({ dashboard }: AttendanceTabProps) {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="p-3 border border-gray-200">
+              <Card className="p-3 sm:p-4 border border-gray-200">
                 <AttendanceFilters
                   filters={filters}
                   onFiltersChange={handleFiltersChange}

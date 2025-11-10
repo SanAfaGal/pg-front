@@ -4,6 +4,7 @@ import { Badge } from '../../../../../components/ui/Badge';
 import { formatAttendanceDateTime } from '../../../../attendances/utils/dateUtils';
 import { isToday } from 'date-fns';
 import { motion } from 'framer-motion';
+import { useMediaQuery } from '../../../../../shared';
 
 interface Attendance {
   id: string;
@@ -21,7 +22,9 @@ interface CompactAttendanceListProps {
 
 /**
  * Compact Attendance List Component
- * Displays attendance history in a compact table-like format
+ * Displays attendance history in a responsive format:
+ * - Cards on mobile/tablet
+ * - Table on desktop
  */
 export const CompactAttendanceList = ({
   attendances,
@@ -31,6 +34,9 @@ export const CompactAttendanceList = ({
   totalCount,
   onClearFilters,
 }: CompactAttendanceListProps) => {
+  const { isMobile, isTablet } = useMediaQuery();
+  const isMobileOrTablet = isMobile || isTablet;
+
   const formattedAttendances = useMemo(() => {
     return attendances.map((att) => {
       const { date, time } = formatAttendanceDateTime(att.check_in);
@@ -86,6 +92,64 @@ export const CompactAttendanceList = ({
     );
   }
 
+  // Mobile/Tablet Card View
+  if (isMobileOrTablet) {
+    return (
+      <div className="space-y-3 p-3 sm:p-4">
+        {formattedAttendances.map((attendance, index) => (
+          <motion.div
+            key={attendance.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: index * 0.02 }}
+            className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-semibold text-gray-600 flex-shrink-0">
+                    {index + 1}
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-sm font-semibold text-gray-900 truncate">
+                      {attendance.date}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 ml-8">
+                  <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <span className="text-sm text-gray-600">{attendance.time}</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                {(attendance.isTodayAttendance || attendance.isRecent) && (
+                  <Badge 
+                    variant={attendance.isTodayAttendance ? 'info' : 'success'} 
+                    size="sm"
+                  >
+                    {attendance.isTodayAttendance ? 'Hoy' : 'Reciente'}
+                  </Badge>
+                )}
+                <span className="text-xs text-gray-400 font-mono">
+                  {attendance.id.slice(0, 6)}...
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+
+        {/* Footer Info */}
+        {hasActiveFilters && (
+          <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-600 text-center">
+            Mostrando {attendances.length} de {totalCount} asistencias
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop Table View
   return (
     <div className="space-y-1">
       {/* Table Header */}

@@ -61,18 +61,19 @@ export const RewardProgress = ({
   if (!progress) return null;
 
   return (
-    <Card className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm">
-          <Gift className="w-5 h-5 text-white" />
+    <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
+      <div className="flex items-center gap-2 sm:gap-3 mb-3">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
+          <Gift className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-gray-900">Progreso hacia Recompensa</p>
-          <p className="text-xs text-gray-600">20% de descuento con 20+ asistencias</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-gray-900 truncate">Progreso hacia Recompensa</p>
+          <p className="text-xs text-gray-600 truncate">20% de descuento con 20+ asistencias</p>
         </div>
         <Badge 
           variant={progress.isComplete ? 'success' : 'info'} 
           size="lg"
+          className="flex-shrink-0"
         >
           {progress.cycleAttendances}/{progress.threshold}
         </Badge>
@@ -90,14 +91,14 @@ export const RewardProgress = ({
         />
       </div>
 
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-gray-600">
+      <div className="flex items-center justify-between text-xs gap-2">
+        <span className="text-gray-600 truncate">
           {progress.isComplete 
             ? '¡Has alcanzado el objetivo!' 
             : `Faltan ${progress.remaining} asistencias`
           }
         </span>
-        <span className="text-gray-500 font-medium">
+        <span className="text-gray-500 font-medium flex-shrink-0">
           {Math.round(progress.progressPercentage)}%
         </span>
       </div>
