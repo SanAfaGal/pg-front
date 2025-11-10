@@ -7,8 +7,7 @@ import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { 
   formatDate, 
   formatDateTime, 
-  getDaysRemaining,
-  getSubscriptionProgress
+  getDaysRemaining
 } from '../utils/subscriptionHelpers';
 import { 
   formatCurrency, 
@@ -53,9 +52,8 @@ export const SubscriptionDetail: React.FC<SubscriptionDetailProps> = memo(({
   className = '',
 }) => {
   // Memoized calculations
-  const { daysRemaining, progress, totalPaid, canRenew, canCancel } = useMemo(() => ({
+  const { daysRemaining, totalPaid, canRenew, canCancel } = useMemo(() => ({
     daysRemaining: getDaysRemaining(subscription),
-    progress: getSubscriptionProgress(subscription),
     totalPaid: calculateTotalPayments(payments),
     canRenew: subscription.status === 'active' || subscription.status === 'expired',
     canCancel: ['active', 'pending_payment', 'scheduled'].includes(subscription.status),
@@ -128,21 +126,6 @@ export const SubscriptionDetail: React.FC<SubscriptionDetailProps> = memo(({
             </div>
           </div>
         </div>
-
-        {subscription.status === 'active' && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-sm font-semibold text-gray-700">Progreso de Suscripción</span>
-              <span className="text-sm font-bold text-gray-900">{progress}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-green-500 to-emerald-500 h-3 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        )}
 
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">

@@ -10,10 +10,9 @@ import {
   formatDate, 
   getDaysRemaining,
   canRenewSubscription,
-  canCancelSubscription,
-  getSubscriptionProgress
+  canCancelSubscription
 } from '../utils/subscriptionHelpers';
-import { Calendar, Clock, RefreshCw, X, ArrowRight } from 'lucide-react';
+import { Calendar, RefreshCw, X, ArrowRight } from 'lucide-react';
 
 interface SubscriptionStatusBadgeProps {
   status: SubscriptionStatus;
@@ -61,7 +60,6 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
   className = '',
 }) => {
   const daysRemaining = getDaysRemaining(subscription);
-  const progress = getSubscriptionProgress(subscription);
   const canRenew = canRenewSubscription(subscription);
   const canCancel = canCancelSubscription(subscription);
 
@@ -102,25 +100,6 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = memo(({
           </div>
         </div>
       </div>
-
-      {subscription.status === SubscriptionStatus.ACTIVE && (
-        <div className="mb-4 p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs sm:text-sm font-medium text-gray-700">Progreso</span>
-            <span className="text-xs sm:text-sm font-semibold text-gray-900">{progress}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 sm:h-2.5 mb-2 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 sm:h-2.5 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="font-medium">{daysRemaining} día{daysRemaining !== 1 ? 's' : ''} restante{daysRemaining !== 1 ? 's' : ''}</span>
-          </div>
-        </div>
-      )}
 
       {subscription.cancellation_date && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SubscriptionsTable } from '../features/subscriptions/components/SubscriptionsTable';
 import { SubscriptionDetailModal } from '../features/subscriptions/components/SubscriptionDetailModal';
@@ -39,9 +39,9 @@ export const SubscriptionsPage: React.FC = () => {
   }, []);
 
   const handleViewClient = useCallback((clientId: string) => {
+    // Guardar el clientId en localStorage para que Clients.tsx lo lea
+    localStorage.setItem('selected_client_id', clientId);
     navigate(`/dashboard#clients`);
-    // Note: The Clients page should handle selecting the client
-    // For now, we just navigate to the clients page
   }, [navigate]);
 
   const handleRefresh = useCallback(async () => {
