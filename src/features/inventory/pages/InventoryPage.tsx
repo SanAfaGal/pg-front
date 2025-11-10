@@ -273,24 +273,36 @@ export const InventoryPage: React.FC = () => {
               movements={movements} 
               isLoading={movementsLoading}
               error={movementsError ? String(movementsError) : undefined}
+              products={products}
             />
-            <div className="flex justify-between items-center mt-4">
-              <Button
-                variant="secondary"
-                disabled={movementPage === 0}
-                onClick={() => setMovementPage(prev => Math.max(0, prev - 1))}
-              >
-                Anterior
-              </Button>
-              <span>Página {movementPage + 1}</span>
-              <Button
-                variant="secondary"
-                disabled={!movementsResponse || movements.length < 10}
-                onClick={() => setMovementPage(prev => prev + 1)}
-              >
-                Siguiente
-              </Button>
-            </div>
+            {movementsResponse && movementsResponse.total > 0 && (
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 px-1">
+                <div className="text-sm text-gray-600">
+                  Mostrando {movements.length} de {movementsResponse.total} movimientos
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={movementPage === 0}
+                    onClick={() => setMovementPage(prev => Math.max(0, prev - 1))}
+                  >
+                    Anterior
+                  </Button>
+                  <span className="text-sm text-gray-700 font-medium min-w-[80px] text-center">
+                    Página {movementPage + 1}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={!movementsResponse || movements.length < 10 || (movementPage + 1) * 10 >= movementsResponse.total}
+                    onClick={() => setMovementPage(prev => prev + 1)}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
         </Tabs>
