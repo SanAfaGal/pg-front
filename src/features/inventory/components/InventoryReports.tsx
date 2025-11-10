@@ -192,27 +192,32 @@ export const InventoryReports: React.FC = () => {
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [selectedEmployee, setSelectedEmployee] = useState('');
 
-  // Fetch data - only fetch reconciliation when tab is active
-  const shouldFetchReconciliation = activeTab === 'reconciliation';
+  // Solo hacer peticiones cuando el tab correspondiente esté activo
+  const isOverviewTab = activeTab === 'overview';
+  const isSalesTab = activeTab === 'sales';
+  const isReconciliationTab = activeTab === 'reconciliation';
 
-  const { data: stats, isLoading: statsLoading, error: statsError } = useInventoryStats();
-  const { data: lowStockProducts, isLoading: lowStockLoading, error: lowStockError } = useLowStockProducts();
-  const { data: outOfStockProducts, isLoading: outOfStockLoading, error: outOfStockError } = useOutOfStockProducts();
-  const { data: overstockProducts, isLoading: overstockLoading, error: overstockError } = useOverstockProducts();
+  // Datos del tab Overview - solo cuando está activo
+  const { data: stats, isLoading: statsLoading, error: statsError } = useInventoryStats(isOverviewTab);
+  const { data: lowStockProducts, isLoading: lowStockLoading, error: lowStockError } = useLowStockProducts(isOverviewTab);
+  const { data: outOfStockProducts, isLoading: outOfStockLoading, error: outOfStockError } = useOutOfStockProducts(isOverviewTab);
+  const { data: overstockProducts, isLoading: overstockLoading, error: overstockError } = useOverstockProducts(isOverviewTab);
   
+  // Datos del tab Sales - solo cuando está activo
   const { data: dailySales, isLoading: dailySalesLoading, error: dailySalesError } = useDailySales({
     date: selectedDate,
     ...(selectedEmployee && { responsible: selectedEmployee })
-  });
+  }, isSalesTab);
   
   const { data: salesByEmployee, isLoading: salesByEmployeeLoading, error: salesByEmployeeError } = useDailySalesByEmployee({
     date: selectedDate
-  });
+  }, isSalesTab);
   
+  // Datos del tab Reconciliation - solo cuando está activo
   const { data: reconciliation, isLoading: reconciliationLoading, error: reconciliationError } = useReconciliationReport({
     start_date: startDate,
     end_date: endDate
-  }, shouldFetchReconciliation);
+  }, isReconciliationTab);
 
   const renderOverviewTab = () => (
     <div className="space-y-4 sm:space-y-6">
@@ -599,26 +604,38 @@ export const InventoryReports: React.FC = () => {
     </div>
   );
 
+  // Configuración de tabs (sin contenido, solo metadatos)
   const tabs = useMemo(() => [
     {
       id: 'overview',
       label: 'Visión General',
       icon: <Package className="w-4 h-4 sm:w-5 sm:h-5" />,
-      content: renderOverviewTab()
     },
     {
       id: 'sales',
       label: 'Ventas Diarias',
       icon: <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />,
-      content: renderDailySalesTab()
     },
     {
       id: 'reconciliation',
       label: 'Conciliación',
       icon: <FileText className="w-4 h-4 sm:w-5 sm:h-5" />,
-      content: renderReconciliationTab()
     }
-  ], [activeTab, selectedDate, selectedEmployee, startDate, endDate]);
+  ], []);
+
+  // Renderizar contenido basado en el tab activo (no dentro de useMemo)
+  const renderActiveTabContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return renderOverviewTab();
+      case 'sales':
+        return renderDailySalesTab();
+      case 'reconciliation':
+        return renderReconciliationTab();
+      default:
+        return renderOverviewTab();
+    }
+  };
 
   return (
     <div className="w-full space-y-4 sm:space-y-6">
@@ -656,7 +673,7 @@ export const InventoryReports: React.FC = () => {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
-            {tabs.find(tab => tab.id === activeTab)?.content}
+            {renderActiveTabContent()}
           </motion.div>
         </AnimatePresence>
       </div>

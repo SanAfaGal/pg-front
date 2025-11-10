@@ -3,6 +3,7 @@ import { inventoryApi } from '../api/inventoryApi';
 import { StockAddRequest, StockRemoveRequest } from '../types';
 import { productKeys } from './useProducts';
 import { movementKeys } from './useMovements';
+import { reportKeys } from './useReports';
 
 export const useAddStock = () => {
   const queryClient = useQueryClient();
@@ -17,8 +18,11 @@ export const useAddStock = () => {
       // Invalidate movements
       queryClient.invalidateQueries({ queryKey: movementKeys.lists() });
       
-      // Invalidate reports that might be affected
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      // Invalidate specific report queries that might be affected
+      queryClient.invalidateQueries({ queryKey: reportKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: reportKeys.lowStock() });
+      queryClient.invalidateQueries({ queryKey: reportKeys.outOfStock() });
+      queryClient.invalidateQueries({ queryKey: reportKeys.overstock() });
     },
   });
 };
@@ -36,8 +40,11 @@ export const useRemoveStock = () => {
       // Invalidate movements
       queryClient.invalidateQueries({ queryKey: movementKeys.lists() });
       
-      // Invalidate reports that might be affected
-      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      // Invalidate specific report queries that might be affected
+      queryClient.invalidateQueries({ queryKey: reportKeys.stats() });
+      queryClient.invalidateQueries({ queryKey: reportKeys.lowStock() });
+      queryClient.invalidateQueries({ queryKey: reportKeys.outOfStock() });
+      queryClient.invalidateQueries({ queryKey: reportKeys.overstock() });
     },
   });
 };

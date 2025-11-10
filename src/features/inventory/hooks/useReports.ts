@@ -20,34 +20,38 @@ export const reportKeys = {
 };
 
 // Hooks
-export const useInventoryStats = () => {
+export const useInventoryStats = (enabled = true) => {
   return useQuery({
     queryKey: reportKeys.stats(),
     queryFn: () => inventoryApi.getInventoryStats(),
+    enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
-export const useLowStockProducts = () => {
+export const useLowStockProducts = (enabled = true) => {
   return useQuery({
     queryKey: reportKeys.lowStock(),
     queryFn: () => inventoryApi.getLowStockProducts(),
+    enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 
-export const useOutOfStockProducts = () => {
+export const useOutOfStockProducts = (enabled = true) => {
   return useQuery({
     queryKey: reportKeys.outOfStock(),
     queryFn: () => inventoryApi.getOutOfStockProducts(),
+    enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 
-export const useOverstockProducts = () => {
+export const useOverstockProducts = (enabled = true) => {
   return useQuery({
     queryKey: reportKeys.overstock(),
     queryFn: () => inventoryApi.getOverstockProducts(),
+    enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -61,18 +65,20 @@ export const useProductHistory = (productId: string, enabled = true) => {
   });
 };
 
-export const useDailySales = (params?: DailySalesParams) => {
+export const useDailySales = (params?: DailySalesParams, enabled = true) => {
   return useQuery({
     queryKey: reportKeys.dailySales(params),
     queryFn: () => inventoryApi.getDailySales(params),
+    enabled: enabled && !!params?.date,
     staleTime: 1 * 60 * 1000, // 1 minute
   });
 };
 
-export const useDailySalesByEmployee = (params?: DailySalesByEmployeeParams) => {
+export const useDailySalesByEmployee = (params?: DailySalesByEmployeeParams, enabled = true) => {
   return useQuery({
     queryKey: reportKeys.dailySalesByEmployee(params),
     queryFn: () => inventoryApi.getDailySalesByEmployee(params),
+    enabled: enabled && !!params?.date,
     staleTime: 1 * 60 * 1000, // 1 minute
   });
 };

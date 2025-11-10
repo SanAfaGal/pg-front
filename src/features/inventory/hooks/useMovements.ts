@@ -12,10 +12,11 @@ export const movementKeys = {
 };
 
 // Hooks
-export const useMovements = (filters?: MovementFilters) => {
+export const useMovements = (filters?: MovementFilters, enabled = true) => {
   return useQuery({
     queryKey: movementKeys.list(filters),
     queryFn: () => inventoryApi.getMovements(filters),
+    enabled,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };

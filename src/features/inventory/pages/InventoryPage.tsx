@@ -30,9 +30,13 @@ export const InventoryPage: React.FC = () => {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  // Hooks
+  // Hooks - solo cargar movements cuando el tab esté activo
   const { data: productsResponse, isLoading: productsLoading, error: productsError, isRefetching: isProductsRefetching, refetch: refetchProducts } = useProducts();
-  const { data: movementsResponse, isLoading: movementsLoading, error: movementsError, isRefetching: isMovementsRefetching, refetch: refetchMovements } = useMovements({ skip: movementPage * 10, limit: 10 });
+  const shouldLoadMovements = activeTab === 'movements';
+  const { data: movementsResponse, isLoading: movementsLoading, error: movementsError, isRefetching: isMovementsRefetching, refetch: refetchMovements } = useMovements(
+    { skip: movementPage * 10, limit: 10 },
+    shouldLoadMovements
+  );
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
