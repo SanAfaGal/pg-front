@@ -8,7 +8,7 @@ import { SubscriptionStatusBadge } from './SubscriptionList';
 import { SubscriptionDetailModal } from './SubscriptionDetailModal';
 import { formatDate, sortSubscriptionsByStatus, isSubscriptionExpired, getLastExpiredSubscription } from '../utils/subscriptionHelpers';
 import { useMediaQuery } from '../../../shared';
-import { Eye, Calendar, RefreshCw } from 'lucide-react';
+import { Eye, Calendar, RefreshCw, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SubscriptionHistoryTableProps {
@@ -222,6 +222,22 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
   return (
     <>
       <Card className={`p-4 sm:p-4 ${className}`}>
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-4 sm:mb-5 pb-3 sm:pb-4 border-b border-gray-200">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+            <History className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">
+              Historial de Suscripciones
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+              {historySubscriptions.length} {historySubscriptions.length === 1 ? 'suscripción registrada' : 'suscripciones registradas'}
+            </p>
+          </div>
+        </div>
+
+        {/* Subscription List */}
         <div className={isMobile ? 'space-y-3' : 'space-y-1'}>
           {historySubscriptions.map((subscription, index) => {
             const startDate = new Date(subscription.start_date);
