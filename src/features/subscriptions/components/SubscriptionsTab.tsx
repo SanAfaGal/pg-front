@@ -284,6 +284,7 @@ export const SubscriptionsTab: React.FC<SubscriptionsTabProps> = ({
           subscriptions={subscriptions || []}
           isLoading={subscriptionsLoading}
           onRenew={handleOpenRenewModal}
+          hasActiveSubscription={!!activeSubscription}
           onViewDetails={(subscription) => {
             // Handle view details if needed
           }}

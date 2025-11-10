@@ -18,6 +18,7 @@ interface SubscriptionHistoryTableProps {
   onViewDetails?: (subscription: Subscription) => void;
   onRenew?: (subscription: Subscription) => void;
   className?: string;
+  hasActiveSubscription?: boolean;
 }
 
 /**
@@ -32,8 +33,9 @@ const SubscriptionRow: React.FC<{
   onViewDetails: (subscription: Subscription) => void;
   onRenew?: (subscription: Subscription) => void;
   isLastExpired: boolean;
+  hasActiveSubscription: boolean;
   index: number;
-}> = ({ subscription, startDate, endDate, duration, onViewDetails, onRenew, isLastExpired, index }) => {
+}> = ({ subscription, startDate, endDate, duration, onViewDetails, onRenew, isLastExpired, hasActiveSubscription, index }) => {
   const isExpired = isSubscriptionExpired(subscription);
 
   return (
@@ -65,7 +67,7 @@ const SubscriptionRow: React.FC<{
 
       {/* Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        {isLastExpired && isExpired && onRenew && (
+        {isLastExpired && isExpired && onRenew && !hasActiveSubscription && (
           <Button
             variant="primary"
             size="sm"
@@ -101,8 +103,9 @@ const SubscriptionHistoryCard: React.FC<{
   onViewDetails: (subscription: Subscription) => void;
   onRenew?: (subscription: Subscription) => void;
   isLastExpired: boolean;
+  hasActiveSubscription: boolean;
   index: number;
-}> = ({ subscription, startDate, endDate, duration, onViewDetails, onRenew, isLastExpired, index }) => {
+}> = ({ subscription, startDate, endDate, duration, onViewDetails, onRenew, isLastExpired, hasActiveSubscription, index }) => {
   const isExpired = isSubscriptionExpired(subscription);
 
   return (
@@ -147,7 +150,7 @@ const SubscriptionHistoryCard: React.FC<{
 
       {/* Actions */}
       <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
-        {isLastExpired && isExpired && onRenew && (
+        {isLastExpired && isExpired && onRenew && !hasActiveSubscription && (
           <Button
             variant="primary"
             size="sm"
@@ -178,6 +181,7 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
   onViewDetails,
   onRenew,
   className = '',
+  hasActiveSubscription = false,
 }) => {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -257,6 +261,7 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
                 onViewDetails={handleViewDetails}
                 onRenew={onRenew}
                 isLastExpired={isLastExpired}
+                hasActiveSubscription={hasActiveSubscription}
                 index={index}
               />
             ) : (
@@ -269,6 +274,7 @@ export const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> =
                 onViewDetails={handleViewDetails}
                 onRenew={onRenew}
                 isLastExpired={isLastExpired}
+                hasActiveSubscription={hasActiveSubscription}
                 index={index}
               />
             );
