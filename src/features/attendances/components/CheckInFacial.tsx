@@ -6,12 +6,14 @@ import { useCheckIn } from '../hooks/useAttendances';
 import { CheckInResponse } from '../types';
 import { logger } from '../../../shared';
 import { Camera } from 'lucide-react';
+import { Card } from '../../../components/ui/Card';
 
 type ProcessingStage = 'idle' | 'uploading' | 'processing' | 'verifying' | 'finalizing' | 'completed';
 
 export const CheckInFacial: React.FC = () => {
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | null>(null);
   const [processingStage, setProcessingStage] = useState<ProcessingStage>('idle');
+  const [cameraKey, setCameraKey] = useState(0); // Key to force camera remount
 
   const { checkIn, reset } = useCheckIn();
 
@@ -46,7 +48,17 @@ export const CheckInFacial: React.FC = () => {
       logger.error('Check-in failed:', err);
       
       let errorResult: CheckInResponse;
-      const error = err as { type?: string; status?: number; message?: string; response?: { data?: { detail?: string } } };
+      const error = err as { 
+        type?: string; 
+        status?: number; 
+        message?: string; 
+        response?: { 
+          data?: { 
+            detail?: string;
+            message?: string;
+          } | string;
+        } 
+      };
       const errorType = error?.type;
       const status = error?.status;
       
@@ -73,8 +85,13 @@ export const CheckInFacial: React.FC = () => {
         try {
           if (error.response?.data) {
             const errorData = error.response.data;
-            apiMessage = errorData.message || errorData.detail || '';
-            apiDetail = errorData.detail || '';
+            if (typeof errorData === 'string') {
+              apiMessage = errorData;
+              apiDetail = errorData;
+            } else if (typeof errorData === 'object') {
+              apiMessage = errorData.message || errorData.detail || '';
+              apiDetail = errorData.detail || errorData.message || '';
+            }
           }
         } catch (parseError) {
           logger.warn('Could not parse error response:', parseError);
@@ -160,6 +177,16 @@ export const CheckInFacial: React.FC = () => {
     setCheckInResult(null);
     setProcessingStage('idle');
     reset();
+    // Force camera remount by changing key
+    setCameraKey(prev => prev + 1);
+  }, [reset]);
+
+  const handleNewCheckIn = useCallback(() => {
+    setCheckInResult(null);
+    setProcessingStage('idle');
+    reset();
+    // Force camera remount by changing key
+    setCameraKey(prev => prev + 1);
   }, [reset]);
 
   const handleError = useCallback((error: string) => {
@@ -178,11 +205,12 @@ export const CheckInFacial: React.FC = () => {
     : 'uploading';
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6 max-w-4xl mx-auto">
       {/* Camera Section - Only show when idle */}
       {showCamera && (
         <div className="w-full">
           <CameraCapture
+            key={cameraKey}
             onImageCaptured={handleImageCaptured}
             onError={handleError}
             isProcessing={false}
@@ -192,9 +220,11 @@ export const CheckInFacial: React.FC = () => {
 
       {/* Processing Status - Show during processing */}
       {showProcessing && (
-        <CheckInProcessingStatus 
-          stage={processingStageForStatus}
-        />
+        <div className="w-full">
+          <CheckInProcessingStatus 
+            stage={processingStageForStatus}
+          />
+        </div>
       )}
 
       {/* Result Section - Show after completion */}
@@ -203,23 +233,26 @@ export const CheckInFacial: React.FC = () => {
           <CheckInResult
             result={checkInResult}
             onRetry={handleRetry}
+            onNewCheckIn={checkInResult.success && checkInResult.can_enter ? handleNewCheckIn : undefined}
           />
         </div>
       )}
 
       {/* Empty State - Only show if nothing else is displayed */}
       {!showCamera && !showProcessing && !showResult && (
-        <div className="w-full py-8 sm:py-12 text-center">
-          <div className="flex flex-col items-center space-y-3 sm:space-y-4">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center">
-              <Camera className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+        <Card className="p-8 sm:p-12 text-center bg-white border border-gray-100 shadow-soft max-w-2xl mx-auto" padding="none">
+          <div className="flex flex-col items-center space-y-5 sm:space-y-6">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl flex items-center justify-center shadow-[0_8px_16px_rgba(0,0,0,0.08),0_2px_4px_rgba(0,0,0,0.04)] border border-gray-200/50">
+              <Camera className="w-10 h-10 sm:w-12 sm:h-12 text-gray-600" strokeWidth={2} />
             </div>
-            <div>
-              <p className="text-base sm:text-lg font-medium text-gray-700 mb-1">Listo para Check-in</p>
-              <p className="text-xs sm:text-sm text-gray-500">Captura tu foto para comenzar el proceso</p>
+            <div className="space-y-2">
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900">Listo para Check-in</h3>
+              <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto font-medium">
+                Captura tu foto para comenzar el proceso de reconocimiento facial
+              </p>
             </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

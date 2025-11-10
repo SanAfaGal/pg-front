@@ -28,6 +28,7 @@ export interface CheckInResponse {
   };
   reason?: 'subscription_expired' | 'inactive_client' | 'no_active_subscription' | 'face_not_recognized' | 'no_face_detected' | 'already_checked_in' | 'system_error';
   detail?: string;
+  total_attendances?: number;
 }
 
 // Error response types for different HTTP status codes

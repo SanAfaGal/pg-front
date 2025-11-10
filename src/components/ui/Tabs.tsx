@@ -35,7 +35,7 @@ export function Tabs({ value, onChange, children, className = '' }: TabsProps) {
 
 export function TabsList({ children, className = '' }: TabsListProps) {
   return (
-    <div className={`flex items-center gap-0 border-b border-gray-200 ${className}`}>
+    <div className={`flex items-center gap-0 border-b-2 border-gray-200 ${className}`}>
       {children}
     </div>
   );
@@ -48,18 +48,15 @@ export function TabsTrigger({ value, children, activeValue, onChange }: TabsTrig
     <button
       onClick={() => onChange(value)}
       className={`
-        relative flex-1 px-2 sm:px-4 py-2.5 sm:py-3 font-medium text-sm transition-all duration-200
-        flex items-center justify-center min-w-0
+        relative flex-initial px-4 sm:px-6 py-3 sm:py-4 font-semibold text-sm transition-all duration-200
+        flex items-center justify-center gap-2 whitespace-nowrap
         ${isActive
-          ? 'text-[#f60310]'
-          : 'text-[#A0A0A0] hover:text-gray-700'
+          ? 'text-primary-500 border-b-2 border-primary-500'
+          : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300'
         }
       `}
     >
       {children}
-      {isActive && (
-        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#f60310]" />
-      )}
     </button>
   );
 }
@@ -68,7 +65,7 @@ export function TabsContent({ value, activeValue, children }: TabsContentProps) 
   if (value !== activeValue) return null;
 
   return (
-    <div className="mt-6 animate-fadeIn">
+    <div className="mt-6 animate-fadeIn w-full">
       {children}
     </div>
   );

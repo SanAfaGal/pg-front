@@ -7,6 +7,7 @@ import { Button } from '../../../components/ui/Button';
 import { useToast } from '../../../shared';
 import { useAttendanceHistory } from '../hooks/useAttendances';
 import { Camera, Clock, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const AttendancePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('checkin');
@@ -38,7 +39,7 @@ export const AttendancePage: React.FC = () => {
       actions={
         <Button
           variant="secondary"
-          size="md"
+          size="sm"
           onClick={handleRefresh}
           disabled={isRefreshing}
           leftIcon={
@@ -52,40 +53,52 @@ export const AttendancePage: React.FC = () => {
         </Button>
       }
     >
-      <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
-        <TabsList className="w-full border-b border-gray-200">
-          <TabsTrigger 
-            value="checkin" 
-            activeValue={activeTab} 
-            onChange={setActiveTab}
-          >
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
-              <Camera className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">Check-in</span>
-            </div>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="history" 
-            activeValue={activeTab} 
-            onChange={setActiveTab}
-          >
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-1">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-              <span className="text-xs sm:text-sm">Historial</span>
-            </div>
-          </TabsTrigger>
-        </TabsList>
+      <div className="w-full space-y-6">
+        <Tabs value={activeTab} onChange={setActiveTab} className="w-full">
+          <div className="flex justify-center w-full">
+            <TabsList className="inline-flex max-w-full">
+              <TabsTrigger 
+                value="checkin" 
+                activeValue={activeTab} 
+                onChange={setActiveTab}
+              >
+                <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Check-in</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="history" 
+                activeValue={activeTab} 
+                onChange={setActiveTab}
+              >
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>Historial</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <div className="p-3 sm:p-4 lg:p-6">
-          <TabsContent value="checkin" activeValue={activeTab}>
-            <CheckInFacial />
-          </TabsContent>
+          <div className="mt-6">
+            <TabsContent value="checkin" activeValue={activeTab} className="w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CheckInFacial />
+              </motion.div>
+            </TabsContent>
 
-          <TabsContent value="history" activeValue={activeTab}>
-            <AttendanceHistory />
-          </TabsContent>
-        </div>
-      </Tabs>
+            <TabsContent value="history" activeValue={activeTab} className="w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AttendanceHistory />
+              </motion.div>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
     </PageLayout>
   );
 };
