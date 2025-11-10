@@ -1,6 +1,7 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '../../../components/ui/Card';
-import { Activity, UserPlus, Calendar, DollarSign, Clock, HeartPulse, ArrowRight } from 'lucide-react';
+import { Activity, UserPlus, Calendar, DollarSign, Clock, HeartPulse, ChevronLeft, ChevronRight } from 'lucide-react';
 import { RecentActivity } from '../types';
 import { formatRelativeTime, formatDateTime } from '../utils/dashboardHelpers';
 
@@ -95,7 +96,18 @@ const getActivityTypeLabel = (type: RecentActivity['type']): string => {
 };
 
 export const RecentActivitiesList = ({ activities, isLoading = false }: RecentActivitiesListProps) => {
-  const maxDisplayed = 4;
+  const itemsPerPage = 4;
+  const [currentPage, setCurrentPage] = useState(0);
+  
+  const totalPages = Math.ceil(activities.length / itemsPerPage);
+  const startIndex = currentPage * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const displayedActivities = activities.slice(startIndex, endIndex);
+
+  // Reiniciar a la primera página cuando cambien las actividades
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [activities.length]);
 
   // Estado de carga - solo mostrar skeleton si está cargando Y no hay datos
   if (isLoading && activities.length === 0) {
@@ -145,9 +157,13 @@ export const RecentActivitiesList = ({ activities, isLoading = false }: RecentAc
     );
   }
 
-  // Lista de actividades - Máximo 4 eventos sin scroll
-  const displayedActivities = activities.slice(0, maxDisplayed);
-  const hasMore = activities.length > maxDisplayed;
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  };
 
   return (
     <Card 
@@ -173,83 +189,112 @@ export const RecentActivitiesList = ({ activities, isLoading = false }: RecentAc
         )}
       </div>
       
-      {/* Lista de Actividades - Sin Scroll */}
+      {/* Lista de Actividades con Paginación */}
       <div className="flex-1 flex flex-col">
-        <div className="space-y-3 flex-1">
-          {displayedActivities.map((activity, index) => {
-            const { date } = formatDateTime(activity.timestamp);
-            const isPayment = activity.type === 'payment_received' && activity.metadata.amount;
-            const relativeTime = formatRelativeTime(activity.timestamp);
-            const colorScheme = getActivityColorScheme(activity.type);
-            
-            return (
-              <motion.div
-                key={activity.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.2 }}
-                className="flex gap-3 group"
-              >
-                {/* Ícono del timeline */}
-                <div className="flex-shrink-0 pt-0.5">
-                  <div className={`w-10 h-10 ${colorScheme.iconBg} rounded-xl flex items-center justify-center shadow-sm ${colorScheme.iconColor}`}>
-                    {getActivityIconComponent(activity.type)}
-                  </div>
-                </div>
-                
-                {/* Contenido de la actividad */}
-                <div className={`flex-1 min-w-0 ${colorScheme.bg} rounded-xl border ${colorScheme.border} p-3 transition-all duration-200 hover:shadow-sm`}>
-                  <div className="space-y-2">
-                    {/* Badge y tiempo relativo */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${colorScheme.badge}`}>
-                        {getActivityTypeLabel(activity.type)}
-                      </span>
-                      <span className="text-xs text-gray-500 font-light">{relativeTime}</span>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentPage}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-3 flex-1"
+          >
+            {displayedActivities.map((activity, index) => {
+              const { date } = formatDateTime(activity.timestamp);
+              const isPayment = activity.type === 'payment_received' && activity.metadata.amount;
+              const relativeTime = formatRelativeTime(activity.timestamp);
+              const colorScheme = getActivityColorScheme(activity.type);
+              
+              return (
+                <motion.div
+                  key={activity.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.2 }}
+                  className="flex gap-3 group"
+                >
+                  {/* Ícono del timeline */}
+                  <div className="flex-shrink-0 pt-0.5">
+                    <div className={`w-10 h-10 ${colorScheme.iconBg} rounded-xl flex items-center justify-center shadow-sm ${colorScheme.iconColor}`}>
+                      {getActivityIconComponent(activity.type)}
                     </div>
-                    
-                    {/* Descripción */}
-                    <p className="text-sm text-gray-900 font-normal leading-relaxed line-clamp-2">
-                      {activity.description}
-                    </p>
-                    
-                    {/* Metadata footer */}
-                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200/60">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-light">
-                        <Clock className="w-3.5 h-3.5" strokeWidth={2} />
-                        <span>{date}</span>
+                  </div>
+                  
+                  {/* Contenido de la actividad */}
+                  <div className={`flex-1 min-w-0 ${colorScheme.bg} rounded-xl border ${colorScheme.border} p-3 transition-all duration-200 hover:shadow-sm`}>
+                    <div className="space-y-2">
+                      {/* Badge y tiempo relativo */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border ${colorScheme.badge}`}>
+                          {getActivityTypeLabel(activity.type)}
+                        </span>
+                        <span className="text-xs text-gray-500 font-light">{relativeTime}</span>
                       </div>
-                      {isPayment && activity.metadata.method && (
-                        <span className="px-2 py-0.5 bg-white rounded-md border border-gray-200 text-xs font-normal text-gray-600">
-                          {getPaymentMethodLabel(activity.metadata.method)}
-                        </span>
-                      )}
-                      {activity.metadata.plan_name && (
-                        <span className="px-2 py-0.5 bg-white rounded-md border border-gray-200 text-xs font-normal text-gray-600">
-                          {activity.metadata.plan_name}
-                        </span>
-                      )}
+                      
+                      {/* Descripción */}
+                      <p className="text-sm text-gray-900 font-normal leading-relaxed line-clamp-2">
+                        {activity.description}
+                      </p>
+                      
+                      {/* Metadata footer */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200/60">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500 font-light">
+                          <Clock className="w-3.5 h-3.5" strokeWidth={2} />
+                          <span>{date}</span>
+                        </div>
+                        {isPayment && activity.metadata.method && (
+                          <span className="px-2 py-0.5 bg-white rounded-md border border-gray-200 text-xs font-normal text-gray-600">
+                            {getPaymentMethodLabel(activity.metadata.method)}
+                          </span>
+                        )}
+                        {activity.metadata.plan_name && (
+                          <span className="px-2 py-0.5 bg-white rounded-md border border-gray-200 text-xs font-normal text-gray-600">
+                            {activity.metadata.plan_name}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </AnimatePresence>
 
-        {/* Botón "Ver más" */}
-        {hasMore && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
+        {/* Controles de Paginación */}
+        {totalPages > 1 && (
+          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
             <button
-              onClick={() => {
-                // Navegar a una página de actividades o mostrar más
-                // Por ahora, simplemente hacemos scroll o mostramos más
-                window.location.hash = '#activities';
-              }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 0}
+              className={`flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200 ${
+                currentPage === 0
+                  ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 shadow-sm hover:shadow-md'
+              }`}
+              aria-label="Página anterior"
             >
-              <span>Ver más actividades</span>
-              <ArrowRight className="w-4 h-4" strokeWidth={2} />
+              <ChevronLeft className="w-5 h-5" strokeWidth={2} />
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">
+                {currentPage + 1} / {totalPages}
+              </span>
+            </div>
+            
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages - 1}
+              className={`flex items-center justify-center w-10 h-10 rounded-xl border transition-all duration-200 ${
+                currentPage === totalPages - 1
+                  ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
+                  : 'border-gray-300 bg-white text-gray-700 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-600 shadow-sm hover:shadow-md'
+              }`}
+              aria-label="Página siguiente"
+            >
+              <ChevronRight className="w-5 h-5" strokeWidth={2} />
             </button>
           </div>
         )}
