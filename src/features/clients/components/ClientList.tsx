@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
+import { IconButton } from '@/components/ui/IconButton';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ClientFormModal } from './ClientFormModal';
 import { ClientCards } from './ClientCards';
 import { useToast, logger, useMediaQuery } from '@/shared';
@@ -24,6 +26,8 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
   const [activeFilter, setActiveFilter] = useState<boolean | undefined>(undefined);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const { showToast } = useToast();
   const { isDesktop } = useMediaQuery();
 
@@ -39,18 +43,23 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
     setIsModalOpen(true);
   }, []);
 
-  const handleDelete = useCallback(async (client: Client) => {
-    if (!confirm(`¿Está seguro de que desea inactivar al cliente ${clientHelpers.formatFullName(client)}?\n\nEl cliente será marcado como inactivo y no aparecerá en la lista de clientes activos.`)) {
-      return;
-    }
+  const handleDeleteClick = useCallback((client: Client) => {
+    setClientToDelete(client);
+    setIsDeleteModalOpen(true);
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!clientToDelete) return;
 
     try {
-      await deleteClientMutation.mutateAsync(client.id);
+      await deleteClientMutation.mutateAsync(clientToDelete.id);
       showToast({
         type: 'success',
         title: 'Éxito',
-        message: `${clientHelpers.formatFullName(client)} ha sido inactivado correctamente`,
+        message: `${clientHelpers.formatFullName(clientToDelete)} ha sido inactivado correctamente`,
       });
+      setIsDeleteModalOpen(false);
+      setClientToDelete(null);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error al inactivar cliente';
       showToast({
@@ -60,7 +69,14 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
       });
       logger.error('Error deleting client:', error);
     }
-  }, [deleteClientMutation, showToast]);
+  }, [clientToDelete, deleteClientMutation, showToast]);
+
+  const handleDeleteModalClose = useCallback(() => {
+    if (!deleteClientMutation.isPending) {
+      setIsDeleteModalOpen(false);
+      setClientToDelete(null);
+    }
+  }, [deleteClientMutation.isPending]);
 
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
@@ -272,129 +288,145 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
         ) : isDesktop ? (
           // Vista de tabla para desktop
           <div className="overflow-x-auto -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left py-3 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Cliente
-                  </th>
-                  <th className="text-left py-3 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
-                    Documento
-                  </th>
-                  <th className="text-left py-3 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden md:table-cell">
-                    Contacto
-                  </th>
-                  <th className="text-left py-3 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="text-left py-3 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell">
-                    Registro
-                  </th>
-                  <th className="text-right py-3 sm:py-4 px-2 sm:px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <AnimatePresence>
-                {filteredClients.map((client, index) => (
-                  <motion.tr
-                    key={client.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ delay: index * 0.03, duration: 0.2 }}
-                    className="border-b border-gray-50 hover:bg-powergym-cream/30 transition-all duration-200 group"
-                  >
-                    <td className="py-3 sm:py-4 px-2 sm:px-4">
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <Avatar
-                          src=""
-                          alt={clientHelpers.formatFullName(client)}
-                          size="md"
-                        />
-                        <div className="min-w-0">
-                          <div className="font-medium text-gray-900 text-sm sm:text-base truncate">
-                            {clientHelpers.formatFullName(client)}
+            <div className="inline-block min-w-full align-middle">
+              <div className="overflow-hidden shadow-sm ring-1 ring-black ring-opacity-5 rounded-xl">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100/50">
+                    <tr>
+                      <th className="text-left py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Cliente
+                      </th>
+                      <th className="text-center py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
+                        Documento
+                      </th>
+                      <th className="text-left py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
+                        Contacto
+                      </th>
+                      <th className="text-center py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="text-center py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
+                        Registro
+                      </th>
+                      <th className="sticky right-0 bg-gradient-to-r from-gray-50 to-gray-100/50 text-right py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider z-10 backdrop-blur-sm">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-100">
+                    <AnimatePresence>
+                    {filteredClients.map((client, index) => (
+                      <motion.tr
+                        key={client.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ delay: index * 0.02, duration: 0.2 }}
+                        className="hover:bg-blue-50/40 transition-colors duration-200 group border-b border-gray-100/60"
+                      >
+                        <td className="py-4 px-4 min-h-[52px]">
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              src=""
+                              alt={clientHelpers.formatFullName(client)}
+                              size="md"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-gray-900 text-base truncate">
+                                {clientHelpers.formatFullName(client)}
+                              </div>
+                              <div className="text-sm text-gray-500 font-normal mt-0.5">
+                                {clientHelpers.calculateAge(client.birth_date)} años
+                              </div>
+                              <div className="text-xs text-gray-400 font-light sm:hidden mt-1">
+                                {client.dni_type}: {client.dni_number}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-xs sm:text-sm text-gray-500">
-                            {clientHelpers.calculateAge(client.birth_date)} años
+                        </td>
+                        <td className="py-4 px-4 text-center hidden sm:table-cell min-h-[52px]">
+                          <div className="flex flex-col items-center">
+                            <div className="text-sm font-medium text-gray-900">
+                              {client.dni_type}
+                            </div>
+                            <div className="text-sm text-gray-600 font-normal mt-0.5">
+                              {client.dni_number}
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-500 sm:hidden mt-1">
-                            {client.dni_type}: {client.dni_number}
+                        </td>
+                        <td className="py-4 px-4 hidden md:table-cell min-h-[52px]">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2 text-sm text-gray-700 font-normal">
+                              <Phone className="w-4 h-4 text-gray-400" strokeWidth={2} />
+                              <span>{client.phone}</span>
+                            </div>
+                            {client.address && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600 font-light">
+                                <Mail className="w-4 h-4 text-gray-400" strokeWidth={2} />
+                                <span className="truncate max-w-[200px]">{client.address}</span>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 sm:py-4 px-2 sm:px-4 hidden sm:table-cell">
-                      <div className="text-sm">
-                        <div className="font-medium text-gray-900">
-                          {client.dni_type}
-                        </div>
-                        <div className="text-gray-500">{client.dni_number}</div>
-                      </div>
-                    </td>
-                    <td className="py-3 sm:py-4 px-2 sm:px-4 hidden md:table-cell">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
-                          {client.phone}
-                        </div>
-                        {client.address && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
-                            <span className="truncate max-w-[200px]">{client.address}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center min-h-[52px]">
+                          <div className="flex justify-center">
+                            <Badge 
+                              variant={client.is_active ? 'success' : 'error'}
+                              className="font-medium"
+                            >
+                              {client.is_active ? 'Activo' : 'Inactivo'}
+                            </Badge>
                           </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 sm:py-4 px-2 sm:px-4">
-                      <Badge variant={client.is_active ? 'success' : 'error'}>
-                        {client.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </td>
-                    <td className="py-3 sm:py-4 px-2 sm:px-4 hidden lg:table-cell">
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                        <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-                        {formatDate(client.created_at)}
-                      </div>
-                    </td>
-                    <td className="py-3 sm:py-4 px-2 sm:px-4">
-                      <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 opacity-100 transition-opacity duration-200">
-                        <button
-                          onClick={() => onSelectClient?.(client.id)}
-                          className="p-2 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-gray-400 hover:text-powergym-blue-medium hover:bg-blue-50 rounded-lg transition-all duration-200 hover:scale-110"
-                          title="Ver detalles"
-                          aria-label="Ver detalles"
-                        >
-                          <Eye className="w-4 h-4 sm:w-4 sm:h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEdit(client)}
-                          className="p-2 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-gray-400 hover:text-powergym-blue-medium hover:bg-blue-50 rounded-lg transition-all duration-200 hover:scale-110"
-                          title="Editar"
-                          aria-label="Editar"
-                        >
-                          <Edit2 className="w-4 h-4 sm:w-4 sm:h-4" />
-                        </button>
-                        {client.is_active && (
-                          <button
-                            onClick={() => handleDelete(client)}
-                            className="p-2 sm:p-2 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center text-gray-400 hover:text-powergym-red hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110"
-                            title="Inactivar cliente"
-                            aria-label="Inactivar cliente"
-                            disabled={deleteClientMutation.isPending}
-                          >
-                            <Trash2 className="w-4 h-4 sm:w-4 sm:h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-                </AnimatePresence>
-              </tbody>
-            </table>
+                        </td>
+                        <td className="py-4 px-4 text-center hidden lg:table-cell min-h-[52px]">
+                          <div className="flex items-center justify-center gap-2 text-sm text-gray-600 font-normal">
+                            <Calendar className="w-4 h-4 text-gray-400" strokeWidth={2} />
+                            <span>{formatDate(client.created_at)}</span>
+                          </div>
+                        </td>
+                        <td className="sticky right-0 bg-white group-hover:bg-blue-50/40 py-4 px-4 min-h-[52px] z-10 transition-colors duration-200 backdrop-blur-sm">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {onSelectClient && (
+                              <IconButton
+                                icon={Eye}
+                                onClick={() => onSelectClient(client.id)}
+                                variant="default"
+                                size="sm"
+                                title="Ver detalles"
+                                aria-label="Ver detalles"
+                                className="!text-gray-400 hover:!text-powergym-blue-medium hover:!bg-blue-50/50"
+                              />
+                            )}
+                            <IconButton
+                              icon={Edit2}
+                              onClick={() => handleEdit(client)}
+                              variant="default"
+                              size="sm"
+                              title="Editar cliente"
+                              aria-label="Editar cliente"
+                              className="!text-gray-400 hover:!text-powergym-blue-medium hover:!bg-blue-50/50"
+                            />
+                            {client.is_active && (
+                              <IconButton
+                                icon={Trash2}
+                                onClick={() => handleDeleteClick(client)}
+                                variant="default"
+                                size="sm"
+                                disabled={deleteClientMutation.isPending}
+                                title="Inactivar cliente"
+                                aria-label="Inactivar cliente"
+                                className="!text-gray-400 hover:!text-powergym-red hover:!bg-red-50/50"
+                              />
+                            )}
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         ) : (
           // Vista de cards para móvil/tablet
@@ -402,7 +434,7 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
             clients={filteredClients}
             onView={onSelectClient}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onDelete={handleDeleteClick}
             isDeleting={deleteClientMutation.isPending}
           />
         )}
@@ -414,6 +446,21 @@ export const ClientList = memo(({ onSelectClient }: ClientListProps) => {
         client={selectedClient}
         onSaved={handleClientSaved}
       />
+
+      {/* Confirm Delete Modal */}
+      {clientToDelete && (
+        <ConfirmDialog
+          isOpen={isDeleteModalOpen}
+          onClose={handleDeleteModalClose}
+          onConfirm={handleDeleteConfirm}
+          title="Inactivar Cliente"
+          message={`¿Está seguro de que desea inactivar al cliente ${clientHelpers.formatFullName(clientToDelete)}?`}
+          confirmText="Inactivar Cliente"
+          cancelText="Cancelar"
+          variant="danger"
+          isLoading={deleteClientMutation.isPending}
+        />
+      )}
     </div>
   );
 });
