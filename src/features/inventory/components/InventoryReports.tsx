@@ -585,7 +585,7 @@ export const InventoryReports: React.FC = () => {
                             )}
                           </div>
                           <span className={`font-semibold ${movement.movement_type === 'EXIT' ? 'text-red-600' : 'text-green-600'}`}>
-                            {movement.movement_type === 'EXIT' ? '-' : '+'}{formatQuantity(movement.quantity)}
+                            {movement.movement_type === 'EXIT' ? '-' : '+'}{formatQuantity(Math.abs(parseFloat(movement.quantity)))}
                           </span>
                         </motion.div>
                       ))}
