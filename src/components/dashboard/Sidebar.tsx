@@ -74,55 +74,14 @@ export const Sidebar = ({ isOpen, onClose, activeItem, onItemClick, onLogout, us
             </div>
             <div>
               <h2 className="text-lg font-bold text-powergym-charcoal">PowerGym AG</h2>
-              {(() => {
-                const userName = user?.full_name || user?.username || '';
-                const userRole = user?.role ? getRoleLabel(user.role) : '';
-                const roleKeywords = ['administrator', 'admin', 'administrador', 'empleado', 'employee'];
-                const isRoleInName = roleKeywords.some(keyword => 
-                  userName.toLowerCase().trim() === keyword
-                );
-                
-                // Si el nombre es un rol, solo mostrar el rol traducido en español
-                if (isRoleInName && userRole) {
-                  return (
-                    <p className="text-xs font-medium text-gray-700">
-                      {userRole}
-                    </p>
-                  );
-                }
-                
-                // Si hay nombre válido (que no es un rol), mostrarlo con el rol debajo si existe
-                if (userName && !isRoleInName) {
-                  return (
-                    <>
-                      <p className="text-xs font-medium text-gray-700">
-                        {userName}
-                      </p>
-                      {userRole && (
-                        <p className="text-xs text-gray-500">
-                          {userRole}
-                        </p>
-                      )}
-                    </>
-                  );
-                }
-                
-                // Si solo hay rol, mostrarlo
-                if (userRole) {
-                  return (
-                    <p className="text-xs font-medium text-gray-700">
-                      {userRole}
-                    </p>
-                  );
-                }
-                
-                // Fallback
-                return (
-                  <p className="text-xs font-medium text-gray-700">
-                    Usuario
-                  </p>
-                );
-              })()}
+              <p className="text-xs font-medium text-gray-700">
+                {user?.full_name || user?.username || 'Usuario'}
+              </p>
+              {user?.role && (
+                <p className="text-xs text-gray-500">
+                  {getRoleLabel(user.role)}
+                </p>
+              )}
             </div>
           </div>
           <button
