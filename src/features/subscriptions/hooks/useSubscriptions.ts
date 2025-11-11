@@ -293,11 +293,9 @@ export const useExpireSubscriptions = () => {
     mutationFn: expireSubscriptions,
     onSuccess: () => {
       // Invalidate all subscription queries to refresh the list
+      // This includes all subscriptions lists and active subscriptions
       queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.allSubscriptions(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.lists(),
+        queryKey: subscriptionKeys.all(),
       });
     },
   });
@@ -311,11 +309,9 @@ export const useActivateSubscriptions = () => {
     mutationFn: activateSubscriptions,
     onSuccess: () => {
       // Invalidate all subscription queries to refresh the list
+      // This includes all subscriptions lists and active subscriptions
       queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.allSubscriptions(),
-      });
-      queryClient.invalidateQueries({
-        queryKey: subscriptionKeys.lists(),
+        queryKey: subscriptionKeys.all(),
       });
     },
   });

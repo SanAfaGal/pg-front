@@ -65,7 +65,7 @@ export const PAYMENT_METHOD_CONFIG = {
 
 // Default Pagination Settings
 export const DEFAULT_PAGINATION = {
-  limit: 100,
+  limit: 20,
   offset: 0,
 } as const;
 

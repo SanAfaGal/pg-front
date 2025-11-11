@@ -1,39 +1,70 @@
-import React, { memo, useMemo, useState, useCallback } from 'react';
+import React, { memo, useMemo, useCallback, useState } from 'react';
 import { Subscription, SubscriptionStatus, SubscriptionFilters } from '../api/types';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { SubscriptionStatusBadge } from './SubscriptionList';
-import { formatDate } from '../utils/subscriptionHelpers';
+import { formatDate, getDaysRemaining } from '../utils/subscriptionHelpers';
 import { useMediaQuery } from '../../../shared';
 import { useClientsMap } from '../../../features/clients/hooks/useClients';
+import { useActivePlans } from '../../../features/plans';
 import { clientHelpers } from '../../../features/clients/utils/clientHelpers';
 import { Client } from '../../../features/clients/types';
-import { Eye, Search, Filter, X, DollarSign, User } from 'lucide-react';
+import { Plan } from '../api/types';
+import { Search, X, User, Calendar, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Pagination } from '../../../components/ui/Pagination';
 
 interface SubscriptionsTableProps {
   subscriptions: Subscription[];
   isLoading?: boolean;
   filters: SubscriptionFilters;
   onFiltersChange: (filters: SubscriptionFilters) => void;
-  onViewDetails?: (subscription: Subscription) => void;
   onViewClient?: (clientId: string) => void;
   className?: string;
 }
+
+/**
+ * Componente compartido para mostrar información de plan y días restantes
+ */
+const SubscriptionPlanInfo: React.FC<{
+  subscription: Subscription;
+  plansMap: Map<string, Plan>;
+}> = ({ subscription, plansMap }) => {
+  const plan = plansMap.get(subscription.plan_id);
+  const daysRemaining = getDaysRemaining(subscription);
+  const planName = plan?.name || subscription.plan_id.slice(0, 8);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2 text-sm">
+        <Package className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+        <span className="text-gray-600">Plan:</span>
+        <span className="font-medium text-gray-900 truncate">{planName}</span>
+      </div>
+      <div className="flex items-center gap-2 text-sm">
+        <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+        <span className="text-gray-600">
+          {daysRemaining > 0 
+            ? `${daysRemaining} día${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}`
+            : 'Expirada'
+          }
+        </span>
+      </div>
+    </div>
+  );
+};
 
 /**
  * Subscription Row Component (Desktop)
  */
 const SubscriptionRow: React.FC<{
   subscription: Subscription;
-  onViewDetails: (subscription: Subscription) => void;
   onViewClient: (clientId: string) => void;
   index: number;
   clientsMap: Map<string, Client>;
-}> = ({ subscription, onViewDetails, onViewClient, index, clientsMap }) => {
-  // Get client from map or fallback to ID
+  plansMap: Map<string, Plan>;
+}> = ({ subscription, onViewClient, index, clientsMap, plansMap }) => {
   const client = clientsMap.get(subscription.client_id);
   const clientName = client 
     ? clientHelpers.formatFullName(client)
@@ -73,16 +104,9 @@ const SubscriptionRow: React.FC<{
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onViewDetails(subscription)}
-          leftIcon={<Eye className="w-3.5 h-3.5" />}
-        >
-          Ver
-        </Button>
+      {/* Plan and Days Remaining */}
+      <div className="flex-shrink-0 min-w-[200px]">
+        <SubscriptionPlanInfo subscription={subscription} plansMap={plansMap} />
       </div>
     </motion.div>
   );
@@ -93,12 +117,11 @@ const SubscriptionRow: React.FC<{
  */
 const SubscriptionCard: React.FC<{
   subscription: Subscription;
-  onViewDetails: (subscription: Subscription) => void;
   onViewClient: (clientId: string) => void;
   index: number;
   clientsMap: Map<string, Client>;
-}> = ({ subscription, onViewDetails, onViewClient, index, clientsMap }) => {
-  // Get client from map or fallback to ID
+  plansMap: Map<string, Plan>;
+}> = ({ subscription, onViewClient, index, clientsMap, plansMap }) => {
   const client = clientsMap.get(subscription.client_id);
   const clientName = client 
     ? clientHelpers.formatFullName(client)
@@ -142,17 +165,9 @@ const SubscriptionCard: React.FC<{
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onViewDetails(subscription)}
-          leftIcon={<Eye className="w-4 h-4" />}
-          className="w-full"
-        >
-          Ver Detalles
-        </Button>
+      {/* Plan and Days Remaining */}
+      <div className="pt-3 border-t border-gray-100">
+        <SubscriptionPlanInfo subscription={subscription} plansMap={plansMap} />
       </div>
     </motion.div>
   );
@@ -163,7 +178,6 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
   isLoading = false,
   filters,
   onFiltersChange,
-  onViewDetails,
   onViewClient,
   className = '',
 }) => {
@@ -178,34 +192,49 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
   // Get clients map using the hook
   const { clientsMap } = useClientsMap(clientIds);
 
-  // Filter subscriptions by status and search query (client ID or subscription ID)
+  // Get plans only when there are subscriptions (lazy load)
+  const { data: plans = [] } = useActivePlans();
+  
+  // Create plans map for quick lookup
+  const plansMap = useMemo(() => {
+    const map = new Map<string, Plan>();
+    plans.forEach(plan => {
+      map.set(plan.id, plan);
+    });
+    return map;
+  }, [plans]);
+
+  // Calculate pagination info
+  const limit = filters.limit || 20;
+  const currentPage = useMemo(() => {
+    return Math.floor((filters.offset || 0) / limit) + 1;
+  }, [filters.offset, limit]);
+
+  // Detect if we're on the last page (heuristic: if results < limit)
+  // This means there are no more pages after this one
+  const isLastPage = subscriptions.length < limit;
+  const totalPages = isLastPage ? currentPage : undefined;
+
+  // Filter subscriptions by search query (only in current page results)
   const filteredSubscriptions = useMemo(() => {
-    let filtered = subscriptions;
-    
-    // Apply status filter if specified
-    if (filters.status) {
-      filtered = filtered.filter(sub => sub.status === filters.status);
+    if (!searchQuery.trim()) {
+      return subscriptions;
     }
-    
-    // Apply search query filter if specified
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(sub => {
-        const matchesId = sub.id.toLowerCase().includes(query) ||
-          sub.client_id.toLowerCase().includes(query);
-        
-        // Also search by client name if available
-        const client = clientsMap.get(sub.client_id);
-        const matchesName = client 
-          ? clientHelpers.formatFullName(client).toLowerCase().includes(query)
-          : false;
-        
-        return matchesId || matchesName;
-      });
-    }
-    
-    return filtered;
-  }, [subscriptions, filters.status, searchQuery, clientsMap]);
+
+    const query = searchQuery.toLowerCase();
+    return subscriptions.filter(sub => {
+      const matchesId = sub.id.toLowerCase().includes(query) ||
+        sub.client_id.toLowerCase().includes(query);
+      
+      // Also search by client name if available
+      const client = clientsMap.get(sub.client_id);
+      const matchesName = client 
+        ? clientHelpers.formatFullName(client).toLowerCase().includes(query)
+        : false;
+      
+      return matchesId || matchesName;
+    });
+  }, [subscriptions, searchQuery, clientsMap]);
 
   const handleStatusFilter = useCallback((status: SubscriptionStatus | 'all') => {
     onFiltersChange({
@@ -213,6 +242,7 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
       status: status === 'all' ? undefined : status,
       offset: 0, // Reset pagination when filtering
     });
+    setSearchQuery(''); // Clear search when changing status filter
   }, [filters, onFiltersChange]);
 
   const clearFilters = useCallback(() => {
@@ -226,6 +256,15 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
   const hasActiveFilters = useMemo(() => {
     return !!filters.status || !!searchQuery.trim();
   }, [filters.status, searchQuery]);
+
+  const handlePageChange = useCallback((page: number) => {
+    const limit = filters.limit || 20;
+    const newOffset = (page - 1) * limit;
+    onFiltersChange({
+      ...filters,
+      offset: newOffset,
+    });
+  }, [filters, onFiltersChange]);
 
   if (isLoading) {
     return (
@@ -279,6 +318,13 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
               Pendientes
             </Button>
             <Button
+              variant={filters.status === SubscriptionStatus.SCHEDULED ? 'primary' : 'outline'}
+              size="sm"
+              onClick={() => handleStatusFilter(SubscriptionStatus.SCHEDULED)}
+            >
+              Programadas
+            </Button>
+            <Button
               variant={filters.status === SubscriptionStatus.EXPIRED ? 'primary' : 'outline'}
               size="sm"
               onClick={() => handleStatusFilter(SubscriptionStatus.EXPIRED)}
@@ -299,48 +345,82 @@ export const SubscriptionsTable: React.FC<SubscriptionsTableProps> = memo(({
         </div>
       </Card>
 
-      {/* Results Count */}
-      <div className="text-sm text-gray-600">
-        Mostrando {filteredSubscriptions.length} de {subscriptions.length} suscripciones
-      </div>
+      {/* Search info (only show if searching) */}
+      {searchQuery.trim() && (
+        <div className="text-sm text-gray-600">
+          {filteredSubscriptions.length > 0 ? (
+            <span>
+              {filteredSubscriptions.length} resultado{filteredSubscriptions.length !== 1 ? 's' : ''} encontrado{filteredSubscriptions.length !== 1 ? 's' : ''} en esta página
+            </span>
+          ) : (
+            <span className="text-amber-600">
+              No se encontraron resultados para "{searchQuery}" en esta página
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Subscriptions List */}
-      {filteredSubscriptions.length === 0 ? (
+      {subscriptions.length === 0 ? (
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center">
             <p className="text-sm text-gray-500">No se encontraron suscripciones</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Intenta cambiar los filtros o actualizar la lista
+            </p>
+          </div>
+        </Card>
+      ) : filteredSubscriptions.length === 0 && searchQuery.trim() ? (
+        <Card className="p-8 text-center">
+          <div className="flex flex-col items-center">
+            <p className="text-sm text-gray-500">No se encontraron resultados para "{searchQuery}"</p>
+            <p className="text-xs text-gray-400 mt-1">
+              La búsqueda se realiza solo en la página actual. Intenta navegar a otras páginas o cambiar los filtros.
+            </p>
           </div>
         </Card>
       ) : (
-        <Card className="p-0 overflow-hidden">
-          <div className={isMobile ? 'space-y-3 p-4' : 'space-y-1 p-2'}>
-            {filteredSubscriptions.map((subscription, index) =>
-              isMobile ? (
-                <SubscriptionCard
-                  key={subscription.id}
-                  subscription={subscription}
-                  onViewDetails={onViewDetails || (() => {})}
-                  onViewClient={onViewClient || (() => {})}
-                  index={index}
-                  clientsMap={clientsMap}
-                />
-              ) : (
-                <SubscriptionRow
-                  key={subscription.id}
-                  subscription={subscription}
-                  onViewDetails={onViewDetails || (() => {})}
-                  onViewClient={onViewClient || (() => {})}
-                  index={index}
-                  clientsMap={clientsMap}
-                />
-              )
-            )}
-          </div>
-        </Card>
+        <>
+          <Card className="p-0 overflow-hidden">
+            <div className={isMobile ? 'space-y-3 p-4' : 'space-y-1 p-2'}>
+              {filteredSubscriptions.map((subscription, index) =>
+                isMobile ? (
+                  <SubscriptionCard
+                    key={subscription.id}
+                    subscription={subscription}
+                    onViewClient={onViewClient || (() => {})}
+                    index={index}
+                    clientsMap={clientsMap}
+                    plansMap={plansMap}
+                  />
+                ) : (
+                  <SubscriptionRow
+                    key={subscription.id}
+                    subscription={subscription}
+                    onViewClient={onViewClient || (() => {})}
+                    index={index}
+                    clientsMap={clientsMap}
+                    plansMap={plansMap}
+                  />
+                )
+              )}
+            </div>
+          </Card>
+
+          {/* Pagination */}
+          <Card className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              onPageChange={handlePageChange}
+              itemsPerPage={limit}
+              isLoading={isLoading}
+              totalPages={totalPages}
+            />
+          </Card>
+        </>
       )}
     </div>
   );
 });
 
 SubscriptionsTable.displayName = 'SubscriptionsTable';
-

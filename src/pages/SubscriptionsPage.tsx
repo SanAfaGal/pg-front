@@ -1,14 +1,13 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SubscriptionsTable } from '../features/subscriptions/components/SubscriptionsTable';
-import { SubscriptionDetailModal } from '../features/subscriptions/components/SubscriptionDetailModal';
 import { 
   useAllSubscriptions, 
   useExpireSubscriptions, 
   useActivateSubscriptions 
 } from '../features/subscriptions';
-import { Subscription, SubscriptionFilters } from '../features/subscriptions/api/types';
-import { NOTIFICATION_MESSAGES } from '../features/subscriptions/constants/subscriptionConstants';
+import { SubscriptionFilters } from '../features/subscriptions/api/types';
+import { NOTIFICATION_MESSAGES, DEFAULT_PAGINATION } from '../features/subscriptions/constants/subscriptionConstants';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { RefreshButton } from '../components/ui/RefreshButton';
@@ -20,12 +19,10 @@ export const SubscriptionsPage: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [filters, setFilters] = useState<SubscriptionFilters>({
-    limit: 100,
-    offset: 0,
+    limit: DEFAULT_PAGINATION.limit,
+    offset: DEFAULT_PAGINATION.offset,
   });
-  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [shouldFetch, setShouldFetch] = useState(true); // Controlar cuando hacer la petición
+  const [shouldFetch, setShouldFetch] = useState(false); // Solo cargar cuando el usuario lo solicite
   const [lastActionResult, setLastActionResult] = useState<{
     type: 'expire' | 'activate';
     count: number;
@@ -47,12 +44,12 @@ export const SubscriptionsPage: React.FC = () => {
 
   const handleFiltersChange = useCallback((newFilters: SubscriptionFilters) => {
     setFilters(newFilters);
-  }, []);
+    // Habilitar fetch cuando se cambian los filtros
+    if (!shouldFetch) {
+      setShouldFetch(true);
+    }
+  }, [shouldFetch]);
 
-  const handleViewDetails = useCallback((subscription: Subscription) => {
-    setSelectedSubscription(subscription);
-    setIsModalOpen(true);
-  }, []);
 
   const handleViewClient = useCallback((clientId: string) => {
     // Guardar el clientId en localStorage para que Clients.tsx lo lea
@@ -60,12 +57,8 @@ export const SubscriptionsPage: React.FC = () => {
     navigate(`/dashboard#clients`);
   }, [navigate]);
 
-  // Habilitar la petición cuando el componente se monta
-  useEffect(() => {
-    setShouldFetch(true);
-  }, []);
-
   const handleRefresh = useCallback(async () => {
+    setShouldFetch(true);
     await refetch();
     showToast({
       title: 'Actualizado',
@@ -76,13 +69,6 @@ export const SubscriptionsPage: React.FC = () => {
 
   const handleExpireSubscriptions = useCallback(async () => {
     try {
-      // Mostrar toast de inicio
-      showToast({
-        title: 'Procesando...',
-        message: 'Expirando suscripciones, por favor espera',
-        type: 'info',
-      });
-
       const response = await expireSubscriptionsMutation.mutateAsync();
       
       // Guardar resultado para mostrar banner
@@ -92,31 +78,22 @@ export const SubscriptionsPage: React.FC = () => {
         timestamp: new Date(),
       });
 
-      // Mostrar toast de éxito con información detallada
+      // Mostrar un solo toast con el resultado
       showToast({
-        title: '✓ Operación Completada',
+        title: response.expired_count > 0 ? '✓ Operación Completada' : 'Sin Cambios',
         message: response.expired_count > 0 
-          ? `Se ${response.expired_count === 1 ? 'expiró' : 'expiraron'} ${response.expired_count} suscripción${response.expired_count !== 1 ? 'es' : ''}. La lista se está actualizando para mostrar los cambios.`
+          ? `Se ${response.expired_count === 1 ? 'expiró' : 'expiraron'} ${response.expired_count} suscripción${response.expired_count !== 1 ? 'es' : ''}.`
           : 'No había suscripciones pendientes de expirar.',
-        type: 'success',
+        type: response.expired_count > 0 ? 'success' : 'info',
       });
 
       // Refrescar la lista automáticamente
       await refetch();
 
-      // Mostrar toast de actualización completada
-      setTimeout(() => {
-        showToast({
-          title: 'Lista Actualizada',
-          message: 'Los cambios ya están visibles en la tabla de suscripciones',
-          type: 'success',
-        });
-      }, 500);
-
-      // Cerrar el banner automáticamente después de 10 segundos
+      // Cerrar el banner automáticamente después de 8 segundos
       setTimeout(() => {
         setLastActionResult(null);
-      }, 10000);
+      }, 8000);
     } catch (error: unknown) {
       // Detectar errores de CORS o red
       const errorObj = error as { 
@@ -167,13 +144,6 @@ export const SubscriptionsPage: React.FC = () => {
 
   const handleActivateSubscriptions = useCallback(async () => {
     try {
-      // Mostrar toast de inicio
-      showToast({
-        title: 'Procesando...',
-        message: 'Activando suscripciones programadas, por favor espera',
-        type: 'info',
-      });
-
       const response = await activateSubscriptionsMutation.mutateAsync();
       
       // Guardar resultado para mostrar banner
@@ -183,31 +153,22 @@ export const SubscriptionsPage: React.FC = () => {
         timestamp: new Date(),
       });
 
-      // Mostrar toast de éxito con información detallada
+      // Mostrar un solo toast con el resultado
       showToast({
-        title: '✓ Operación Completada',
+        title: response.activated_count > 0 ? '✓ Operación Completada' : 'Sin Cambios',
         message: response.activated_count > 0
-          ? `Se ${response.activated_count === 1 ? 'activó' : 'activaron'} ${response.activated_count} suscripción${response.activated_count !== 1 ? 'es' : ''} programada${response.activated_count !== 1 ? 's' : ''}. La lista se está actualizando para mostrar los cambios.`
+          ? `Se ${response.activated_count === 1 ? 'activó' : 'activaron'} ${response.activated_count} suscripción${response.activated_count !== 1 ? 'es' : ''} programada${response.activated_count !== 1 ? 's' : ''}.`
           : 'No había suscripciones programadas listas para activar.',
-        type: 'success',
+        type: response.activated_count > 0 ? 'success' : 'info',
       });
 
       // Refrescar la lista automáticamente
       await refetch();
 
-      // Mostrar toast de actualización completada
-      setTimeout(() => {
-        showToast({
-          title: 'Lista Actualizada',
-          message: 'Los cambios ya están visibles en la tabla de suscripciones',
-          type: 'success',
-        });
-      }, 500);
-
-      // Cerrar el banner automáticamente después de 10 segundos
+      // Cerrar el banner automáticamente después de 8 segundos
       setTimeout(() => {
         setLastActionResult(null);
-      }, 10000);
+      }, 8000);
     } catch (error: unknown) {
       // Detectar errores de CORS o red
       const errorObj = error as { 
@@ -256,10 +217,6 @@ export const SubscriptionsPage: React.FC = () => {
     }
   }, [activateSubscriptionsMutation, showToast, refetch]);
 
-  const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false);
-    setSelectedSubscription(null);
-  }, []);
 
   return (
     <PageLayout
@@ -416,18 +373,8 @@ export const SubscriptionsPage: React.FC = () => {
           isLoading={isLoading}
           filters={filters}
           onFiltersChange={handleFiltersChange}
-          onViewDetails={handleViewDetails}
           onViewClient={handleViewClient}
         />
-
-        {/* Subscription Detail Modal */}
-        {selectedSubscription && (
-          <SubscriptionDetailModal
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
-            subscription={selectedSubscription}
-          />
-        )}
       </div>
     </PageLayout>
   );
