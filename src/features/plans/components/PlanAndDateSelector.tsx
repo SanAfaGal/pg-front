@@ -57,8 +57,15 @@ const EmptyState = ({ message }: { message: string }) => (
 const getCurrentDateInColombia = () => {
   const now = new Date()
   // Colombia timezone: America/Bogota (UTC-5, no daylight saving time)
-  const colombiaDate = new Date(now.toLocaleString("en-US", {timeZone: "America/Bogota"}))
-  return colombiaDate.toISOString().split('T')[0]
+  // Use Intl.DateTimeFormat to get date components in Colombia timezone
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+  // Format returns YYYY-MM-DD directly (en-CA locale uses ISO format)
+  return formatter.format(now)
 }
 
 export const PlanAndDateSelector: React.FC<PlanAndDateSelectorProps> = ({
