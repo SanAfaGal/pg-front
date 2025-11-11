@@ -22,6 +22,7 @@ const Attendances = lazy(() => import('./Attendances').then(module => ({ default
 const InventoryPage = lazy(() => import('../features/inventory').then(module => ({ default: module.InventoryPage })));
 const SubscriptionsPage = lazy(() => import('./SubscriptionsPage').then(module => ({ default: module.SubscriptionsPage })));
 const PlansPage = lazy(() => import('../features/plans/pages/PlansPage').then(module => ({ default: module.PlansPage })));
+const UsersPage = lazy(() => import('../features/users/pages/UsersPage').then(module => ({ default: module.UsersPage })));
 
 // Loading fallback for lazy components
 const ComponentLoadingFallback = () => (
@@ -141,6 +142,14 @@ export const Dashboard = () => {
       return (
         <Suspense fallback={<ComponentLoadingFallback />}>
           <PlansPage />
+        </Suspense>
+      );
+    }
+
+    if (activeMenuItem === 'users') {
+      return (
+        <Suspense fallback={<ComponentLoadingFallback />}>
+          <UsersPage />
         </Suspense>
       );
     }

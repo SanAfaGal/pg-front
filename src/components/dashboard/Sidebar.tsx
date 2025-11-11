@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, X, LogOut, Camera, Package, CreditCard, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, X, LogOut, Camera, Package, CreditCard, FileText, Shield } from 'lucide-react';
 import { useIsAdmin } from '../../features/subscriptions/hooks/useSubscriptionPermissions';
 
 interface User {
@@ -41,6 +41,7 @@ const baseMenuItems = [
 
 const adminMenuItems = [
   { id: 'plans', label: 'Planes', icon: FileText },
+  { id: 'users', label: 'Usuarios', icon: Shield },
 ];
 
 export const Sidebar = ({ isOpen, onClose, activeItem, onItemClick, onLogout, user }: SidebarProps) => {

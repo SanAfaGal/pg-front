@@ -93,6 +93,19 @@ export const API_ENDPOINTS = {
       reconciliation: '/inventory/reports/reconciliation',
     },
   },
+  
+  // Users
+  users: {
+    list: '/users',
+    detail: (username: string) => `/users/${username}`,
+    register: '/auth/register',
+    update: (username: string) => `/users/${username}`,
+    delete: (username: string) => `/users/${username}`,
+    resetPassword: (username: string) => `/users/${username}/password`,
+    changeRole: (username: string) => `/users/${username}/role`,
+    enable: (username: string) => `/users/${username}/enable`,
+    disable: (username: string) => `/users/${username}/disable`,
+  },
 } as const;
 
 /**
