@@ -9,7 +9,6 @@ import {
   StockRemoveRequest,
   StockOperationResponse,
   Movement,
-  MovementFilters,
   MovementListResponse,
   InventoryStats,
   LowStockProduct,
@@ -63,11 +62,21 @@ export const inventoryApi = {
 
   // Stock Management
   async addStock(request: StockAddRequest): Promise<StockOperationResponse> {
-    const params = {
+    const params: Record<string, string> = {
       product_id: request.product_id,
       quantity: request.quantity,
-      ...(request.notes && { notes: request.notes })
     };
+    
+    // Include responsible if provided and not empty
+    if (request.responsible?.trim()) {
+      params.responsible = request.responsible.trim();
+    }
+    
+    // Include notes if provided and not empty
+    if (request.notes?.trim()) {
+      params.notes = request.notes.trim();
+    }
+    
     return apiClient.post<StockOperationResponse>(
       API_ENDPOINTS.inventory.stock.add, 
       null, 
@@ -91,8 +100,11 @@ export const inventoryApi = {
 
   // Movements
   async getMovements(params?: MovementListQueryParams): Promise<MovementListResponse> {
+    const filteredParams = params ? Object.fromEntries(
+      Object.entries(params).filter(([, value]) => value !== undefined)
+    ) as Record<string, string | number | boolean> : {};
     return apiClient.get<MovementListResponse>(API_ENDPOINTS.inventory.movements.list, {
-      params
+      params: filteredParams
     });
   },
 

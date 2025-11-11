@@ -65,6 +65,7 @@ export type ProductListResponse = PaginatedResponse<Product>;
 export interface StockAddRequest {
   product_id: string;
   quantity: string;
+  responsible?: string;
   notes?: string;
 }
 

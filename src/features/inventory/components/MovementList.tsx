@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Movement, Product } from '../types';
 import { Card } from '../../../components/ui/Card';
-import { Package, User, Calendar, Clock, FileText, AlertCircle } from 'lucide-react';
+import { Package, User, Calendar, FileText, AlertCircle } from 'lucide-react';
 import { MovementTypeIcon } from './common/MovementTypeIcon';
 import { LoadingState } from './common/LoadingState';
 import { formatDate, formatQuantity } from '../utils/formatters';
@@ -144,15 +144,15 @@ export const MovementList: React.FC<MovementListProps> = ({
                     </p>
                   </div>
                 </div>
-                {movement.responsible && (
-                  <div className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-xs text-gray-500">Responsable</p>
-                      <p className="text-sm text-gray-900 truncate">{movement.responsible}</p>
-                    </div>
+                <div className="flex items-center gap-2">
+                  <User className={`w-3.5 h-3.5 flex-shrink-0 ${movement.responsible ? 'text-gray-400' : 'text-gray-300'}`} />
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500">Responsable</p>
+                    <p className={`text-sm truncate ${movement.responsible ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                      {movement.responsible || 'No asignado'}
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Notes */}
@@ -256,14 +256,12 @@ export const MovementList: React.FC<MovementListProps> = ({
 
                 {/* Responsible */}
                 <td className="px-4 py-3">
-                  {movement.responsible ? (
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                      <span className="text-sm text-gray-700">{movement.responsible}</span>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">—</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <User className={`w-4 h-4 flex-shrink-0 ${movement.responsible ? 'text-gray-400' : 'text-gray-300'}`} />
+                    <span className={`text-sm ${movement.responsible ? 'text-gray-700' : 'text-gray-400 italic'}`}>
+                      {movement.responsible || 'No asignado'}
+                    </span>
+                  </div>
                 </td>
 
                 {/* Notes */}

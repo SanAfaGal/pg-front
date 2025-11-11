@@ -18,11 +18,26 @@ export const useAddStock = () => {
       // Invalidate movements
       queryClient.invalidateQueries({ queryKey: movementKeys.lists() });
       
+      // Invalidate product history for this specific product
+      queryClient.invalidateQueries({ queryKey: reportKeys.productHistory(response.product.id) });
+      
       // Invalidate specific report queries that might be affected
       queryClient.invalidateQueries({ queryKey: reportKeys.stats() });
       queryClient.invalidateQueries({ queryKey: reportKeys.lowStock() });
       queryClient.invalidateQueries({ queryKey: reportKeys.outOfStock() });
       queryClient.invalidateQueries({ queryKey: reportKeys.overstock() });
+      
+      // Invalidate daily sales and reconciliation reports (they may include responsible tracking)
+      // Invalidate all variations of these reports
+      queryClient.invalidateQueries({ 
+        queryKey: [...reportKeys.all, 'daily-sales'],
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [...reportKeys.all, 'daily-sales-by-employee'],
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [...reportKeys.all, 'reconciliation'],
+      });
     },
   });
 };
@@ -40,11 +55,26 @@ export const useRemoveStock = () => {
       // Invalidate movements
       queryClient.invalidateQueries({ queryKey: movementKeys.lists() });
       
+      // Invalidate product history for this specific product
+      queryClient.invalidateQueries({ queryKey: reportKeys.productHistory(response.product.id) });
+      
       // Invalidate specific report queries that might be affected
       queryClient.invalidateQueries({ queryKey: reportKeys.stats() });
       queryClient.invalidateQueries({ queryKey: reportKeys.lowStock() });
       queryClient.invalidateQueries({ queryKey: reportKeys.outOfStock() });
       queryClient.invalidateQueries({ queryKey: reportKeys.overstock() });
+      
+      // Invalidate daily sales and reconciliation reports (they track responsible users)
+      // Invalidate all variations of these reports
+      queryClient.invalidateQueries({ 
+        queryKey: [...reportKeys.all, 'daily-sales'],
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [...reportKeys.all, 'daily-sales-by-employee'],
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [...reportKeys.all, 'reconciliation'],
+      });
     },
   });
 };

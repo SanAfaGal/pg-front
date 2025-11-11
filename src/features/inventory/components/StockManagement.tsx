@@ -61,18 +61,31 @@ export const StockManagement: React.FC<StockManagementProps> = ({
 
   const watchedQuantity = watch('quantity');
 
+  // Helper functions for stock calculations
+  const parseQuantity = (value: string | undefined): number | null => {
+    if (!value) return null;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? null : parsed;
+  };
+
+  const getProductStockValues = () => ({
+    current: parseFloat(product.available_quantity),
+    min: parseFloat(product.min_stock),
+    max: parseFloat(product.max_stock),
+  });
+
   const handleFormSubmit = (data: StockOperationFormData) => {
-    const request = {
+    const baseRequest = {
       product_id: product.id,
       quantity: data.quantity,
       notes: data.notes,
-      ...(operationType === 'remove' && { responsible: user?.username }),
+      responsible: user?.username, // Include responsible for both add and remove operations
     };
 
     if (operationType === 'add') {
-      onAddStock(request as StockAddRequest);
+      onAddStock(baseRequest as StockAddRequest);
     } else {
-      onRemoveStock(request as StockRemoveRequest);
+      onRemoveStock(baseRequest as StockRemoveRequest);
     }
   };
 
@@ -83,70 +96,91 @@ export const StockManagement: React.FC<StockManagementProps> = ({
   };
 
 
-  const calculateNewStock = () => {
-    if (!watchedQuantity) return null;
+  const calculateNewStock = (): number | null => {
+    const operationQuantity = parseQuantity(watchedQuantity);
+    if (operationQuantity === null) return null;
     
-    const currentStock = parseFloat(product.available_quantity);
-    const operationQuantity = parseFloat(watchedQuantity);
-    
-    if (isNaN(operationQuantity)) return null;
-    
+    const { current } = getProductStockValues();
     const newStock = operationType === 'add' 
-      ? currentStock + operationQuantity 
-      : currentStock - operationQuantity;
+      ? current + operationQuantity 
+      : current - operationQuantity;
     
     return Math.max(0, newStock);
   };
 
-  const getNewStockStatus = () => {
+  const getNewStockStatus = (): 'NORMAL' | 'LOW_STOCK' | 'STOCK_OUT' | 'OVERSTOCK' | null => {
     const newStock = calculateNewStock();
     if (newStock === null) return null;
     
-    const minStock = parseFloat(product.min_stock);
-    const maxStock = parseFloat(product.max_stock);
+    const { min, max } = getProductStockValues();
     
     if (newStock === 0) return 'STOCK_OUT';
-    if (newStock < minStock) return 'LOW_STOCK';
-    if (newStock > maxStock) return 'OVERSTOCK';
+    if (newStock < min) return 'LOW_STOCK';
+    if (newStock > max) return 'OVERSTOCK';
     return 'NORMAL';
   };
 
-  const isValidOperation = () => {
-    if (!watchedQuantity) return false;
+  const isValidOperation = (): boolean => {
+    const operationQuantity = parseQuantity(watchedQuantity);
+    if (operationQuantity === null || operationQuantity <= 0) return false;
     
-    const operationQuantity = parseFloat(watchedQuantity);
-    if (isNaN(operationQuantity) || operationQuantity <= 0) return false;
-    
-    const currentStock = parseFloat(product.available_quantity);
-    const maxStock = parseFloat(product.max_stock);
+    const { current, max } = getProductStockValues();
     
     if (operationType === 'add') {
-      return (currentStock + operationQuantity) <= maxStock;
+      return (current + operationQuantity) <= max;
     } else {
-      return operationQuantity <= currentStock;
+      return operationQuantity <= current;
     }
   };
 
-  const getOperationError = () => {
-    if (!watchedQuantity) return null;
+  const getOperationError = (): string | null => {
+    const operationQuantity = parseQuantity(watchedQuantity);
     
-    const operationQuantity = parseFloat(watchedQuantity);
-    if (isNaN(operationQuantity)) return 'Debe ser un número válido';
+    if (operationQuantity === null) return 'Debe ser un número válido';
     if (operationQuantity <= 0) return 'La cantidad debe ser mayor a 0';
     
-    const currentStock = parseFloat(product.available_quantity);
-    const maxStock = parseFloat(product.max_stock);
+    const { current, max } = getProductStockValues();
     
     if (operationType === 'add') {
-      if ((currentStock + operationQuantity) > maxStock) {
-        return `No se puede exceder el stock máximo de ${maxStock} ${product.unit_type}`;
+      if ((current + operationQuantity) > max) {
+        return `No se puede exceder el stock máximo de ${Math.floor(max)} unidades`;
       }
-    } else if (operationQuantity > currentStock) {
-      return `No hay suficiente stock. Disponible: ${formatQuantity(currentStock.toString(), product.unit_type)}`;
+    } else if (operationQuantity > current) {
+      return `No hay suficiente stock. Disponible: ${Math.floor(current)} unidades`;
     }
     
     return null;
   };
+
+  // Operation type colors and styles
+  const operationStyles = {
+    add: {
+      bg: 'bg-green-50',
+      border: 'border-green-500',
+      ring: 'ring-green-200',
+      iconBg: 'bg-green-100',
+      iconColor: 'text-green-600',
+      text: 'text-green-700',
+      textDark: 'text-green-900',
+      label: 'text-green-700',
+      focus: 'focus:ring-green-500 focus:border-green-500',
+      button: '',
+    },
+    remove: {
+      bg: 'bg-red-50',
+      border: 'border-red-500',
+      ring: 'ring-red-200',
+      iconBg: 'bg-red-100',
+      iconColor: 'text-red-600',
+      text: 'text-red-700',
+      textDark: 'text-red-900',
+      label: 'text-red-700',
+      focus: 'focus:ring-red-500 focus:border-red-500',
+      button: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
+    },
+  };
+
+  const currentStyle = operationStyles[operationType];
 
   return (
     <Modal 
@@ -200,49 +234,86 @@ export const StockManagement: React.FC<StockManagementProps> = ({
           </div>
         </Card>
 
-        {/* Operation Type Selector */}
-        <div className="flex gap-2 mb-6">
-          <div className="relative flex-1 group">
-            <Button
+        {/* Operation Type Selector - Mejorado con mejor diferenciación visual */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Tipo de Operación
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Botón Agregar Stock */}
+            <button
               type="button"
-              variant={operationType === 'add' ? 'primary' : 'secondary'}
               onClick={() => setOperationType('add')}
-              leftIcon={<Plus className="w-4 h-4" />}
-              className="w-full"
               disabled={!isAdmin}
+              className={`
+                relative flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg border-2 transition-all duration-200
+                ${operationType === 'add' 
+                  ? 'bg-green-50 border-green-500 shadow-md ring-2 ring-green-200' 
+                  : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }
+                ${!isAdmin ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              `}
             >
-              Agregar Stock
-            </Button>
-            {!isAdmin && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                Solo administradores pueden agregar stock
-                <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-800"></div>
+              <div className={`
+                p-2 rounded-full transition-colors
+                ${operationType === 'add' ? 'bg-green-100' : 'bg-gray-100'}
+              `}>
+                <Plus className={`w-6 h-6 ${operationType === 'add' ? 'text-green-600' : 'text-gray-400'}`} />
               </div>
-            )}
+              <span className={`text-sm font-semibold ${operationType === 'add' ? 'text-green-700' : 'text-gray-600'}`}>
+                Agregar Stock
+              </span>
+              {operationType === 'add' && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+              )}
+              {!isAdmin && (
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                  Solo administradores
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-800"></div>
+                </div>
+              )}
+            </button>
+
+            {/* Botón Remover Stock */}
+            <button
+              type="button"
+              onClick={() => setOperationType('remove')}
+              className={`
+                relative flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer
+                ${operationType === 'remove' 
+                  ? 'bg-red-50 border-red-500 shadow-md ring-2 ring-red-200' 
+                  : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }
+              `}
+            >
+              <div className={`
+                p-2 rounded-full transition-colors
+                ${operationType === 'remove' ? 'bg-red-100' : 'bg-gray-100'}
+              `}>
+                <Minus className={`w-6 h-6 ${operationType === 'remove' ? 'text-red-600' : 'text-gray-400'}`} />
+              </div>
+              <span className={`text-sm font-semibold ${operationType === 'remove' ? 'text-red-700' : 'text-gray-600'}`}>
+                Remover Stock
+              </span>
+              {operationType === 'remove' && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+              )}
+            </button>
           </div>
-          <Button
-            type="button"
-            variant={operationType === 'remove' ? 'primary' : 'secondary'}
-            onClick={() => setOperationType('remove')}
-            leftIcon={<Minus className="w-4 h-4" />}
-            className="flex-1"
-          >
-            Remover Stock
-          </Button>
         </div>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          {/* Quantity Input */}
+          {/* Quantity Input - Mejorado con mejor feedback visual */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 ${currentStyle.label}`}>
               Cantidad {operationType === 'add' ? 'a agregar' : 'a remover'} *
             </label>
             <div className="relative">
-              <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+              <div className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${currentStyle.iconColor}`}>
                 {operationType === 'add' ? (
-                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <TrendingUp className="w-5 h-5" />
                 ) : (
-                  <TrendingDown className="w-4 h-4 text-red-500" />
+                  <TrendingDown className="w-5 h-5" />
                 )}
               </div>
               <Input
@@ -257,7 +328,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
                 type="number"
                 step="1"
                 placeholder="Ej: 10"
-                className="pl-10"
+                className={`pl-11 ${currentStyle.focus}`}
                 error={errors.quantity?.message || getOperationError() || undefined}
               />
             </div>
@@ -281,31 +352,48 @@ export const StockManagement: React.FC<StockManagementProps> = ({
             </div>
           </div>
 
-          {/* Preview */}
+          {/* Preview - Mejorado con colores temáticos según operación */}
           {watchedQuantity && isValidOperation() && (
-            <Card className="p-4 bg-blue-50 border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Package className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">Vista Previa</span>
+            <Card className={`p-4 border-2 ${currentStyle.bg} ${
+              operationType === 'add' ? 'border-green-200' : 'border-red-200'
+            }`}>
+              <div className={`flex items-center gap-2 mb-3 ${currentStyle.textDark}`}>
+                <Package className={`w-5 h-5 ${currentStyle.iconColor}`} />
+                <span className="text-sm font-semibold">
+                  Vista Previa - {operationType === 'add' ? 'Agregar Stock' : 'Remover Stock'}
+                </span>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Stock actual:</span>
-                  <span className="ml-2 font-medium">
-                    {product.available_quantity}
+              <div className="grid grid-cols-2 gap-4 text-sm mb-3">
+                <div className="bg-white rounded-lg p-2">
+                  <span className="text-gray-600 block text-xs mb-1">Stock actual:</span>
+                  <span className="text-base font-bold text-gray-900">
+                    {formatQuantity(product.available_quantity, "")} unidades
                   </span>
                 </div>
-                <div>
-                  <span className="text-gray-600">Nuevo stock:</span>
-                  <span className="ml-2 font-medium">
-                    {calculateNewStock()?.toString() || '0'}
+                <div className={`rounded-lg p-2 ${currentStyle.iconBg}`}>
+                  <span className={`block text-xs mb-1 ${currentStyle.text}`}>
+                    Nuevo stock:
+                  </span>
+                  <span className={`text-base font-bold ${currentStyle.textDark}`}>
+                    {formatQuantity(calculateNewStock()?.toString() || '0', "")} unidades
                   </span>
                 </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className={`font-medium ${currentStyle.text}`}>
+                  {operationType === 'add' ? '+' : '-'}
+                  {formatQuantity(watchedQuantity, "")}
+                </span>
+                <span className="text-gray-500">unidades</span>
               </div>
               {getNewStockStatus() && getNewStockStatus() !== product.stock_status && (
-                <div className="mt-2 pt-2 border-t border-blue-200">
+                <div className={`mt-3 pt-3 border-t ${
+                  operationType === 'add' ? 'border-green-200' : 'border-red-200'
+                }`}>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Nuevo estado:</span>
+                    <span className={`text-sm font-medium ${currentStyle.text}`}>
+                      Nuevo estado:
+                    </span>
                     <StockBadge status={getNewStockStatus()!} />
                   </div>
                 </div>
@@ -315,19 +403,32 @@ export const StockManagement: React.FC<StockManagementProps> = ({
 
           {/* Warning for critical operations */}
           {operationType === 'remove' && getNewStockStatus() === 'STOCK_OUT' && (
-            <Card className="p-4 bg-red-50 border-red-200">
+            <Card className="p-4 bg-red-50 border-2 border-red-300">
               <div className="flex items-center gap-2 text-red-800">
-                <AlertTriangle className="w-4 h-4" />
-                <span className="text-sm font-medium">¡Advertencia!</span>
+                <AlertTriangle className="w-5 h-5" />
+                <span className="text-sm font-semibold">¡Advertencia!</span>
               </div>
-              <p className="text-sm text-red-700 mt-1">
+              <p className="text-sm text-red-700 mt-2">
                 Esta operación dejará el producto sin stock.
               </p>
             </Card>
           )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+          {/* Error message when operation is invalid */}
+          {watchedQuantity && !isValidOperation() && getOperationError() && (
+            <Card className="p-4 bg-red-50 border-2 border-red-300">
+              <div className="flex items-center gap-2 text-red-800">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="text-sm font-semibold">Error de validación</span>
+              </div>
+              <p className="text-sm text-red-700 mt-2">
+                {getOperationError()}
+              </p>
+            </Card>
+          )}
+
+          {/* Actions - Mejorado con colores temáticos */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
             <Button
               type="button"
               variant="secondary"
@@ -339,15 +440,22 @@ export const StockManagement: React.FC<StockManagementProps> = ({
             <div className="relative group">
               <Button
                 type="submit"
-                variant="primary"
+                variant={operationType === 'add' ? 'primary' : 'primary'}
                 isLoading={isLoading}
-                leftIcon={operationType === 'add' ? <Plus className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                leftIcon={
+                  operationType === 'add' ? (
+                    <Plus className="w-4 h-4" />
+                  ) : (
+                    <Minus className="w-4 h-4" />
+                  )
+                }
                 disabled={!isValid || isLoading || (operationType === 'add' && !isAdmin)}
+                className={operationType === 'remove' ? currentStyle.button : ''}
               >
                 {operationType === 'add' ? 'Agregar Stock' : 'Remover Stock'}
               </Button>
               {operationType === 'add' && !isAdmin && (
-                <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
                   Solo administradores pueden agregar stock
                   <div className="absolute top-full left-4 -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-gray-800"></div>
                 </div>
