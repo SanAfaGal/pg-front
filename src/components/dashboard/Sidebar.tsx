@@ -6,6 +6,7 @@ interface User {
   username: string;
   full_name?: string;
   email?: string;
+  role?: string;
 }
 
 interface SidebarProps {
@@ -17,8 +18,21 @@ interface SidebarProps {
   user?: User;
 }
 
+// Función para traducir el rol del usuario al español
+const getRoleLabel = (role?: string): string => {
+  if (!role) return '';
+  const roleLower = role.toLowerCase();
+  if (roleLower === 'admin' || roleLower === 'administrador') {
+    return 'Administrador';
+  }
+  if (roleLower === 'employee' || roleLower === 'empleado') {
+    return 'Empleado';
+  }
+  return role; // Si no coincide, devolver el rol original
+};
+
 const baseMenuItems = [
-  { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'home', label: 'Inicio', icon: LayoutDashboard },
   { id: 'clients', label: 'Clientes', icon: Users },
   { id: 'subscriptions', label: 'Suscripciones', icon: CreditCard },
   { id: 'attendances', label: 'Asistencias', icon: Camera },
@@ -60,9 +74,55 @@ export const Sidebar = ({ isOpen, onClose, activeItem, onItemClick, onLogout, us
             </div>
             <div>
               <h2 className="text-lg font-bold text-powergym-charcoal">PowerGym AG</h2>
-              <p className="text-xs text-gray-500">
-                {user?.full_name || user?.username || 'Usuario'}
-              </p>
+              {(() => {
+                const userName = user?.full_name || user?.username || '';
+                const userRole = user?.role ? getRoleLabel(user.role) : '';
+                const roleKeywords = ['administrator', 'admin', 'administrador', 'empleado', 'employee'];
+                const isRoleInName = roleKeywords.some(keyword => 
+                  userName.toLowerCase().trim() === keyword
+                );
+                
+                // Si el nombre es un rol, solo mostrar el rol traducido en español
+                if (isRoleInName && userRole) {
+                  return (
+                    <p className="text-xs font-medium text-gray-700">
+                      {userRole}
+                    </p>
+                  );
+                }
+                
+                // Si hay nombre válido (que no es un rol), mostrarlo con el rol debajo si existe
+                if (userName && !isRoleInName) {
+                  return (
+                    <>
+                      <p className="text-xs font-medium text-gray-700">
+                        {userName}
+                      </p>
+                      {userRole && (
+                        <p className="text-xs text-gray-500">
+                          {userRole}
+                        </p>
+                      )}
+                    </>
+                  );
+                }
+                
+                // Si solo hay rol, mostrarlo
+                if (userRole) {
+                  return (
+                    <p className="text-xs font-medium text-gray-700">
+                      {userRole}
+                    </p>
+                  );
+                }
+                
+                // Fallback
+                return (
+                  <p className="text-xs font-medium text-gray-700">
+                    Usuario
+                  </p>
+                );
+              })()}
             </div>
           </div>
           <button
@@ -112,3 +172,4 @@ export const Sidebar = ({ isOpen, onClose, activeItem, onItemClick, onLogout, us
     </>
   );
 };
+
