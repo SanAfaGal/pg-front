@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   useUsers,
   useCreateUser,
@@ -8,7 +8,6 @@ import {
   useChangeRole,
   useEnableUser,
   useDisableUser,
-  userKeys,
 } from '../hooks/useUsers';
 import { User, UserCreateInput, UserUpdateInput, UserFilters as UserFiltersType } from '../api/types';
 import { UserList } from '../components/UserList';
@@ -16,7 +15,6 @@ import { UserForm } from '../components/UserForm';
 import { PasswordResetModal } from '../components/PasswordResetModal';
 import { Button } from '../../../components/ui/Button';
 import { PageLayout } from '../../../components/ui/PageLayout';
-import { LoadingSpinner } from '../../../components/ui/LoadingSpinner';
 import { RefreshButton } from '../../../components/ui/RefreshButton';
 import { ConfirmDialog } from '../../../components/ui/ConfirmDialog';
 import { useToast, logger } from '../../../shared';
@@ -24,7 +22,6 @@ import { useIsAdmin } from '../../subscriptions/hooks/useSubscriptionPermissions
 import { useAuth } from '../../auth';
 import { Plus, AlertCircle, UserCog } from 'lucide-react';
 import { NOTIFICATION_MESSAGES } from '../constants/userConstants';
-import { useQueryClient } from '@tanstack/react-query';
 
 export const UsersPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -43,16 +40,15 @@ export const UsersPage: React.FC = () => {
   const isAdmin = useIsAdmin();
   const { user: currentUser } = useAuth();
   const { showToast } = useToast();
-  const queryClient = useQueryClient();
 
-  // Queries - enabled=false by default, only fetch on manual refresh
+  // Queries - enabled=true to load data automatically on page entry
   const {
     data: users,
     isLoading: usersLoading,
     error: usersError,
     isRefetching: isUsersRefetching,
     refetch: refetchUsers,
-  } = useUsers(false);
+  } = useUsers(true);
 
   // Mutations
   const createUserMutation = useCreateUser();

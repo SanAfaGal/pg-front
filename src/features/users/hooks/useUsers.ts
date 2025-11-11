@@ -31,9 +31,9 @@ export const userKeys = {
 
 /**
  * Hook to get all users (admin only)
- * enabled=false by default - only fetch when manually triggered
+ * enabled=true by default - loads data automatically on mount
  */
-export const useUsers = (enabled: boolean = false) => {
+export const useUsers = (enabled: boolean = true) => {
   return useQuery({
     queryKey: userKeys.list(),
     queryFn: () => getAllUsers(),
@@ -69,8 +69,9 @@ export const useCreateUser = () => {
   return useMutation({
     mutationFn: (userData: UserCreateInput) => createUser(userData),
     onSuccess: () => {
-      // Invalidate lists to refetch
+      // Invalidate and refetch lists automatically
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.refetchQueries({ queryKey: userKeys.lists() });
     },
   });
 };
@@ -85,8 +86,9 @@ export const useUpdateUser = () => {
     mutationFn: ({ username, data }: { username: string; data: UserUpdateInput }) =>
       updateUser(username, data),
     onSuccess: (updatedUser: User) => {
-      // Invalidate lists
+      // Invalidate and refetch lists automatically
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.refetchQueries({ queryKey: userKeys.lists() });
       // Update the specific user in cache (optimistic update)
       queryClient.setQueryData(userKeys.detail(updatedUser.username), updatedUser);
     },
@@ -102,8 +104,9 @@ export const useDeleteUser = () => {
   return useMutation({
     mutationFn: (username: string) => deleteUser(username),
     onSuccess: (_, deletedUsername) => {
-      // Invalidate lists
+      // Invalidate and refetch lists automatically
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.refetchQueries({ queryKey: userKeys.lists() });
       // Remove the specific user from cache
       queryClient.removeQueries({ queryKey: userKeys.detail(deletedUsername) });
     },
@@ -120,6 +123,9 @@ export const useResetPassword = () => {
     mutationFn: ({ username, newPassword }: { username: string; newPassword: string }) =>
       resetUserPassword(username, newPassword),
     onSuccess: (_, { username }) => {
+      // Invalidate and refetch lists to show updated data
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.refetchQueries({ queryKey: userKeys.lists() });
       // Invalidate user detail to refetch
       queryClient.invalidateQueries({ queryKey: userKeys.detail(username) });
     },
@@ -136,8 +142,9 @@ export const useChangeRole = () => {
     mutationFn: ({ username, role }: { username: string; role: UserRole }) =>
       changeUserRole(username, role),
     onSuccess: (updatedUser: User) => {
-      // Invalidate lists
+      // Invalidate and refetch lists automatically
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.refetchQueries({ queryKey: userKeys.lists() });
       // Update the specific user in cache
       queryClient.setQueryData(userKeys.detail(updatedUser.username), updatedUser);
     },
@@ -153,8 +160,9 @@ export const useEnableUser = () => {
   return useMutation({
     mutationFn: (username: string) => enableUser(username),
     onSuccess: (updatedUser: User) => {
-      // Invalidate lists
+      // Invalidate and refetch lists automatically
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.refetchQueries({ queryKey: userKeys.lists() });
       // Update the specific user in cache
       queryClient.setQueryData(userKeys.detail(updatedUser.username), updatedUser);
     },
@@ -170,8 +178,9 @@ export const useDisableUser = () => {
   return useMutation({
     mutationFn: (username: string) => disableUser(username),
     onSuccess: (updatedUser: User) => {
-      // Invalidate lists
+      // Invalidate and refetch lists automatically
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+      queryClient.refetchQueries({ queryKey: userKeys.lists() });
       // Update the specific user in cache
       queryClient.setQueryData(userKeys.detail(updatedUser.username), updatedUser);
     },
