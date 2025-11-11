@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '../components/dashboard/Sidebar';
 import { useAuth } from '../features/auth';
@@ -12,12 +12,22 @@ import { FloatingAlerts } from '../features/dashboard/components/FloatingAlerts'
 import { DashboardHeader } from '../features/dashboard/components/DashboardHeader';
 import { DashboardErrorState } from '../features/dashboard/components/DashboardErrorState';
 import { DashboardSkeleton } from '../features/dashboard/components/DashboardSkeleton';
-import { Clients } from './Clients';
-import Attendances from './Attendances';
-import { InventoryPage } from '../features/inventory';
-import { SubscriptionsPage } from './SubscriptionsPage';
+import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { NOTIFICATION_MESSAGES } from '../features/dashboard/constants/dashboardConstants';
 import { useToast } from '../shared';
+
+// Lazy load heavy dashboard components for better code splitting
+const Clients = lazy(() => import('./Clients').then(module => ({ default: module.Clients })));
+const Attendances = lazy(() => import('./Attendances').then(module => ({ default: module.default })));
+const InventoryPage = lazy(() => import('../features/inventory').then(module => ({ default: module.InventoryPage })));
+const SubscriptionsPage = lazy(() => import('./SubscriptionsPage').then(module => ({ default: module.SubscriptionsPage })));
+
+// Loading fallback for lazy components
+const ComponentLoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <LoadingSpinner size="lg" />
+  </div>
+);
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -95,19 +105,35 @@ export const Dashboard = () => {
 
   const renderContent = () => {
     if (activeMenuItem === 'clients') {
-      return <Clients />;
+      return (
+        <Suspense fallback={<ComponentLoadingFallback />}>
+          <Clients />
+        </Suspense>
+      );
     }
 
     if (activeMenuItem === 'attendances') {
-      return <Attendances />;
+      return (
+        <Suspense fallback={<ComponentLoadingFallback />}>
+          <Attendances />
+        </Suspense>
+      );
     }
 
     if (activeMenuItem === 'inventory') {
-      return <InventoryPage />;
+      return (
+        <Suspense fallback={<ComponentLoadingFallback />}>
+          <InventoryPage />
+        </Suspense>
+      );
     }
 
     if (activeMenuItem === 'subscriptions') {
-      return <SubscriptionsPage />;
+      return (
+        <Suspense fallback={<ComponentLoadingFallback />}>
+          <SubscriptionsPage />
+        </Suspense>
+      );
     }
 
     if (activeMenuItem === 'home') {

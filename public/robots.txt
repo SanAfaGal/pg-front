@@ -1,0 +1,14 @@
+# robots.txt for PowerGym AG
+# Allow indexing of public pages
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /privacy-policy
+
+# Disallow private/protected routes
+Disallow: /dashboard
+Disallow: /dashboard/*
+
+# Sitemap location
+Sitemap: /sitemap.xml
+

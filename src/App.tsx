@@ -1,13 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
-import { LandingPage } from './pages/LandingPage';
-import { PrivacyPolicy } from './pages/PrivacyPolicy';
-import { Login } from './pages/Login';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 
-// Lazy load heavy components
+// Lazy load all pages for better code splitting
+const LandingPage = lazy(() => import('./pages/LandingPage').then(module => ({ default: module.LandingPage })));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(module => ({ default: module.PrivacyPolicy })));
+const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
 const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
+
+// Reusable loading fallback component
+const PageLoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <LoadingSpinner size="xl" />
+  </div>
+);
 
 function App() {
   return (
@@ -19,20 +26,37 @@ function App() {
     >
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<PageLoadingFallback />}>
+              <LandingPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/privacy-policy"
+          element={
+            <Suspense fallback={<PageLoadingFallback />}>
+              <PrivacyPolicy />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <Suspense fallback={<PageLoadingFallback />}>
+              <Login />
+            </Suspense>
+          }
+        />
         
         {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Suspense fallback={
-                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-50">
-                  <LoadingSpinner size="xl" />
-                </div>
-              }>
+              <Suspense fallback={<PageLoadingFallback />}>
                 <Dashboard />
               </Suspense>
             </ProtectedRoute>
