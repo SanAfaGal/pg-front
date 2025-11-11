@@ -1,4 +1,5 @@
-import { LayoutDashboard, Users, X, LogOut, Camera, Package, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, X, LogOut, Camera, Package, CreditCard, FileText } from 'lucide-react';
+import { useIsAdmin } from '../../features/subscriptions/hooks/useSubscriptionPermissions';
 
 interface User {
   id: string;
@@ -16,7 +17,7 @@ interface SidebarProps {
   user?: User;
 }
 
-const menuItems = [
+const baseMenuItems = [
   { id: 'home', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'clients', label: 'Clientes', icon: Users },
   { id: 'subscriptions', label: 'Suscripciones', icon: CreditCard },
@@ -24,7 +25,16 @@ const menuItems = [
   { id: 'inventory', label: 'Inventario', icon: Package },
 ];
 
+const adminMenuItems = [
+  { id: 'plans', label: 'Planes', icon: FileText },
+];
+
 export const Sidebar = ({ isOpen, onClose, activeItem, onItemClick, onLogout, user }: SidebarProps) => {
+  const isAdmin = useIsAdmin();
+  
+  const menuItems = isAdmin 
+    ? [...baseMenuItems, ...adminMenuItems]
+    : baseMenuItems;
   return (
     <>
       {isOpen && (

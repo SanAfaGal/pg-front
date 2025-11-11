@@ -1,13 +1,32 @@
 import { DurationType } from '../api/types'
 
-// Formatear precio en pesos colombianos
-export const formatPrice = (price: string | number): string => {
-  const num = typeof price === 'string' ? parseFloat(price) : price
+/**
+ * Formats a currency amount with proper locale and currency symbol
+ * Supports multiple currencies (COP, USD, EUR)
+ * @param price - The price to format (string or number)
+ * @param currency - Currency code (default: 'COP')
+ * @returns Formatted currency string (e.g., "$50.000" for COP, "$50.00" for USD)
+ */
+export const formatPrice = (
+  price: string | number,
+  currency: string = 'COP'
+): string => {
+  const num = typeof price === 'string' ? parseFloat(price) : price;
+  
+  if (isNaN(num)) {
+    return typeof price === 'string' ? price : '0';
+  }
+  
+  // For COP, don't show decimals. For other currencies, show 2 decimals
+  const minimumFractionDigits = currency === 'COP' ? 0 : 2;
+  const maximumFractionDigits = currency === 'COP' ? 0 : 2;
+  
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-  }).format(num)
+    currency: currency,
+    minimumFractionDigits,
+    maximumFractionDigits,
+  }).format(num);
 }
 
 // Mostrar duración de forma legible

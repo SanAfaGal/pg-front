@@ -22,7 +22,7 @@ export const PlanItemCard: React.FC<PlanItemCardProps> = ({
             <p className="text-sm text-gray-600">{formatDuration(plan.duration_count, plan.duration_unit)}</p>
           </div>
           <div className="text-lg font-bold text-gray-900">
-            {formatPrice(plan.price)}
+            {formatPrice(plan.price, plan.currency)}
           </div>
         </div>
       </div>
@@ -42,7 +42,7 @@ export const PlanItemCard: React.FC<PlanItemCardProps> = ({
         <div className="flex items-end justify-between">
           <div className="space-y-1">
             <div className="text-2xl font-bold text-gray-900">
-              {formatPrice(plan.price)}
+              {formatPrice(plan.price, plan.currency)}
             </div>
             <div className="text-xs uppercase tracking-wide font-medium text-gray-500">
               {formatDuration(plan.duration_count, plan.duration_unit)}
