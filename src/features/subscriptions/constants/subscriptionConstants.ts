@@ -159,6 +159,8 @@ export const NOTIFICATION_MESSAGES = {
     canceled: 'Suscripción cancelada exitosamente',
     updated: 'Suscripción actualizada exitosamente',
     deleted: 'Suscripción eliminada exitosamente',
+    expired: 'Suscripciones expiradas exitosamente',
+    activated: 'Suscripciones activadas exitosamente',
   },
   payment: {
     created: 'Pago registrado exitosamente',

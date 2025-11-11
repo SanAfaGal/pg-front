@@ -11,6 +11,8 @@ import {
   updateSubscription,
   deleteSubscription,
   getAllSubscriptions,
+  expireSubscriptions,
+  activateSubscriptions,
 } from '../api/subscriptionApi';
 import {
   Subscription,
@@ -277,8 +279,44 @@ export const useAllSubscriptions = (
     queryFn: () => getAllSubscriptions(filters),
     staleTime: QUERY_STALE_TIMES.subscriptions,
     gcTime: QUERY_CACHE_TIMES.subscriptions,
-    enabled: enabled,
+    enabled: enabled, // No hacer peticiones automáticas, solo cuando enabled es true
     retry: RETRY_CONFIG.retries,
     retryDelay: RETRY_CONFIG.retryDelay,
+  });
+};
+
+// Hook to expire subscriptions
+export const useExpireSubscriptions = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: expireSubscriptions,
+    onSuccess: () => {
+      // Invalidate all subscription queries to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.allSubscriptions(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.lists(),
+      });
+    },
+  });
+};
+
+// Hook to activate scheduled subscriptions
+export const useActivateSubscriptions = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: activateSubscriptions,
+    onSuccess: () => {
+      // Invalidate all subscription queries to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.allSubscriptions(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: subscriptionKeys.lists(),
+      });
+    },
   });
 };

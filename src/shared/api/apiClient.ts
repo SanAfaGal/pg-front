@@ -41,6 +41,8 @@ export const API_ENDPOINTS = {
     detail: (id: string) => `/subscriptions/${id}`,
     renew: (clientId: string, id: string) => `/clients/${clientId}/subscriptions/${id}/renew`,
     cancel: (clientId: string, id: string) => `/clients/${clientId}/subscriptions/${id}/cancel`,
+    expire: '/subscriptions/expire',
+    activate: '/subscriptions/activate',
   },
   
   // Payments

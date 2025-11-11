@@ -96,6 +96,19 @@ export interface SubscriptionFilters {
   offset?: number;
 }
 
+// Subscription Management Response Types
+export interface ExpireSubscriptionsResponse {
+  expired_count: number;
+  execution_time: string;
+  reference_date: string;
+}
+
+export interface ActivateSubscriptionsResponse {
+  activated_count: number;
+  execution_time: string;
+  reference_date: string;
+}
+
 // Query Keys Factory
 export const subscriptionKeys = {
   all: () => ['subscriptions'] as const,

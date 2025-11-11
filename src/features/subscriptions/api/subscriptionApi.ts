@@ -6,6 +6,8 @@ import {
   SubscriptionRenewInput,
   SubscriptionCancelInput,
   SubscriptionStatus,
+  ExpireSubscriptionsResponse,
+  ActivateSubscriptionsResponse,
 } from './types';
 
 // Subscription API functions
@@ -115,4 +117,20 @@ export const getAllSubscriptions = async (
       offset,
     }
   });
+};
+
+/**
+ * Expire all subscriptions that have passed their end_date
+ */
+export const expireSubscriptions = async (): Promise<ExpireSubscriptionsResponse> => {
+  logger.debug('Expiring subscriptions');
+  return apiClient.post<ExpireSubscriptionsResponse>(API_ENDPOINTS.subscriptions.expire);
+};
+
+/**
+ * Activate all scheduled subscriptions that have reached their start_date
+ */
+export const activateSubscriptions = async (): Promise<ActivateSubscriptionsResponse> => {
+  logger.debug('Activating scheduled subscriptions');
+  return apiClient.post<ActivateSubscriptionsResponse>(API_ENDPOINTS.subscriptions.activate);
 };
