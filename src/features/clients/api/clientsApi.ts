@@ -51,9 +51,38 @@ export const clientsApi = {
   },
 
   async updateFaceBiometric(clientId: string, imageBase64: string): Promise<void> {
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(clientId)) {
+      throw new Error('Invalid client ID format. Expected UUID format.');
+    }
+
+    // Validate image base64
+    if (!imageBase64 || imageBase64.trim().length === 0) {
+      throw new Error('Image data cannot be empty');
+    }
+
+    // Basic base64 validation (should start with data:image/ or be pure base64)
+    const base64Pattern = /^data:image\/(jpeg|jpg|png|webp);base64,/i;
+    const isDataUri = base64Pattern.test(imageBase64);
+    const isPureBase64 = /^[A-Za-z0-9+/=]+$/.test(imageBase64.replace(/\s/g, ''));
+    
+    if (!isDataUri && !isPureBase64) {
+      throw new Error('Invalid image format. Expected base64 encoded image.');
+    }
+
+    // Extract pure base64 if it's a data URI
+    const pureBase64 = isDataUri 
+      ? imageBase64.split(',')[1] 
+      : imageBase64.trim();
+
+    if (!pureBase64 || pureBase64.length < 100) {
+      throw new Error('Image data is too short. Please ensure the image was captured correctly.');
+    }
+
     return apiClient.put('/face/update', {
       client_id: clientId,
-      image_base64: imageBase64,
+      image_base64: pureBase64,
     });
   },
 

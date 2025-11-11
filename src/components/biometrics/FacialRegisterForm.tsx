@@ -73,11 +73,35 @@ export const FacialRegisterForm: React.FC<FacialRegisterFormProps> = ({
       stopCamera();
       onSuccess();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error al procesar la imagen';
+      let errorMessage = 'Error al procesar la imagen';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Provide more user-friendly messages for common errors
+        if (error.message.includes('Invalid client ID format')) {
+          errorMessage = 'ID de cliente inválido. Por favor, recarga la página e intenta de nuevo.';
+        } else if (error.message.includes('Image data cannot be empty')) {
+          errorMessage = 'La imagen capturada está vacía. Por favor, intenta capturar nuevamente.';
+        } else if (error.message.includes('Invalid image format')) {
+          errorMessage = 'Formato de imagen inválido. Por favor, intenta capturar nuevamente.';
+        } else if (error.message.includes('too short')) {
+          errorMessage = 'La imagen capturada es demasiado pequeña. Por favor, asegúrate de que tu rostro esté completamente visible.';
+        } else if (error.message.includes('Client not found')) {
+          errorMessage = 'Cliente no encontrado. Por favor, verifica la información del cliente.';
+        } else if (error.message.includes('Client is not active')) {
+          errorMessage = 'El cliente no está activo. Por favor, contacta al administrador.';
+        } else if (error.message.includes('Internal server error')) {
+          errorMessage = 'Error del servidor. Por favor, intenta de nuevo más tarde.';
+        } else if (error.message.includes('no face detected') || error.message.includes('No face detected')) {
+          errorMessage = 'No se detectó un rostro en la imagen. Por favor, asegúrate de que tu rostro esté claramente visible y bien iluminado.';
+        }
+      }
+      
       showToast({
         type: 'error',
         title: 'Error',
-        message: message
+        message: errorMessage
       });
       setIsDetecting(false);
     }
