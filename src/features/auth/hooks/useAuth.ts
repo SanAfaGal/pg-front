@@ -52,6 +52,10 @@ export const useAuth = () => {
       queryClient.clear();
       setHasToken(false); // Explicitly set authentication status to false
       queryClient.resetQueries({ queryKey: AUTH_QUERY_KEY, exact: false });
+      // Limpiar el estado del recordatorio de membresías para que aparezca en la próxima sesión
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('membership_reminder_shown');
+      }
     },
     onError: () => {
       // Even if logout fails on server, clear local tokens
@@ -59,6 +63,10 @@ export const useAuth = () => {
       queryClient.clear();
       setHasToken(false); // Explicitly set authentication status to false
       queryClient.resetQueries({ queryKey: AUTH_QUERY_KEY, exact: false });
+      // Limpiar el estado del recordatorio de membresías para que aparezca en la próxima sesión
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('membership_reminder_shown');
+      }
     },
   });
 

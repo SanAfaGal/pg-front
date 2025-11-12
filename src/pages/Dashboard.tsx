@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '../components/dashboard/Sidebar';
 import { useAuth } from '../features/auth';
 import { useDashboardHome } from '../features/dashboard/hooks/useDashboardHome';
+import { useMembershipReminder } from '../features/dashboard/hooks/useMembershipReminder';
 import { ClientStatsCard } from '../features/dashboard/components/ClientStatsCard';
 import { FinancialStatsCard } from '../features/dashboard/components/FinancialStatsCard';
 import { AttendanceStatsCard } from '../features/dashboard/components/AttendanceStatsCard';
@@ -12,6 +13,7 @@ import { FloatingAlerts } from '../features/dashboard/components/FloatingAlerts'
 import { DashboardHeader } from '../features/dashboard/components/DashboardHeader';
 import { DashboardErrorState } from '../features/dashboard/components/DashboardErrorState';
 import { DashboardSkeleton } from '../features/dashboard/components/DashboardSkeleton';
+import { MembershipReminder } from '../features/dashboard/components/MembershipReminder';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { NOTIFICATION_MESSAGES } from '../features/dashboard/constants/dashboardConstants';
 import { useToast } from '../shared';
@@ -48,6 +50,10 @@ export const Dashboard = () => {
   };
 
   const [activeMenuItem, setActiveMenuItem] = useState(getInitialMenuItem);
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+
+  // Hook personalizado para gestionar el estado del recordatorio de membresías
+  const { hasShownReminder, markAsShown } = useMembershipReminder();
 
   // Use custom hook for dashboard home logic
   const {
@@ -65,6 +71,18 @@ export const Dashboard = () => {
     dateLabel,
     handleRefresh,
   } = useDashboardHome();
+
+  // Mostrar el modal automáticamente cuando se carga el dashboard por primera vez en la sesión
+  useEffect(() => {
+    if (!isDashboardLoading && dashboardData && !hasShownReminder) {
+      setIsReminderModalOpen(true);
+      markAsShown();
+    }
+  }, [isDashboardLoading, dashboardData, hasShownReminder, markAsShown]);
+
+  const handleCloseReminder = () => {
+    setIsReminderModalOpen(false);
+  };
 
   // Handle errors
   useEffect(() => {
@@ -268,6 +286,12 @@ export const Dashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* Modal de Recordatorio de Membresías */}
+      <MembershipReminder
+        isOpen={isReminderModalOpen}
+        onClose={handleCloseReminder}
+      />
     </div>
   );
 };
